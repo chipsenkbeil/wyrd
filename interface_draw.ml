@@ -436,7 +436,7 @@ let draw_untimed (iface : interface_state_t) reminders =
                   wattron iface.scr.untimed_win WA.reverse
                else
                   wattroff iface.scr.untimed_win WA.reverse;
-               trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 2) 
+               trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 3) 
                   ("* " ^ msg);
                lineinfo.(line) <- Some (filename, line_num, msg);
                render_lines tail (succ n) (succ line)
@@ -447,6 +447,18 @@ let draw_untimed (iface : interface_state_t) reminders =
    in
    render_lines today_reminders 0 1;
    wattroff iface.scr.untimed_win (WA.bold lor WA.reverse);
+   if List.length today_reminders > pred iface.scr.uw_lines then begin
+      if iface.top_untimed > 0 then begin
+         assert (mvwaddch iface.scr.untimed_win 1 (pred iface.scr.uw_cols) (int_of_char '^'));
+         assert (mvwaddch iface.scr.untimed_win 2 (pred iface.scr.uw_cols) (int_of_char '^'))
+      end else begin
+         assert (mvwaddch iface.scr.untimed_win (pred iface.scr.uw_lines) 
+                (pred iface.scr.uw_cols) (int_of_char 'v'));
+         assert (mvwaddch iface.scr.untimed_win (iface.scr.uw_lines - 2) 
+                (pred iface.scr.uw_cols) (int_of_char 'v'))
+      end
+   end else
+      ();
    assert (wnoutrefresh iface.scr.untimed_win);
    {iface with untimed_lineinfo = lineinfo;
                len_untimed      = List.length today_reminders}
