@@ -62,11 +62,21 @@ let time_inc iface =
 
 
 (* Draw the vertical date strip at the left of the timed window.
- * Note: non-trivial. *)
+ * Note: non-trivial.
+ * The first date stamp is a special case; it is drawn at the top
+ * of the screen and truncated at the beginning to fit before the
+ * first date change.  The remaining date stamps are all drawn immediately
+ * after any date changes, and truncated at the end to fit in the
+ * window.
+ * Step 1: determine the line numbers on which the dates change
+ * Step 2: create a string to represent the vertical strip
+ * Step 3: draw each of the characters of the string onto the window *)
 let draw_date_strip (iface : interface_state_t) =
-   Printf.fprintf stderr "draw_date_strip ()\n";
-   flush stderr;
-   (* determine the line numbers of any date changes within the
+   (* draw the vertical line to the right of the date string *)
+   let acs = get_acs_codes () in
+   wattron iface.scr.timed_win ((WA.color_pair 5) lor WA.bold);
+   mvwvline iface.scr.timed_win 0 1 acs.Acs.vline iface.scr.tw_lines;
+   (* determine the line numbers and timestamps of any date changes within the
     * timed window *)
    let rec check_timestamp date_changes timestamp line =
       if line >= iface.scr.tw_lines then
@@ -83,17 +93,8 @@ let draw_date_strip (iface : interface_state_t) =
             check_timestamp date_changes next_timestamp (succ line)
    in
    let date_changes = List.rev (check_timestamp [] iface.top_timestamp 0) in
-   let rec print_date_lines c =
-      match c with
-      | [] -> ()
-      | (line, _) :: tail ->
-           Printf.fprintf stderr "line %2d\n" line;
-           print_date_lines tail
-   in
-   print_date_lines date_changes;
-   flush stderr;
+   (* generate a string to represent the vertical strip *)
    let date_chars = 
-      (* generate a string to represent the vertical strip *)
       if List.length date_changes > 0 then begin
          (* special case for the top date string *)
          let (line, timestamp) = List.hd date_changes in
@@ -130,22 +131,22 @@ let draw_date_strip (iface : interface_state_t) =
          in
          add_date top_date_str date_changes
       end else
+         (* if there are no date changes (e.g. for small window) then just grab the proper
+          * date from the top_timestamp *)
          (Printf.sprintf "%s %.2d" (string_of_tm_mon iface.top_timestamp.Unix.tm_mon) 
              iface.top_timestamp.Unix.tm_mday) ^ (String.make (iface.scr.tw_lines - 6) ' ') 
    in
-   let acs = get_acs_codes () in
+   (* draw the date string vertically, one character at a time *)
    for i = 0 to pred iface.scr.tw_lines do
       if date_chars.[i] = '-' then begin
          wattron iface.scr.timed_win ((WA.color_pair 5) lor WA.bold);
-         assert (mvwaddch iface.scr.timed_win i 0 acs.Acs.hline)
+         assert (mvwaddch iface.scr.timed_win i 0 acs.Acs.hline);
+         assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.rtee)
       end else begin
          wattron iface.scr.timed_win ((WA.color_pair 4) lor WA.bold);
          assert (mvwaddch iface.scr.timed_win i 0 (int_of_char date_chars.[i]))
       end
    done;
-   (* draw the remaining vertical strip *)
-   wattron iface.scr.timed_win ((WA.color_pair 5) lor WA.bold);
-   mvwvline iface.scr.timed_win 0 1 acs.Acs.vline iface.scr.tw_lines;
    assert (wnoutrefresh iface.scr.timed_win);
    assert (doupdate ())
 
