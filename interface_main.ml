@@ -159,29 +159,67 @@ let handle_resize (iface : interface_state_t) =
    handle_refresh iface;;
  *)
 
-let handle_keypress key iface = ()
 
-let do_main_loop (iface : interface_state_t) =
-   while iface.run_remic do
+
+let handle_keypress key iface reminders =
+   match (char_of_int key) with
+   |'j' ->
+      begin match iface.selected_side with
+      |Left ->
+         if iface.left_selection < pred iface.scr.tw_lines then begin
+            let new_iface = {
+               iface with left_selection = succ iface.left_selection
+            } in
+            let new_reminders = Remind.update_reminders reminders 
+            (timestamp_of_line new_iface new_iface.left_selection) in
+            draw_timed new_iface new_reminders.Remind.all_timed;
+            assert (doupdate ());
+            (new_iface, new_reminders)
+         end else begin
+            let second_timestamp = timestamp_of_line iface 1 in
+            let new_iface = {
+               iface with top_timestamp = second_timestamp
+            } in
+            let new_reminders = Remind.update_reminders reminders 
+            (timestamp_of_line new_iface new_iface.left_selection) in
+            draw_timed new_iface new_reminders.Remind.all_timed;
+            assert (doupdate ());
+            (new_iface, new_reminders)
+         end
+      |Right ->
+           (iface, reminders)
+      end
+   |_ ->
+      (iface, reminders)
+
+
+
+let rec do_main_loop (iface : interface_state_t) reminders =
+   if iface.run_remic then
       let key = wgetch iface.scr.help_win in
       (* using the ncurses SIGWINCH handler to catch window resize events *)
-      if key = Key.resize then
-         ()
-         (* handle_resize iface *)
-      else
-         handle_keypress key iface
-   done
+      let new_iface, new_reminders = 
+         if key = Key.resize then
+            (* handle_resize iface *)
+            (iface, reminders)
+         else
+            handle_keypress key iface reminders
+      in
+      do_main_loop new_iface new_reminders
+   else
+      () (* exit main loop *)
+
 
 
 (* initialize the interface and begin the main loop *)
 let run (iface : interface_state_t) =
-   let (timed, untimed) = Remind.month_reminders (iface.top_timestamp) in
+   let reminders = Remind.create_three_month (iface.top_timestamp) in
    assert (keypad iface.scr.help_win true);
    draw_help iface;
    draw_date_strip iface;
-   draw_timed iface timed;
+   draw_timed iface reminders.Remind.all_timed;
    assert (doupdate ());
-   do_main_loop iface
+   do_main_loop iface reminders
         
 
 

@@ -39,13 +39,6 @@ let draw_help (iface : interface_state_t) =
    assert (wnoutrefresh iface.scr.help_win)
 
 
-let time_inc iface =
-   match iface.zoom_level with
-   | Hour        -> 60
-   | HalfHour    -> 30
-   | QuarterHour -> 15
-
-
 (* Draw the vertical date strip at the left of the timed window.
  * Note: non-trivial.
  * The first date stamp is a special case; it is drawn at the top
@@ -142,7 +135,7 @@ let draw_date_strip (iface : interface_state_t) =
    assert (wnoutrefresh iface.scr.timed_win)
 
 
-
+(* Draw the timed schedule *)
 let draw_timed iface reminders =
    let blank = String.make iface.scr.tw_cols ' ' in
    for i = 0 to pred iface.scr.tw_lines do

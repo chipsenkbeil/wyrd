@@ -83,6 +83,21 @@ let make (std : screen_t) =
    }
                                                
 
+let time_inc (iface : interface_state_t) =
+   match iface.zoom_level with
+   | Hour        -> 60
+   | HalfHour    -> 30
+   | QuarterHour -> 15
+
+
+let timestamp_of_line iface line =
+   let temp = {
+      iface.top_timestamp with
+        Unix.tm_min = iface.top_timestamp.Unix.tm_min + (line * (time_inc iface))
+   } in 
+   let (_, ts) = Unix.mktime temp in ts
+
+
 
 
 (* arch-tag: DO_NOT_CHANGE_2e912989-cdb2-498a-9bb3-b6d76e94f3a5 *)

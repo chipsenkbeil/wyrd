@@ -32,9 +32,11 @@ type three_month_rem_t = {
    prev_timed     : (float * float * string) list;
    curr_timed     : (float * float * string) list;
    next_timed     : (float * float * string) list;
+   all_timed      : (float * float * string) list;
    prev_untimed   : (float * string) list;
    curr_untimed   : (float * string) list;
-   next_untimed   : (float * string) list
+   next_untimed   : (float * string) list;
+   all_untimed    : (float * string) list
 }
 
 
@@ -135,9 +137,11 @@ let create_three_month timestamp =
       prev_timed     = pt;
       curr_timed     = ct;
       next_timed     = nt;
+      all_timed      = List.rev_append (List.rev_append ct pt) nt;
       prev_untimed   = pu;
       curr_untimed   = cu;
-      next_untimed   = nu
+      next_untimed   = nu;
+      all_untimed    = List.rev_append (List.rev_append cu pu) nu
    }
 
 
@@ -156,12 +160,16 @@ let next_month reminders =
    let (_, next_timestamp) = Unix.mktime temp2 in
    let (t, u) = month_reminders next_timestamp in {
       curr_timestamp = new_curr_timestamp;
-      prev_timed = reminders.curr_timed;
-      curr_timed = reminders.next_timed;
-      next_timed = t;
-      prev_untimed = reminders.curr_untimed;
-      curr_untimed = reminders.next_untimed;
-      next_untimed = u
+      prev_timed     = reminders.curr_timed;
+      curr_timed     = reminders.next_timed;
+      next_timed     = t;
+      all_timed      = List.rev_append 
+                          (List.rev_append reminders.next_timed reminders.curr_timed) t;
+      prev_untimed   = reminders.curr_untimed;
+      curr_untimed   = reminders.next_untimed;
+      next_untimed   = u;
+      all_untimed    = List.rev_append 
+                          (List.rev_append reminders.next_untimed reminders.curr_untimed) u
    }
 
 
@@ -179,13 +187,45 @@ let prev_month reminders =
    let (_, prev_timestamp) = Unix.mktime temp2 in
    let (t, u) = month_reminders prev_timestamp in {
       curr_timestamp = new_curr_timestamp;
-      prev_timed = t;
-      curr_timed = reminders.prev_timed;
-      next_timed = reminders.curr_timed;
-      prev_untimed = u;
-      curr_untimed = reminders.prev_untimed;
-      next_untimed = reminders.curr_untimed
+      prev_timed     = t;
+      curr_timed     = reminders.prev_timed;
+      next_timed     = reminders.curr_timed;
+      all_timed      = List.rev_append 
+                          (List.rev_append reminders.prev_timed t) reminders.curr_timed;
+      prev_untimed   = u;
+      curr_untimed   = reminders.prev_untimed;
+      next_untimed   = reminders.curr_untimed;
+      all_untimed    = List.rev_append 
+                          (List.rev_append reminders.prev_untimed u) reminders.curr_untimed
    }
+
+
+(* Return a new reminders record centered on the current timestamp,
+ * doing as little work as possible. *)
+let update_reminders rem timestamp =
+   if timestamp.Unix.tm_year = rem.curr_timestamp.Unix.tm_year &&
+      timestamp.Unix.tm_mon  = rem.curr_timestamp.Unix.tm_mon &&
+      timestamp.Unix.tm_mday = rem.curr_timestamp.Unix.tm_mday then
+      rem
+   else
+      let temp1 = {
+         rem.curr_timestamp with Unix.tm_mon = pred rem.curr_timestamp.Unix.tm_mon
+      } in
+      let temp2 = {
+         rem.curr_timestamp with Unix.tm_mon = succ rem.curr_timestamp.Unix.tm_mon
+      } in
+      let (_, prev_timestamp) = Unix.mktime temp1 in
+      let (_, next_timestamp) = Unix.mktime temp2 in
+      if timestamp.Unix.tm_year = prev_timestamp.Unix.tm_year &&
+         timestamp.Unix.tm_mon  = prev_timestamp.Unix.tm_mon &&
+         timestamp.Unix.tm_mday = prev_timestamp.Unix.tm_mday then
+         prev_month rem
+      else if timestamp.Unix.tm_year = next_timestamp.Unix.tm_year &&
+         timestamp.Unix.tm_mon  = next_timestamp.Unix.tm_mon &&
+         timestamp.Unix.tm_mday = next_timestamp.Unix.tm_mday then
+         next_month rem
+      else
+         create_three_month timestamp
 
 
 
