@@ -1,5 +1,9 @@
 # Wyrd run-configuration file
 
+set reminders_file="~/.reminders"
+set edit_old_command="vim +%n %f"
+set edit_new_command="vim -c '$' %f"
+
 bind "j"                 scroll_down
 bind "<down>"            scroll_down
 bind "k"                 scroll_up

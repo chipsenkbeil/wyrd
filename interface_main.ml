@@ -345,7 +345,12 @@ let handle_edit (iface : interface_state_t) reminders =
    |None ->
       (iface, reminders)
    |Some (filename, line_num, msg) -> 
-      let command = "vi +" ^ line_num ^ " " ^ filename in
+      let filename_sub = Str.regexp "%f" in
+      let lineno_sub   = Str.regexp "%n" in
+      let command_partial = 
+         Str.global_replace filename_sub filename !Rcfile.edit_old_command
+      in
+      let command = Str.global_replace lineno_sub line_num command_partial in
       endwin();
       let _ = Unix.system command in 
       assert (curs_set 0);
@@ -385,7 +390,11 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    "/home/paul/.reminders" in
    output_string remfile_channel remline;
    close_out remfile_channel;
-   let command = "vi -c '$' ~/.reminders" in
+   let filename_sub = Str.regexp "%f" in
+   let command = 
+      Str.global_replace filename_sub !Rcfile.reminders_file 
+         !Rcfile.edit_new_command
+   in
    endwin();
    let _ = Unix.system command in 
    assert (curs_set 0);

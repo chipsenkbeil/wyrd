@@ -42,8 +42,11 @@ let table_key_command = Hashtbl.create 20
 let table_command_key = Hashtbl.create 20
 
 
-(* Default directory for orpie data *)
-let datadir = ref "~/.wyrd"
+(* Default reminders file *)
+let reminders_file = ref "~/.reminders"
+(* Default editing command strings *)
+let edit_old_command = ref "vim +%n + %f"
+let edit_new_command = ref "vim -c '$' %f"
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -260,18 +263,44 @@ let parse_line line_stream =
       end
    | [< 'Kwd "set" >] ->
       begin match line_stream with parser
-      | [< 'Ident "datadir" >] ->
+      | [< 'Ident "reminders_file" >] ->
          begin match line_stream with parser
          | [< 'Ident "=" >] ->
             begin match line_stream with parser
-            | [< 'String dir >] ->
-               datadir := dir
+            | [< 'String f >] ->
+               reminders_file := f
             | [< >] ->
-               config_failwith ("Expected a directory string after " ^
-               "\"set datadir = \"")
+               config_failwith ("Expected a filename after " ^
+               "\"set reminders_file = \"")
             end
          | [< >] ->
-            config_failwith ("Expected \"=\" after \"set datadir\"")
+            config_failwith ("Expected \"=\" after \"set reminders_file\"")
+         end
+      | [< 'Ident "edit_old_command" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String c >] ->
+               edit_old_command := c
+            | [< >] ->
+               config_failwith ("Expected a command string after " ^
+               "\"set edit_old_command = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set edit_old_command\"")
+         end
+      | [< 'Ident "edit_new_command" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String c >] ->
+               edit_new_command := c
+            | [< >] ->
+               config_failwith ("Expected a command string after " ^
+               "\"set edit_new_command = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set edit_new_command\"")
          end
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
