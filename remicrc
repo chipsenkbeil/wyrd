@@ -17,6 +17,7 @@ bind "2"                 next_week
 bind "<home>"            home
 bind "z"                 zoom
 bind "<return>"          edit
+bind "<enter>"           edit
 bind "t"                 new_timed
 bind "u"                 new_untimed
 bind "Q"                 quit

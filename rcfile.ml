@@ -38,7 +38,7 @@ type operation_t = | ScrollUp | ScrollDown | NextDay | PrevDay
 
 (* These hashtables store conversions between curses keys and the operations
  * they are associated with. *)
-let table_key_command  = Hashtbl.create 20
+let table_key_command = Hashtbl.create 20
 let table_command_key = Hashtbl.create 20
 
 
