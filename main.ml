@@ -24,9 +24,20 @@ open Curses;;
 
 let initialize_screen () =
    let std = initscr () in
+   assert (start_color ());
+   assert (init_pair 1 Color.green Color.blue);
+   assert (init_pair 2 Color.cyan Color.black);
+   assert (init_pair 3 Color.yellow Color.blue);
+   assert (init_pair 4 Color.cyan Color.black);
+   assert (init_pair 5 Color.cyan Color.blue);
+   assert (init_pair 6 Color.yellow Color.red);
+   assert (init_pair 7 Color.blue Color.black);
+   assert (init_pair 8 Color.white Color.blue);
+   assert (init_pair 9 Color.magenta Color.black);
    assert (keypad std true);
    assert (cbreak ());
    assert (noecho ());
+   assert (curs_set 0);
    Interface_main.create_windows std;;
 
 let iface = Interface.make (initialize_screen ());;

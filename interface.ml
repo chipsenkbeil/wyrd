@@ -51,10 +51,11 @@ type screen_t = {
 
 (* everything you need to know about the interface state goes in this variable *)
 type interface_state_t = {
-   version                     : string;                        (* program version string *)
-   scr                         : screen_t;                      (* curses screen with two or three subwindows *)
-   run_remic                   : bool;                          (* exit when run_remic becomes false *)
-   top_timestamp               : Unix.tm                        (* controls what portion of the schedule is viewable *)
+   version       : string;    (* program version string *)
+   scr           : screen_t;  (* curses screen with two or three subwindows *)
+   run_remic     : bool;      (* exit when run_remic becomes false *)
+   top_timestamp : Unix.tm;   (* controls what portion of the schedule is viewable *)
+   zoom_level    : int        (* controls the resolution of the timed window *)
 }
    
 
@@ -68,7 +69,8 @@ let make (std : screen_t) =
       version       = Version.version;
       scr           = std;
       run_remic     = true;
-      top_timestamp = rounded_time
+      top_timestamp = rounded_time;
+      zoom_level    = 0
    }
                                                
 

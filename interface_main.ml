@@ -26,6 +26,7 @@
 open Curses;;
 open Printf;;
 open Interface;;
+open Interface_draw;;
 
 
 exception Interrupt_exception;;
@@ -172,22 +173,8 @@ let do_main_loop (iface : interface_state_t) =
 (* initialize the interface and begin the main loop *)
 let run (iface : interface_state_t) =
    assert (keypad iface.scr.msg_win true);
-
-   (*
-   begin
-      try
-         iface.calc#set_state (Statefile.load_state ());
-         draw_stack iface;
-         draw_help iface;
-         draw_update_entry iface;
-      with
-         Invalid_argument err ->
-            draw_stack iface;
-            draw_help iface;
-            draw_error iface err;
-            draw_update_entry iface
-   end;
-    *)
+   draw_help iface;
+   assert (doupdate ());
    do_main_loop iface
         
 
