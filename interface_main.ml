@@ -322,7 +322,11 @@ let handle_home (iface : interface_state_t) reminders =
 
 (* handle editing the selected reminder *)
 let handle_edit (iface : interface_state_t) reminders =
-   let fl = iface.timed_lineinfo.(iface.left_selection) in
+   let fl =
+      match iface.selected_side with
+      |Left  -> iface.timed_lineinfo.(iface.left_selection)
+      |Right -> iface.untimed_lineinfo.(iface.right_selection)
+   in
    begin match fl with
    |None ->
       (iface, reminders)
