@@ -350,7 +350,19 @@ let handle_edit (iface : interface_state_t) reminders =
       let _ = Unix.system command in 
       assert (curs_set 0);
       let r = Remind.create_three_month iface.top_timestamp in
-      handle_refresh iface r
+      (* if the untimed list has been altered, change the focus to
+       * the timed window *)
+      let new_iface =
+         if List.length r.Remind.curr_untimed <> 
+            List.length reminders.Remind.curr_untimed then {
+            iface with selected_side = Left;
+                       top_untimed = 0;
+                       right_selection = 1
+            }
+         else
+            iface
+      in
+      handle_refresh new_iface r
    end
 
 
@@ -378,7 +390,19 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    let _ = Unix.system command in 
    assert (curs_set 0);
    let r = Remind.create_three_month iface.top_timestamp in
-   handle_refresh iface r
+   (* if the untimed list has been altered, change the focus to
+    * the timed window *)
+   let new_iface =
+      if List.length r.Remind.curr_untimed <> 
+         List.length reminders.Remind.curr_untimed then {
+         iface with selected_side = Left;
+                    top_untimed = 0;
+                    right_selection = 1
+         }
+      else
+         iface
+   in
+   handle_refresh new_iface r
 
 
 
@@ -442,6 +466,18 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
       (* poll remind(1) every 5 minutes and update display *)
       if curr_time -. last_update > 300.0 then begin
          let r = Remind.create_three_month new_iface.top_timestamp in
+         (* if the untimed list has been altered, change the focus to
+          * the timed window *)
+         let new_iface =
+            if List.length r.Remind.curr_untimed <> 
+               List.length reminders.Remind.curr_untimed then {
+               new_iface with selected_side = Left;
+                              top_untimed = 0;
+                              right_selection = 1
+               }
+            else
+               new_iface
+         in
          let (iface2, reminders2) = handle_refresh new_iface r in
          do_main_loop iface2 reminders2 curr_time
       end else
