@@ -28,6 +28,42 @@ open Curses
 open Remind
 
 
+
+(* Word-wrap a string--split the string at whitespace boundaries
+ * to form a list of strings, each of which has length less than
+ * 'len'. *)
+let word_wrap (s : string) (len : int) =
+   let ws = Str.regexp "[\t ]+" in
+   let split_words = Str.split ws s in
+   let rec process_words words lines =
+      match words with
+      |[] ->
+         List.rev lines
+      |word :: remaining_words ->
+         let word_len = String.length word in
+         begin match lines with
+         |[] ->
+            process_words words [""]
+         |line :: remaining_lines ->
+            let line_len = String.length line in
+            if word_len + line_len + 1 <= len then
+               if line_len = 0 then
+                  process_words remaining_words (word :: remaining_lines)
+               else
+                  process_words remaining_words ((line ^ " " ^ word) :: remaining_lines)
+            else if word_len <= len then
+               process_words remaining_words (word :: line :: remaining_lines)
+            else
+               let front = Str.string_before word len
+               and back  = Str.string_after  word len in
+               process_words (back :: remaining_words) 
+                  (front :: line :: remaining_lines)
+         end
+   in
+   process_words split_words []
+
+
+
 (* Draw a string in a specified window and location, using exactly 'len'
  * characters and truncating with ellipses if necessary. *)
 let trunc_mvwaddstr win line col len s =
