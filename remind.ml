@@ -36,7 +36,8 @@ type three_month_rem_t = {
    prev_untimed   : (float * string) list;
    curr_untimed   : (float * string) list;
    next_untimed   : (float * string) list;
-   all_untimed    : (float * string) list
+   all_untimed    : (float * string) list;
+   curr_counts    : int array
 }
 
 
@@ -117,6 +118,25 @@ let month_reminders timestamp =
    build_lists [] []
 
 
+(* generate a count of how many reminders fall on any given day of
+ * the month *)
+let count_reminders timed untimed =
+   let rem_counts = Array.make 31 0 in
+   let count_timed (start, _, _) =
+      let ts = Unix.localtime start in
+      let day = pred ts.Unix.tm_mday in
+      rem_counts.(day) <- succ rem_counts.(day)
+   in
+   let count_untimed (start, _) =
+      let ts = Unix.localtime start in
+      let day = pred ts.Unix.tm_mday in
+      rem_counts.(day) <- succ rem_counts.(day)
+   in
+   List.iter count_timed timed;
+   List.iter count_untimed untimed;
+   rem_counts
+
+
 (* initialize a new three-month reminder record *)
 let create_three_month timestamp =
    let temp = {
@@ -145,7 +165,8 @@ let create_three_month timestamp =
       prev_untimed   = pu;
       curr_untimed   = cu;
       next_untimed   = nu;
-      all_untimed    = List.rev_append (List.rev_append cu pu) nu
+      all_untimed    = List.rev_append (List.rev_append cu pu) nu;
+      curr_counts    = count_reminders ct cu
    }
 
 
@@ -173,7 +194,8 @@ let next_month reminders =
       curr_untimed   = reminders.next_untimed;
       next_untimed   = u;
       all_untimed    = List.rev_append 
-                          (List.rev_append reminders.next_untimed reminders.curr_untimed) u
+                          (List.rev_append reminders.next_untimed reminders.curr_untimed) u;
+      curr_counts    = count_reminders reminders.next_timed reminders.next_untimed
    }
 
 
@@ -200,7 +222,8 @@ let prev_month reminders =
       curr_untimed   = reminders.prev_untimed;
       next_untimed   = reminders.curr_untimed;
       all_untimed    = List.rev_append 
-                          (List.rev_append reminders.prev_untimed u) reminders.curr_untimed
+                          (List.rev_append reminders.prev_untimed u) reminders.curr_untimed;
+      curr_counts    = count_reminders reminders.prev_timed reminders.prev_untimed
    }
 
 

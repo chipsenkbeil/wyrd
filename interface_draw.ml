@@ -254,22 +254,7 @@ let make_cal timestamp =
 (* render a calendar for the given reminders record *)
 let draw_calendar (iface : interface_state_t) 
        (reminders : three_month_rem_t) : unit =
-   (* count the number of reminders for each day in the month *)
-   let rem_counts = Array.make 31 0 in
-   let count_timed (start, _, _) =
-      let ts = Unix.localtime start in
-      let day = pred ts.Unix.tm_mday in
-      rem_counts.(day) <- succ rem_counts.(day)
-   in
-   let count_untimed (start, _) =
-      let ts = Unix.localtime start in
-      let day = pred ts.Unix.tm_mday in
-      rem_counts.(day) <- succ rem_counts.(day)
-   in
-   List.iter count_timed reminders.curr_timed;
-   List.iter count_untimed reminders.curr_untimed;
    let cal = make_cal reminders.curr_timestamp in
-   (* draw the title and weekdays *)
    assert (wmove iface.scr.calendar_win 1 1);
    wclrtoeol iface.scr.calendar_win;
    wattron iface.scr.calendar_win WA.bold;
@@ -299,17 +284,17 @@ let draw_calendar (iface : interface_state_t)
                   assert (waddstr iface.scr.calendar_win s)
                |Str.Text d ->
                   let day = pred (int_of_string d) in
-                  if rem_counts.(day) = 0 then
+                  if reminders.curr_counts.(day) = 0 then
                      assert (waddstr iface.scr.calendar_win d)
-                  else if rem_counts.(day) < 3 then begin
+                  else if reminders.curr_counts.(day) < 3 then begin
                      wattron iface.scr.calendar_win (WA.color_pair 7);
                      assert (waddstr iface.scr.calendar_win d);
                      wattroff iface.scr.calendar_win (WA.color_pair 7)
-                  end else if rem_counts.(day) < 6 then begin
+                  end else if reminders.curr_counts.(day) < 6 then begin
                      wattron iface.scr.calendar_win ((WA.color_pair 7) lor WA.bold);
                      assert (waddstr iface.scr.calendar_win d);
                      wattroff iface.scr.calendar_win ((WA.color_pair 7) lor WA.bold)
-                  end else if rem_counts.(day) < 9 then begin
+                  end else if reminders.curr_counts.(day) < 9 then begin
                      wattron iface.scr.calendar_win (WA.color_pair 9);
                      assert (waddstr iface.scr.calendar_win d);
                      wattroff iface.scr.calendar_win (WA.color_pair 9)
