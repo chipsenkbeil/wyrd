@@ -67,7 +67,7 @@ type interface_state_t = {
 
 (* create and initialize an interface with default settings *)
 let make (std : screen_t) =
-   let curr_time = Unix.localtime (Unix.time ()) in
+   let curr_time = Unix.localtime ((Unix.time ()) -. 60. *. 60.) in
    let temp = {
       curr_time with Unix.tm_sec = 0;
                      Unix.tm_min = 0
@@ -78,7 +78,7 @@ let make (std : screen_t) =
       run_remic       = true;
       top_timestamp   = rounded_time;
       selected_side   = Left;
-      left_selection  = 0;
+      left_selection  = 1;
       right_selection = 0;
       zoom_level      = Hour
    }

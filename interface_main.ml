@@ -211,21 +211,26 @@ let handle_keypress key iface reminders =
    end else if key = int_of_char 'z' then begin
       let new_iface = 
          let curr_ts = timestamp_of_line iface iface.left_selection in
+         let hour_tm = {
+            Unix.localtime curr_ts with Unix.tm_sec = 0;
+                                        Unix.tm_min = 0
+         } in
+         let (hour_ts, _) = Unix.mktime hour_tm in
          match iface.zoom_level with
          |Hour ->
-            let new_top = curr_ts -. (60.0 *. 30.0 *. 
+            let new_top = hour_ts -. (60.0 *. 30.0 *. 
                           (float_of_int iface.left_selection)) in {
                iface with top_timestamp = new_top;
                           zoom_level    = HalfHour
             }
          |HalfHour ->
-            let new_top = curr_ts -. (60.0 *. 15.0 *. 
+            let new_top = hour_ts -. (60.0 *. 15.0 *. 
                           (float_of_int iface.left_selection)) in {
                iface with top_timestamp = new_top;
                           zoom_level    = QuarterHour
             }
          |QuarterHour ->
-            let new_top = curr_ts -. (60.0 *. 60.0 *. 
+            let new_top = hour_ts -. (60.0 *. 60.0 *. 
                           (float_of_int iface.left_selection)) in {
                iface with top_timestamp = new_top;
                           zoom_level    = Hour
@@ -234,6 +239,18 @@ let handle_keypress key iface reminders =
       draw_timed new_iface reminders.Remind.all_timed;
       draw_date_strip new_iface;
       (new_iface, reminders)
+   end else if key = Key.home then begin
+      let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
+      let temp = {
+         curr_time with Unix.tm_sec = 0;
+                        Unix.tm_min = 0
+      } in
+      let (rounded_time, _) = Unix.mktime temp in
+      let new_iface = {
+         iface with top_timestamp  = rounded_time;
+                    left_selection = 1
+      } in
+      handle_selection_change new_iface reminders
    end else
       (iface, reminders)
 
