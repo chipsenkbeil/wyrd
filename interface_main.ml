@@ -174,7 +174,6 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
-            assert (doupdate ());
             (new_iface, new_reminders)
          end else begin
             let second_timestamp = timestamp_of_line iface 1 in
@@ -185,7 +184,6 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
-            assert (doupdate ());
             (new_iface, new_reminders)
          end
       |Right ->
@@ -202,7 +200,6 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
-            assert (doupdate ());
             (new_iface, new_reminders)
          end else begin
             let prev_timestamp = timestamp_of_line iface (-1) in
@@ -213,7 +210,6 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
-            assert (doupdate ());
             (new_iface, new_reminders)
          end
       |Right ->
@@ -225,7 +221,8 @@ let handle_keypress key iface reminders =
 
 
 let rec do_main_loop (iface : interface_state_t) reminders =
-   if iface.run_remic then
+   if iface.run_remic then begin
+      assert (doupdate ());
       let key = wgetch iface.scr.help_win in
       (* using the ncurses SIGWINCH handler to catch window resize events *)
       let new_iface, new_reminders = 
@@ -236,7 +233,7 @@ let rec do_main_loop (iface : interface_state_t) reminders =
             handle_keypress key iface reminders
       in
       do_main_loop new_iface new_reminders
-   else
+   end else
       () (* exit main loop *)
 
 
