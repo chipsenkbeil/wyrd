@@ -1,4 +1,4 @@
-(*  Remic -- a curses-based front-end for Remind
+(*  Wyrd -- a curses-based front-end for Remind
  *  Copyright (C) 2005 Paul Pelzl
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -506,7 +506,7 @@ let draw_msg iface =
    let curr_tm = Unix.localtime (Unix.time ()) in
    wattron iface.scr.msg_win ((WA.color_pair 1) lor WA.bold);
    let s = 
-      Printf.sprintf "remic v%s          Currently: %s, %s %.2d at %s"
+      Printf.sprintf "Wyrd v%s          Currently: %s, %s %.2d at %s"
          Version.version (string_of_tm_wday curr_tm.Unix.tm_wday)
          (full_string_of_tm_mon curr_tm.Unix.tm_mon)
          curr_tm.Unix.tm_mday (twelve_hour_string curr_tm)

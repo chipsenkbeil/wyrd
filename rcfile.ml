@@ -1,4 +1,4 @@
-(*  Remic -- a curses-based front-end for Remind
+(*  Wyrd -- a curses-based front-end for Remind
  *  Copyright (C) 2005 Paul Pelzl
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *)
 
 (* rcfile.ml
- * This file includes everything associated with processing the remicrc file.
+ * This file includes everything associated with processing the wyrdrc file.
  * In particular, this includes a number of hashtables used to store the
  * bindings of curses keypresses to calendar operations.
  * Adapted from rcfile code in Orpie, a curses RPN calculator. *)
@@ -43,7 +43,7 @@ let table_command_key = Hashtbl.create 20
 
 
 (* Default directory for orpie data *)
-let datadir = ref "~/.remic"
+let datadir = ref "~/.wyrd"
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -282,14 +282,14 @@ let parse_line line_stream =
       config_failwith "Expected a keyword at start of line";;
 
 
-(* try opening the rc file, first looking at $HOME/.remicrc, 
- * then looking at $PREFIX/etc/remicrc *)
+(* try opening the rc file, first looking at $HOME/.wyrdrc, 
+ * then looking at $PREFIX/etc/wyrdrc *)
 let open_rcfile rcfile_op =
    match rcfile_op with
    |None ->
       let home_rcfile =
          let homedir = Sys.getenv "HOME" in
-         homedir ^ "/.remicrc"
+         homedir ^ "/.wyrdrc"
       in
       let rcfile_fullpath = 
          (* expand out any occurrences of ${prefix} that autoconf
@@ -297,7 +297,7 @@ let open_rcfile rcfile_op =
          let prefix_regex = Str.regexp "\\${prefix}" in
          let expanded_sysconfdir = Str.global_replace prefix_regex 
          Install.prefix Install.sysconfdir in
-         Utility.join_path expanded_sysconfdir "remicrc"
+         Utility.join_path expanded_sysconfdir "wyrdrc"
       in
       begin try (open_in home_rcfile, home_rcfile)
       with Sys_error error_str ->

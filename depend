@@ -1,10 +1,10 @@
-interface.cmo: version.cmo ./curses/curses.cmi 
-interface.cmx: version.cmx ./curses/curses.cmx 
-interface_draw.cmo: version.cmo remind.cmo interface.cmo ./curses/curses.cmi 
-interface_draw.cmx: version.cmx remind.cmx interface.cmx ./curses/curses.cmx 
-interface_main.cmo: remind.cmo interface_draw.cmo interface.cmo \
+interface.cmo: ./curses/curses.cmi 
+interface.cmx: ./curses/curses.cmx 
+interface_draw.cmo: remind.cmo rcfile.cmo interface.cmo ./curses/curses.cmi 
+interface_draw.cmx: remind.cmx rcfile.cmx interface.cmx ./curses/curses.cmx 
+interface_main.cmo: remind.cmo rcfile.cmo interface_draw.cmo interface.cmo \
     ./curses/curses.cmi 
-interface_main.cmx: remind.cmx interface_draw.cmx interface.cmx \
+interface_main.cmx: remind.cmx rcfile.cmx interface_draw.cmx interface.cmx \
     ./curses/curses.cmx 
 main.cmo: rcfile.cmo interface_main.cmo interface.cmo ./curses/curses.cmi 
 main.cmx: rcfile.cmx interface_main.cmx interface.cmx ./curses/curses.cmx 

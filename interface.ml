@@ -1,4 +1,4 @@
-(*  Remic -- a curses-based front-end for Remind
+(*  Wyrd -- a curses-based front-end for Remind
  *  Copyright (C) 2005 Paul Pelzl
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@ type side_t = Left | Right
 type interface_state_t = {
    version           : string;              (* program version string *)
    scr               : screen_t;            (* curses screen with two or three subwindows *)
-   run_remic         : bool;                (* exit when run_remic becomes false *)
+   run_wyrd          : bool;                (* exit when run_wyrd becomes false *)
    top_timestamp     : float;               (* controls what portion of the schedule is viewable *)
    top_untimed       : int;                 (* controls what portion of untimed reminders are viewable *)
    selected_side     : side_t;              (* controls which window has the focus *)
@@ -97,7 +97,7 @@ let make (std : screen_t) =
    let (rounded_time, _) = Unix.mktime (round_time Hour curr_time) in {
       version           = Version.version;
       scr               = std;
-      run_remic         = true;
+      run_wyrd          = true;
       top_timestamp     = rounded_time;
       top_untimed       = 0;
       selected_side     = Left;

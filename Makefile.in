@@ -3,7 +3,7 @@
 # Copyright (C) 2001 Jean-Christophe FILLIATRE
 #
 # modified 10/26/2003 by Paul Pelzl, for the purpose of building Orpie
-# modified 03/28/2005 by Paul Pelzl, for the purpose of building Remic
+# modified 03/28/2005 by Paul Pelzl, for the purpose of building Wyrd
 # 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Library General Public
@@ -47,7 +47,7 @@ DEPFLAGS = -pp camlp4o
 # main target
 #############
 
-NAME  = remic
+NAME = wyrd
 
 all: $(OCAMLBEST)
 
@@ -102,8 +102,8 @@ version.ml: Makefile
 install-indep: 
 #	mkdir -p $(BINDIR)
 #	mkdir -p $(DESTDIR)/$(sysconfdir)
-#	install -m 644 remicrc $(DESTDIR)/$(sysconfdir)
-#	install -m 644 -D doc/remic.1 $(MANDIR)/man1/orpie.1
+#	install -m 644 wyrdrc $(DESTDIR)/$(sysconfdir)
+#	install -m 644 -D doc/wyrd.1 $(MANDIR)/man1/wyrd.1
 
 install: install-indep
 	install -m 755 -D $(NAME).$(OCAMLBEST) $(BINDIR)/$(NAME)$(EXE)

@@ -1,4 +1,4 @@
-(*  Remic -- a curses-based front-end for Remind
+(*  Wyrd -- a curses-based front-end for Remind
  *  Copyright (C) 2005 Paul Pelzl
  *
  *  This program is free software; you can redistribute it and/or modify

@@ -1,4 +1,4 @@
-# remic run-configuration file
+# Wyrd run-configuration file
 
 bind "j"                 scroll_down
 bind "<down>"            scroll_down

@@ -1,4 +1,4 @@
-(*  Remic -- a curses-based front-end for Remind
+(*  Wyrd -- a curses-based front-end for Remind
  *  Copyright (C) 2005 Paul Pelzl
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -75,10 +75,10 @@ let create_windows screen =
       }
       else
          (endwin ();
-         failwith "Remic requires at least an 80 column window.")
+         failwith "Wyrd requires at least an 80 column window.")
    else
       (endwin (); 
-      failwith "Remic requires at least a 24 line window.");;
+      failwith "Wyrd requires at least a 24 line window.");;
 
 
 (* resize the various windows to fit the new terminal size *)
@@ -443,7 +443,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
       |Rcfile.NewUntimed ->
          handle_new_reminder iface reminders Untimed
       |Rcfile.Quit ->
-         let new_iface = {iface with run_remic = false} in
+         let new_iface = {iface with run_wyrd = false} in
          (new_iface, reminders)
    with Not_found ->
       (iface, reminders)
@@ -451,7 +451,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
 
 
 let rec do_main_loop (iface : interface_state_t) reminders last_update =
-   if iface.run_remic then begin
+   if iface.run_wyrd then begin
       (* refresh the msg window (which contains a clock)
        * every wgetch timeout cycle *)
       draw_msg iface;

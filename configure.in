@@ -5,7 +5,7 @@
 #
 #   modified 10/26/03 by Paul Pelzl, for inclusion with Orpie
 #     (added ocaml-gsl detection, removed unnecessary checks)
-#   modified 03/28/05 by Paul Pelzl, for inclusion with Remic
+#   modified 03/28/05 by Paul Pelzl, for inclusion with Wyrd
 #     (removed unnecessary gsl detection)
 # 
 # This library is free software; you can redistribute it and/or
