@@ -25,24 +25,9 @@
 
 open Interface
 open Curses
+open Remind
 
-exception String_of_tm_mon_failure of string
 
-let string_of_tm_mon i =
-   match i with
-   | 0 -> "Jan"
-   | 1 -> "Feb"
-   | 2 -> "Mar"
-   | 3 -> "Apr"
-   | 4 -> "May"
-   | 5 -> "Jun"
-   | 6 -> "Jul"
-   | 7 -> "Aug"
-   | 8 -> "Sep"
-   | 9 -> "Oct"
-   |10 -> "Nov"
-   |11 -> "Dec"
-   | x -> raise (String_of_tm_mon_failure ("unknown month " ^ (string_of_int x)))
 
 
 (* Draw the one-line help window at the top of the screen *)
@@ -96,7 +81,8 @@ let draw_date_strip (iface : interface_state_t) =
    (* generate a string to represent the vertical strip *)
    let date_chars = 
       if List.length date_changes > 0 then begin
-         (* special case for the top date string *)
+         (* special case for the top date string, which is always at the
+          * top of the screen *)
          let (line, timestamp) = List.hd date_changes in
          let top_date_str = 
             let temp = {
@@ -104,14 +90,16 @@ let draw_date_strip (iface : interface_state_t) =
             } in
             let (_, prev_day) = Unix.mktime temp in
             if line >= 7 then
+               (* the date will fit completely *)
                (Printf.sprintf " %s %.2d" (string_of_tm_mon prev_day.Unix.tm_mon) 
                    prev_day.Unix.tm_mday) ^ (String.make (line - 7) ' ')
             else
+               (* there's not enough room for the date, so truncate it *)
                Str.last_chars
                (Printf.sprintf " %s %.2d" (string_of_tm_mon prev_day.Unix.tm_mon) 
                    prev_day.Unix.tm_mday) line
          in
-         (* all other dates are just drawn at the top of their respective windows *)
+         (* all other dates are just rendered at the top of their respective windows *)
          let rec add_date date_str changes =
             match changes with
             | [] -> date_str
@@ -147,8 +135,7 @@ let draw_date_strip (iface : interface_state_t) =
          assert (mvwaddch iface.scr.timed_win i 0 (int_of_char date_chars.[i]))
       end
    done;
-   assert (wnoutrefresh iface.scr.timed_win);
-   assert (doupdate ())
+   assert (wnoutrefresh iface.scr.timed_win)
 
 
 
