@@ -150,7 +150,7 @@ let month_reminders timestamp =
       with
       | End_of_file ->
            let _ = Unix.close_process_in remind_channel in
-           (timed, untimed)
+           (timed, List.rev untimed)
       | _ ->
            (* if there's an error in regexp matching or string coersion,
             * just drop that reminder and go to the next line *)

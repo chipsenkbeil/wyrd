@@ -243,7 +243,7 @@ let draw_timed iface reminders =
          let ts = timestamp_of_line iface rem_top_line in
          let tm = Unix.localtime ts in
          let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
-         if rem_top_line = iface.left_selection then
+         if rem_top_line = iface.left_selection && iface.selected_side = Left then
             wattron iface.scr.timed_win WA.reverse
          else
             wattroff iface.scr.timed_win WA.reverse;
@@ -269,7 +269,8 @@ let draw_timed iface reminders =
             let tm = Unix.localtime ts in
             let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
             let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
-            if rem_top_line + !count = iface.left_selection then
+            if rem_top_line + !count = iface.left_selection && 
+               iface.selected_side = Left then
                wattron iface.scr.timed_win WA.reverse
             else
                wattroff iface.scr.timed_win WA.reverse;
@@ -295,7 +296,7 @@ let draw_timed iface reminders =
    (* finish off by drawing in the blank timeslots *)
    for i = 0 to pred iface.scr.tw_lines do
       if not is_drawn.(i) then begin
-         if i = iface.left_selection then
+         if i = iface.left_selection && iface.selected_side = Left then
             wattron iface.scr.timed_win WA.reverse
          else
             wattroff iface.scr.timed_win WA.reverse;
@@ -431,6 +432,10 @@ let draw_untimed (iface : interface_state_t) reminders =
       |(rem_ts, msg, filename, line_num) :: tail ->
          if line < iface.scr.uw_lines then
             if n >= iface.top_untimed then begin
+               if line = iface.right_selection && iface.selected_side = Right then
+                  wattron iface.scr.untimed_win WA.reverse
+               else
+                  wattroff iface.scr.untimed_win WA.reverse;
                trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 2) 
                   ("* " ^ msg);
                lineinfo.(line) <- Some (filename, line_num, msg);
@@ -440,10 +445,11 @@ let draw_untimed (iface : interface_state_t) reminders =
          else
             ()
    in
-   render_lines today_reminders 0 2;
-   wattroff iface.scr.untimed_win WA.bold;
+   render_lines today_reminders 0 1;
+   wattroff iface.scr.untimed_win (WA.bold lor WA.reverse);
    assert (wnoutrefresh iface.scr.untimed_win);
-   {iface with untimed_lineinfo = lineinfo}
+   {iface with untimed_lineinfo = lineinfo;
+               len_untimed      = List.length today_reminders}
 
 
 (* Draw the message window *)
@@ -480,7 +486,7 @@ let draw_msg iface =
    trunc_mvwaddstr iface.scr.msg_win (pred iface.scr.mw_lines) 0
       (pred iface.scr.mw_cols) s;
    wattroff iface.scr.msg_win ((WA.color_pair 1) lor WA.bold);
-   (* draw the full MSG string *)
+   (* draw the full MSG string, word wrapping as necessary *)
    let rec render_line lines i =
       match lines with
       |[] ->

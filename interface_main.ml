@@ -45,7 +45,7 @@ exception Interrupt_exception;;
 let create_windows screen =
    let height, width  = get_size () in
    let cal_height     = 10
-   and cal_width      = 30 in
+   and cal_width      = 40 in
    let msg_height     = 5 in
    let timed_height   = height - 1 - msg_height
    and timed_width    = width - cal_width
@@ -179,43 +179,99 @@ let handle_selection_change iface reminders =
    (new_iface, new_reminders)
 
 
+
+(* handle a "scroll down" event when the timed window is focused *)
+let handle_scrolldown_timed (iface : interface_state_t) reminders =
+   let iface = {
+      iface with top_untimed = 0;
+                 right_selection = 1
+   } in
+   if iface.left_selection < pred iface.scr.tw_lines then begin
+      let new_iface = {
+         iface with left_selection = succ iface.left_selection
+      } in
+      handle_selection_change new_iface reminders
+   end else begin
+      let second_timestamp = timestamp_of_line iface 1 in
+      let new_iface = {
+         iface with top_timestamp = second_timestamp
+      } in
+      handle_selection_change new_iface reminders
+   end
+
+
+(* handle a "scroll down" event when the untimed window is focused *)
+let handle_scrolldown_untimed (iface : interface_state_t) reminders =
+   if iface.right_selection < pred iface.scr.uw_lines then begin
+      if iface.right_selection < iface.len_untimed - 
+      iface.top_untimed then begin
+         let new_iface = {
+            iface with right_selection = succ iface.right_selection
+         } in
+         handle_selection_change new_iface reminders
+      end else
+         (iface, reminders)
+   end else begin
+      if iface.right_selection < iface.len_untimed - 
+      iface.top_untimed then begin
+         let new_iface = {
+            iface with top_untimed = succ iface.top_untimed
+         } in
+         handle_selection_change new_iface reminders
+      end else
+         (iface, reminders)
+   end
+
+
+
+(* handle a "scroll up" event when the timed window is focused *)
+let handle_scrollup_timed (iface : interface_state_t) reminders =
+   let iface = {
+      iface with top_untimed = 0;
+                 right_selection = 1
+   } in
+   if iface.left_selection > 0 then begin
+      let new_iface = {
+         iface with left_selection = pred iface.left_selection
+      } in
+      handle_selection_change new_iface reminders
+   end else begin
+      let prev_timestamp = timestamp_of_line iface (-1) in
+      let new_iface = {
+         iface with top_timestamp = prev_timestamp
+      } in
+      handle_selection_change new_iface reminders
+   end
+
+
+
+(* handle a "scroll up" event when the untimed window is focused *)
+let handle_scrollup_untimed (iface : interface_state_t) reminders =
+   if iface.right_selection > 1 then
+      let new_iface = {
+         iface with right_selection = pred iface.right_selection
+      } in
+      handle_selection_change new_iface reminders
+   else if iface.top_untimed > 0 then
+      let new_iface = {
+         iface with top_untimed = pred iface.top_untimed
+      } in
+      handle_selection_change new_iface reminders
+   else
+      (iface, reminders)
+
+
+
 (* Handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
    if key = int_of_char 'j' then begin
-      begin match iface.selected_side with
-      |Left ->
-         if iface.left_selection < pred iface.scr.tw_lines then begin
-            let new_iface = {
-               iface with left_selection = succ iface.left_selection
-            } in
-            handle_selection_change new_iface reminders
-         end else begin
-            let second_timestamp = timestamp_of_line iface 1 in
-            let new_iface = {
-               iface with top_timestamp = second_timestamp
-            } in
-            handle_selection_change new_iface reminders
-         end
-      |Right ->
-           (iface, reminders)
-      end
+      match iface.selected_side with
+      |Left  -> handle_scrolldown_timed iface reminders
+      |Right -> handle_scrolldown_untimed iface reminders
    end else if key = int_of_char 'k' then begin
       begin match iface.selected_side with
-      |Left ->
-         if iface.left_selection > 0 then begin
-            let new_iface = {
-               iface with left_selection = pred iface.left_selection
-            } in
-            handle_selection_change new_iface reminders
-         end else begin
-            let prev_timestamp = timestamp_of_line iface (-1) in
-            let new_iface = {
-               iface with top_timestamp = prev_timestamp
-            } in
-            handle_selection_change new_iface reminders
-         end
-      |Right ->
-           (iface, reminders)
+      |Left  -> handle_scrollup_timed iface reminders
+      |Right -> handle_scrollup_untimed iface reminders
       end
    end else if key = int_of_char 'z' then begin
       let new_iface = 
@@ -249,6 +305,16 @@ let handle_keypress key (iface : interface_state_t) reminders =
       let final_iface = draw_timed new_iface reminders.Remind.all_timed in
       draw_date_strip final_iface;
       (final_iface, reminders)
+   end else if key = int_of_char 'h' || key = int_of_char 'l' then begin
+      if iface.len_untimed > 0 then
+         let new_iface = 
+            match iface.selected_side with
+            |Left  -> {iface with selected_side = Right}
+            |Right -> {iface with selected_side = Left}
+         in
+         handle_selection_change new_iface reminders
+      else
+         (iface, reminders)
    end else if key = Key.home then begin
       let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
       let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in

@@ -65,7 +65,8 @@ type interface_state_t = {
    zoom_level        : zoom_t;              (* controls the resolution of the timed window *)
    timed_lineinfo    : (string * string * string) option array; (* keeps track of the filename, line number, and message 
                                                                  * associated with each line of the timed reminders window *)
-   untimed_lineinfo  : (string * string * string) option array  (* same as above, for untimed window *)
+   untimed_lineinfo  : (string * string * string) option array; (* same as above, for untimed window *)
+   len_untimed       : int
 }
    
 
@@ -101,10 +102,11 @@ let make (std : screen_t) =
       top_untimed       = 0;
       selected_side     = Left;
       left_selection    = 1;
-      right_selection   = 0;
+      right_selection   = 1;
       zoom_level        = Hour;
       timed_lineinfo    = Array.make std.tw_lines None;
-      untimed_lineinfo  = Array.make std.uw_lines None
+      untimed_lineinfo  = Array.make std.uw_lines None;
+      len_untimed       = 0
    }
                                                
 
