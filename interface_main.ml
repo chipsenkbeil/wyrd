@@ -191,6 +191,34 @@ let handle_keypress key iface reminders =
       |Right ->
            (iface, reminders)
       end
+   |'k' ->
+      begin match iface.selected_side with
+      |Left ->
+         if iface.left_selection > 0 then begin
+            let new_iface = {
+               iface with left_selection = pred iface.left_selection
+            } in
+            let new_reminders = Remind.update_reminders reminders 
+            (timestamp_of_line new_iface new_iface.left_selection) in
+            draw_timed new_iface new_reminders.Remind.all_timed;
+            draw_date_strip new_iface;
+            assert (doupdate ());
+            (new_iface, new_reminders)
+         end else begin
+            let prev_timestamp = timestamp_of_line iface (-1) in
+            let new_iface = {
+               iface with top_timestamp = prev_timestamp
+            } in
+            let new_reminders = Remind.update_reminders reminders 
+            (timestamp_of_line new_iface new_iface.left_selection) in
+            draw_timed new_iface new_reminders.Remind.all_timed;
+            draw_date_strip new_iface;
+            assert (doupdate ());
+            (new_iface, new_reminders)
+         end
+      |Right ->
+           (iface, reminders)
+      end
    |_ ->
       (iface, reminders)
 
