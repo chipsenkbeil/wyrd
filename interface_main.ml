@@ -151,7 +151,7 @@ let handle_refresh (iface : interface_state_t) reminders =
    draw_date_strip new_iface;
    draw_calendar new_iface reminders;
    let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
-   draw_msg new_iface;
+   (* draw_msg new_iface; *)
    (new_iface, reminders)
    
 
@@ -176,7 +176,7 @@ let handle_selection_change iface reminders =
    draw_date_strip new_iface;
    draw_calendar new_iface new_reminders;
    let new_iface = draw_untimed new_iface new_reminders.Remind.curr_untimed in
-   draw_msg new_iface;
+   (* draw_msg new_iface; *)
    (new_iface, new_reminders)
 
 
@@ -450,6 +450,9 @@ let handle_keypress key (iface : interface_state_t) reminders =
 
 let rec do_main_loop (iface : interface_state_t) reminders last_update =
    if iface.run_remic then begin
+      (* refresh the msg window (which contains a clock)
+       * every wgetch timeout cycle *)
+      draw_msg iface;
       assert (doupdate ());
       let key = wgetch iface.scr.help_win in
       (* using the ncurses SIGWINCH handler to catch window resize events *)
