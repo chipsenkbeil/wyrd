@@ -159,8 +159,18 @@ let handle_resize (iface : interface_state_t) =
    handle_refresh iface;;
  *)
 
+(* Any time a new item is selected, the reminders
+ * record needs updating and the screen need redrawing *)
+let handle_selection_change new_iface reminders =
+   let new_reminders = Remind.update_reminders reminders 
+   (timestamp_of_line new_iface new_iface.left_selection) in
+   draw_timed new_iface new_reminders.Remind.all_timed;
+   draw_date_strip new_iface;
+   draw_calendar new_iface new_reminders;
+   (new_iface, new_reminders)
 
 
+(* Handle keyboard input and update the display appropriately *)
 let handle_keypress key iface reminders =
    if key = int_of_char 'j' then begin
       begin match iface.selected_side with
@@ -169,23 +179,13 @@ let handle_keypress key iface reminders =
             let new_iface = {
                iface with left_selection = succ iface.left_selection
             } in
-            let new_reminders = Remind.update_reminders reminders 
-            (timestamp_of_line new_iface new_iface.left_selection) in
-            draw_timed new_iface new_reminders.Remind.all_timed;
-            draw_date_strip new_iface;
-            draw_calendar new_iface new_reminders;
-            (new_iface, new_reminders)
+            handle_selection_change new_iface reminders
          end else begin
             let second_timestamp = timestamp_of_line iface 1 in
             let new_iface = {
                iface with top_timestamp = second_timestamp
             } in
-            let new_reminders = Remind.update_reminders reminders 
-            (timestamp_of_line new_iface new_iface.left_selection) in
-            draw_timed new_iface new_reminders.Remind.all_timed;
-            draw_date_strip new_iface;
-            draw_calendar new_iface new_reminders;
-            (new_iface, new_reminders)
+            handle_selection_change new_iface reminders
          end
       |Right ->
            (iface, reminders)
@@ -197,23 +197,13 @@ let handle_keypress key iface reminders =
             let new_iface = {
                iface with left_selection = pred iface.left_selection
             } in
-            let new_reminders = Remind.update_reminders reminders 
-            (timestamp_of_line new_iface new_iface.left_selection) in
-            draw_timed new_iface new_reminders.Remind.all_timed;
-            draw_date_strip new_iface;
-            draw_calendar new_iface new_reminders;
-            (new_iface, new_reminders)
+            handle_selection_change new_iface reminders
          end else begin
             let prev_timestamp = timestamp_of_line iface (-1) in
             let new_iface = {
                iface with top_timestamp = prev_timestamp
             } in
-            let new_reminders = Remind.update_reminders reminders 
-            (timestamp_of_line new_iface new_iface.left_selection) in
-            draw_timed new_iface new_reminders.Remind.all_timed;
-            draw_date_strip new_iface;
-            draw_calendar new_iface new_reminders;
-            (new_iface, new_reminders)
+            handle_selection_change new_iface reminders
          end
       |Right ->
            (iface, reminders)
