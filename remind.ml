@@ -105,7 +105,8 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("rem -s -l -b2 " ^ rem_date_str) in
+   let remind_channel = Unix.open_process_in ("remind -s -l -b2 " ^ !Rcfile.reminders_file ^
+   " " ^ rem_date_str) in
    let rec build_lists timed untimed =
       try
          let line = input_line remind_channel in
