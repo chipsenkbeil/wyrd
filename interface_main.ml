@@ -46,7 +46,7 @@ let create_windows screen =
    let height, width  = get_size () in
    let cal_height     = 10
    and cal_width      = 30 in
-   let msg_height     = 2 in
+   let msg_height     = 5 in
    let timed_height   = height - 1 - msg_height
    and timed_width    = width - cal_width
    and untimed_height = height - 1 - msg_height - cal_height
@@ -68,9 +68,9 @@ let create_windows screen =
                         timed_width;
          uw_lines     = untimed_height;
          uw_cols      = untimed_width;
-         msg_win      = newwin (succ msg_height) (width - 1) (1 + timed_height) 0;
+         msg_win      = newwin msg_height width (1 + timed_height) 0;
          mw_lines     = msg_height;
-         mw_cols      = width - 1
+         mw_cols      = width
       }
       else
          (endwin ();
@@ -149,7 +149,8 @@ let handle_refresh (iface : interface_state_t) reminders =
    let new_iface = draw_timed iface reminders.Remind.all_timed in
    draw_date_strip new_iface;
    draw_calendar new_iface reminders;
-   draw_untimed new_iface reminders.Remind.curr_untimed;
+   let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
+   draw_msg new_iface;
    (new_iface, reminders)
    
 
@@ -173,7 +174,8 @@ let handle_selection_change iface reminders =
    let new_iface = draw_timed iface new_reminders.Remind.all_timed in
    draw_date_strip new_iface;
    draw_calendar new_iface new_reminders;
-   draw_untimed new_iface new_reminders.Remind.curr_untimed;
+   let new_iface = draw_untimed new_iface new_reminders.Remind.curr_untimed in
+   draw_msg new_iface;
    (new_iface, new_reminders)
 
 
@@ -256,11 +258,11 @@ let handle_keypress key (iface : interface_state_t) reminders =
       } in
       handle_selection_change new_iface reminders
    end else if key = 10 then begin
-      let fl = iface.timed_file_line.(iface.left_selection) in
+      let fl = iface.timed_lineinfo.(iface.left_selection) in
       begin match fl with
       |None ->
          (iface, reminders)
-      |Some (filename, line_num) -> 
+      |Some (filename, line_num, msg) -> 
          let command = "vi +" ^ line_num ^ " " ^ filename in
          endwin();
          let _ = Unix.system command in 
@@ -317,7 +319,8 @@ let run (iface : interface_state_t) =
    draw_date_strip iface;
    let new_iface = draw_timed iface reminders.Remind.all_timed in
    draw_calendar new_iface reminders;
-   draw_untimed new_iface reminders.Remind.curr_untimed;
+   let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
+   draw_msg new_iface;
    assert (doupdate ());
    do_main_loop new_iface reminders
         

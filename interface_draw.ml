@@ -63,6 +63,20 @@ let word_wrap (s : string) (len : int) =
    process_words split_words []
 
 
+(* Generate a 12-hour clock representation of a time record *)
+let twelve_hour_string tm =
+   if tm.Unix.tm_hour >= 12 then 
+      let hour = tm.Unix.tm_hour - 12 in
+      if hour = 0 then
+         Printf.sprintf "12:%.2dpm" tm.Unix.tm_min
+      else
+         Printf.sprintf "%d:%.2dpm" hour tm.Unix.tm_min
+   else
+      if tm.Unix.tm_hour = 0 then
+         Printf.sprintf "12:%.2dam" tm.Unix.tm_min
+      else
+         Printf.sprintf "%d:%.2dam" tm.Unix.tm_hour tm.Unix.tm_min
+
 
 (* Draw a string in a specified window and location, using exactly 'len'
  * characters and truncating with ellipses if necessary. *)
@@ -201,8 +215,8 @@ let draw_timed iface reminders =
       if x >= 0.0 then int_of_float x
       else pred (int_of_float x)
    in
-   let is_drawn  = Array.make iface.scr.tw_lines false in
-   let file_line = Array.make iface.scr.tw_lines None in
+   let is_drawn = Array.make iface.scr.tw_lines false in
+   let lineinfo = Array.make iface.scr.tw_lines None in
    let blank = String.make iface.scr.tw_cols ' ' in
    wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
    let top_tm = Unix.localtime iface.top_timestamp in
@@ -216,6 +230,13 @@ let draw_timed iface reminders =
    let process_reminder (start, finish, msg, filename, line_num) =
       let rem_top_line =
          round_down ((start -. iface.top_timestamp) /. (time_inc iface))
+      in
+      let time_str =
+         if finish > start then
+            (twelve_hour_string (Unix.localtime start)) ^ "-" ^
+            (twelve_hour_string (Unix.localtime finish)) ^ " "
+         else
+            (twelve_hour_string (Unix.localtime start)) ^ " "
       in
       (* draw the top line of a reminder *)
       if rem_top_line >= 0 && rem_top_line < iface.scr.tw_lines then begin
@@ -231,8 +252,8 @@ let draw_timed iface reminders =
             wattron iface.scr.timed_win WA.underline
          else
             wattroff iface.scr.timed_win WA.underline;
-         is_drawn.(rem_top_line)  <- true;
-         file_line.(rem_top_line) <- Some (filename, line_num);
+         is_drawn.(rem_top_line) <- true;
+         lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
          trunc_mvwaddstr iface.scr.timed_win rem_top_line 2 (iface.scr.tw_cols - 2) 
             (ts_str ^ msg)
       end else
@@ -244,7 +265,6 @@ let draw_timed iface reminders =
          (rem_top_line + !count < iface.scr.tw_lines)
       do
          if rem_top_line + !count >= 0 then begin
-             
             let ts = timestamp_of_line iface (rem_top_line + !count) in
             let tm = Unix.localtime ts in
             let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
@@ -260,7 +280,8 @@ let draw_timed iface reminders =
                wattroff iface.scr.timed_win WA.underline;
             if not is_drawn.(rem_top_line + !count) then begin
                is_drawn.(rem_top_line + !count)  <- true;
-               file_line.(rem_top_line + !count) <- Some (filename, line_num);
+               lineinfo.(rem_top_line + !count) <- 
+                  Some (filename, line_num, time_str ^ msg);
                assert (mvwaddstr iface.scr.timed_win (rem_top_line + !count) 2 s)
             end else
                ();
@@ -293,7 +314,7 @@ let draw_timed iface reminders =
    done;
    wattroff iface.scr.timed_win (WA.reverse lor WA.underline);
    assert (wnoutrefresh iface.scr.timed_win);
-   {iface with timed_file_line = file_line}
+   {iface with timed_lineinfo = lineinfo}
 
 
 
@@ -374,7 +395,7 @@ let draw_calendar (iface : interface_state_t)
 
 (* Draw the untimed reminders window *)
 let draw_untimed (iface : interface_state_t) reminders =
-   let untimed_file_line = Array.make iface.scr.uw_lines None in
+   let lineinfo = Array.make iface.scr.uw_lines None in
    let blank = String.make iface.scr.uw_cols ' ' in
    let curr_ts = Unix.localtime (timestamp_of_line iface iface.left_selection) in
    let temp1 = {
@@ -412,7 +433,7 @@ let draw_untimed (iface : interface_state_t) reminders =
             if n >= iface.top_untimed then begin
                trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 2) 
                   ("* " ^ msg);
-               untimed_file_line.(line) <- Some (filename, line_num);
+               lineinfo.(line) <- Some (filename, line_num, msg);
                render_lines tail (succ n) (succ line)
             end else
                render_lines tail (succ n) line
@@ -421,12 +442,71 @@ let draw_untimed (iface : interface_state_t) reminders =
    in
    render_lines today_reminders 0 2;
    wattroff iface.scr.untimed_win WA.bold;
-   assert (wnoutrefresh iface.scr.untimed_win)
+   assert (wnoutrefresh iface.scr.untimed_win);
+   {iface with untimed_lineinfo = lineinfo}
 
 
-
-
-
+(* Draw the message window *)
+let draw_msg iface =
+   let sel_tm = 
+      Unix.localtime (timestamp_of_line iface iface.left_selection)
+   in
+   let day_s = 
+      Printf.sprintf "%s, %s %.2d" (string_of_tm_wday sel_tm.Unix.tm_wday)
+         (full_string_of_tm_mon sel_tm.Unix.tm_mon) sel_tm.Unix.tm_mday
+   in
+   let day_time_s =
+      match iface.selected_side with
+      |Left ->
+         day_s ^ " at " ^ (twelve_hour_string sel_tm)
+      |Right ->
+         day_s
+   in
+   werase iface.scr.msg_win;
+   (* draw the date stamp *)
+   let acs = get_acs_codes () in
+   wattron iface.scr.msg_win ((WA.color_pair 1) lor WA.bold lor WA.underline);
+   trunc_mvwaddstr iface.scr.msg_win 0 0 iface.scr.mw_cols day_time_s;
+   wattroff iface.scr.msg_win (WA.color_pair 1 lor WA.bold lor WA.underline);
+   (* draw the current date *)
+   let curr_tm = Unix.localtime (Unix.time ()) in
+   wattron iface.scr.msg_win ((WA.color_pair 1) lor WA.bold);
+   let s = 
+      Printf.sprintf "remic v%s          Currently: %s, %s %.2d at %s"
+         Version.version (string_of_tm_wday curr_tm.Unix.tm_wday)
+         (full_string_of_tm_mon curr_tm.Unix.tm_mon)
+         curr_tm.Unix.tm_mday (twelve_hour_string curr_tm)
+   in
+   trunc_mvwaddstr iface.scr.msg_win (pred iface.scr.mw_lines) 0
+      (pred iface.scr.mw_cols) s;
+   wattroff iface.scr.msg_win ((WA.color_pair 1) lor WA.bold);
+   (* draw the full MSG string *)
+   let rec render_line lines i =
+      match lines with
+      |[] ->
+         ()
+      |line :: tail ->
+         if i < pred iface.scr.mw_lines then begin
+            assert (mvwaddstr iface.scr.msg_win i 5 line);
+            render_line tail (succ i)
+         end else
+            ()
+   in
+   let message =
+      match iface.selected_side with
+      |Left ->
+         begin match iface.timed_lineinfo.(iface.left_selection) with
+         |None             -> ["(no reminder selected)"]
+         |Some (_, _, msg) -> word_wrap msg (iface.scr.mw_cols - 5)
+         end
+      |Right ->
+         begin match iface.untimed_lineinfo.(iface.right_selection) with
+         |None             -> ["(no reminder selected)"]
+         |Some (_, _, msg) -> word_wrap msg (iface.scr.mw_cols - 5)
+         end
+   in
+   render_line message 1;
+   assert (wnoutrefresh iface.scr.msg_win)
 
 
 
