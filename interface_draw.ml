@@ -60,20 +60,17 @@ let draw_date_strip (iface : interface_state_t) =
       if line >= iface.scr.tw_lines then
          date_changes
       else
+         let timestamp_tm = Unix.localtime timestamp in
+         let next_timestamp = timestamp +. (time_inc iface) in
          let temp = {
-            timestamp with 
-              Unix.tm_min = timestamp.Unix.tm_min + (time_inc iface)
-         } in
-         let (_, next_timestamp) = Unix.mktime temp in
-         let temp2 = {
-            timestamp with
+            timestamp_tm with
               Unix.tm_sec = 0;
-              Unix.tm_min = ~- (time_inc iface);
+              Unix.tm_min = ~- (time_inc_min iface);
               Unix.tm_hour = 0
          } in
-         let (_, before_midnight) = Unix.mktime temp2 in
-         if timestamp.Unix.tm_min = before_midnight.Unix.tm_min && 
-            timestamp.Unix.tm_hour = before_midnight.Unix.tm_hour then
+         let (_, before_midnight) = Unix.mktime temp in
+         if timestamp_tm.Unix.tm_min = before_midnight.Unix.tm_min && 
+            timestamp_tm.Unix.tm_hour = before_midnight.Unix.tm_hour then
             check_timestamp ((line, timestamp) :: date_changes) next_timestamp (succ line)
          else
             check_timestamp date_changes next_timestamp (succ line)
@@ -85,24 +82,26 @@ let draw_date_strip (iface : interface_state_t) =
          (* special case for the top date string, which is always at the
           * top of the screen *)
          let (line, timestamp) = List.hd date_changes in
+         let tm = Unix.localtime timestamp in
          let top_date_str = 
             if line >= 7 then
                (* the date will fit completely *)
-               (Printf.sprintf " %s %.2d" (string_of_tm_mon timestamp.Unix.tm_mon) 
-                   timestamp.Unix.tm_mday) ^ (String.make (line - 7) ' ')
+               (Printf.sprintf " %s %.2d" (string_of_tm_mon tm.Unix.tm_mon) 
+                   tm.Unix.tm_mday) ^ (String.make (line - 7) ' ')
             else
                (* there's not enough room for the date, so truncate it *)
                Str.last_chars
-               (Printf.sprintf " %s %.2d" (string_of_tm_mon timestamp.Unix.tm_mon) 
-                   timestamp.Unix.tm_mday) line
+               (Printf.sprintf " %s %.2d" (string_of_tm_mon tm.Unix.tm_mon) 
+                   tm.Unix.tm_mday) line
          in
          (* all other dates are just rendered at the top of their respective windows *)
          let rec add_date date_str changes =
             match changes with
             | [] -> date_str
             | (line, timestamp) :: tail -> 
+               let tm = Unix.localtime timestamp in
                let temp = {
-                  timestamp with Unix.tm_mday = succ timestamp.Unix.tm_mday
+                  tm with Unix.tm_mday = succ tm.Unix.tm_mday
                } in
                let (_, next_day) = Unix.mktime temp in
                let s_len = 
@@ -122,8 +121,9 @@ let draw_date_strip (iface : interface_state_t) =
       end else
          (* if there are no date changes (e.g. for small window) then just grab the proper
           * date from the top_timestamp *)
-         (Printf.sprintf " %s %.2d" (string_of_tm_mon iface.top_timestamp.Unix.tm_mon) 
-             iface.top_timestamp.Unix.tm_mday) ^ (String.make (iface.scr.tw_lines - 6) ' ') 
+         let tm = Unix.localtime iface.top_timestamp in
+         (Printf.sprintf " %s %.2d" (string_of_tm_mon tm.Unix.tm_mon) 
+             tm.Unix.tm_mday) ^ (String.make (iface.scr.tw_lines - 6) ' ') 
    in
    (* draw the date string vertically, one character at a time *)
    for i = 0 to pred iface.scr.tw_lines do
@@ -155,31 +155,32 @@ let draw_timed iface reminders =
    in
    let is_drawn = Array.make iface.scr.tw_lines false in
    let blank = String.make iface.scr.tw_cols ' ' in
-   let (f_top, _) = Unix.mktime iface.top_timestamp in
    wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
+   let top_tm = Unix.localtime iface.top_timestamp in
    let temp = {
-      iface.top_timestamp with
+      top_tm with
         Unix.tm_sec = 0;
-        Unix.tm_min = ~- (time_inc iface);
+        Unix.tm_min = ~- (time_inc_min iface);
         Unix.tm_hour = 0
    } in
    let (_, before_midnight) = Unix.mktime temp in
    let process_reminder (start, finish, msg) =
       let rem_top_line =
-         round_down ((start -. f_top) /. (float_of_int (60 * (time_inc iface))))
+         round_down ((start -. iface.top_timestamp) /. (time_inc iface))
       in
       (* draw the top line of a reminder *)
       if rem_top_line >= 0 && rem_top_line < iface.scr.tw_lines then begin
          let ts = timestamp_of_line iface rem_top_line in
-         let ts_str = Printf.sprintf "%.2d:%.2d " ts.Unix.tm_hour ts.Unix.tm_min in
+         let tm = Unix.localtime ts in
+         let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
          (* FIXME: add ellipses if truncation occurs *)
          let s = Str.string_before (ts_str ^ msg ^ blank) (iface.scr.tw_cols - 2) in
          if rem_top_line = iface.left_selection then
             wattron iface.scr.timed_win WA.reverse
          else
             wattroff iface.scr.timed_win WA.reverse;
-         if ts.Unix.tm_hour = before_midnight.Unix.tm_hour &&
-            ts.Unix.tm_min  = before_midnight.Unix.tm_min then
+         if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
+            tm.Unix.tm_min  = before_midnight.Unix.tm_min then
             wattron iface.scr.timed_win WA.underline
          else
             wattroff iface.scr.timed_win WA.underline;
@@ -190,23 +191,21 @@ let draw_timed iface reminders =
       (* draw any remaining lines of this reminder, as determined by the duration *)
       let count = ref 1 in
       while 
-         let (f_ts, _) = 
-            Unix.mktime (timestamp_of_line iface (rem_top_line + !count))
-         in
-         (f_ts < finish) && (rem_top_line + !count < iface.scr.tw_lines)
+         ((timestamp_of_line iface (rem_top_line + !count)) < finish) &&
+         (rem_top_line + !count < iface.scr.tw_lines)
       do
          if rem_top_line + !count >= 0 then begin
-            let (_, ts) = 
-               Unix.mktime (timestamp_of_line iface (rem_top_line + !count))
-            in
-            let ts_str = Printf.sprintf "%.2d:%.2d " ts.Unix.tm_hour ts.Unix.tm_min in
+             
+            let ts = timestamp_of_line iface (rem_top_line + !count) in
+            let tm = Unix.localtime ts in
+            let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
             let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
             if rem_top_line + !count = iface.left_selection then
                wattron iface.scr.timed_win WA.reverse
             else
                wattroff iface.scr.timed_win WA.reverse;
-            if ts.Unix.tm_hour = before_midnight.Unix.tm_hour &&
-               ts.Unix.tm_min  = before_midnight.Unix.tm_min then
+            if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
+               tm.Unix.tm_min  = before_midnight.Unix.tm_min then
                wattron iface.scr.timed_win WA.underline
             else
                wattroff iface.scr.timed_win WA.underline;
@@ -230,10 +229,11 @@ let draw_timed iface reminders =
          else
             wattroff iface.scr.timed_win WA.reverse;
          let ts = timestamp_of_line iface i in
-         let ts_str = Printf.sprintf "%.2d:%.2d " ts.Unix.tm_hour ts.Unix.tm_min in
+         let tm = Unix.localtime ts in
+         let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
          let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
-         if ts.Unix.tm_hour = before_midnight.Unix.tm_hour &&
-            ts.Unix.tm_min  = before_midnight.Unix.tm_min then
+         if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
+            tm.Unix.tm_min  = before_midnight.Unix.tm_min then
             wattron iface.scr.timed_win WA.underline
          else
             wattroff iface.scr.timed_win WA.underline;
@@ -249,7 +249,7 @@ let draw_timed iface reminders =
 (* render a calendar for the given reminders record *)
 let draw_calendar (iface : interface_state_t) 
        (reminders : three_month_rem_t) : unit =
-   let curr_ts = timestamp_of_line iface iface.left_selection in
+   let curr_tm = Unix.localtime (timestamp_of_line iface iface.left_selection) in
    let cal = reminders.curr_cal in
    assert (wmove iface.scr.calendar_win 1 1);
    wclrtoeol iface.scr.calendar_win;
@@ -280,7 +280,7 @@ let draw_calendar (iface : interface_state_t)
                   assert (waddstr iface.scr.calendar_win s)
                |Str.Text d ->
                   let day = pred (int_of_string d) in
-                  if succ day = curr_ts.Unix.tm_mday then begin
+                  if succ day = curr_tm.Unix.tm_mday then begin
                      (* highlight selected day *)
                      wattron iface.scr.calendar_win ((WA.color_pair 2) lor WA.reverse);
                      assert (waddstr iface.scr.calendar_win d);

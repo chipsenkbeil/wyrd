@@ -38,7 +38,7 @@ type cal_t = {
  * from month to month without constantly calling 
  * rem(1) and cal(1). *)
 type three_month_rem_t = {
-   curr_timestamp : Unix.tm;
+   curr_timestamp : float;
    prev_timed     : (float * float * string) list;
    curr_timed     : (float * float * string) list;
    next_timed     : (float * float * string) list;
@@ -75,9 +75,10 @@ let string_of_tm_mon i =
  * The first list is for timed reminders, the second is for untimed. *)
 let month_reminders timestamp =
    let rem_regex = Str.regexp "^\\([^ ]+\\) [^ ]+ [^ ]+ \\([^ ]+\\) \\([^ ]+\\) \\(.*\\)$" in
-   let rem_date_str = (string_of_tm_mon timestamp.Unix.tm_mon) ^ " " ^ 
-                      (string_of_int timestamp.Unix.tm_mday) ^ " " ^
-                      (string_of_int (timestamp.Unix.tm_year + 1900)) in
+   let tm = Unix.localtime timestamp in
+   let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
+                      (string_of_int tm.Unix.tm_mday) ^ " " ^
+                      (string_of_int (tm.Unix.tm_year + 1900)) in
    let remind_channel = Unix.open_process_in ("rem -s -b2 " ^ rem_date_str) in
    let rec build_lists timed untimed =
       try
@@ -134,13 +135,13 @@ let month_reminders timestamp =
 let count_reminders timed untimed =
    let rem_counts = Array.make 31 0 in
    let count_timed (start, _, _) =
-      let ts = Unix.localtime start in
-      let day = pred ts.Unix.tm_mday in
+      let tm = Unix.localtime start in
+      let day = pred tm.Unix.tm_mday in
       rem_counts.(day) <- succ rem_counts.(day)
    in
    let count_untimed (start, _) =
-      let ts = Unix.localtime start in
-      let day = pred ts.Unix.tm_mday in
+      let tm = Unix.localtime start in
+      let day = pred tm.Unix.tm_mday in
       rem_counts.(day) <- succ rem_counts.(day)
    in
    List.iter count_timed timed;
@@ -150,8 +151,9 @@ let count_reminders timed untimed =
 
 (* use cal(1) to create a calendar record for the desired timestamp *)
 let make_cal timestamp =
-   let month_s = string_of_int (succ timestamp.Unix.tm_mon)
-   and year_s  = string_of_int (timestamp.Unix.tm_year + 1900) in
+   let tm = Unix.localtime timestamp in
+   let month_s = string_of_int (succ tm.Unix.tm_mon)
+   and year_s  = string_of_int (tm.Unix.tm_year + 1900) in
    let command = "cal " ^ month_s ^ " " ^ year_s in
    let cal_channel = Unix.open_process_in command in
    let rec add_lines day_lines =
@@ -175,20 +177,20 @@ let make_cal timestamp =
 (* initialize a new three-month reminder record *)
 let create_three_month timestamp =
    let temp = {
-      timestamp with Unix.tm_sec = 0;
-                     Unix.tm_min = 0;
-                     Unix.tm_hour = 0;
-                     Unix.tm_mday = 1
+      Unix.localtime timestamp with Unix.tm_sec  = 0;
+                                    Unix.tm_min  = 0;
+                                    Unix.tm_hour = 0;
+                                    Unix.tm_mday = 1
    } in
-   let (_, curr_ts) = Unix.mktime temp in
+   let (curr_ts, _) = Unix.mktime temp in
    let temp_prev = {
       temp with Unix.tm_mon = pred temp.Unix.tm_mon
    } in
    let temp_next = {
       temp with Unix.tm_mon = succ temp.Unix.tm_mon
    } in
-   let (_, prev_ts) = Unix.mktime temp_prev
-   and (_, next_ts) = Unix.mktime temp_next in
+   let (prev_ts, _) = Unix.mktime temp_prev
+   and (next_ts, _) = Unix.mktime temp_next in
    let (pt, pu) = month_reminders prev_ts in
    let (ct, cu) = month_reminders curr_ts in
    let (nt, nu) = month_reminders next_ts in {
@@ -209,16 +211,15 @@ let create_three_month timestamp =
 
 (* Update a three-month reminders record for the next month *)
 let next_month reminders =
+   let curr_tm = Unix.localtime reminders.curr_timestamp in
    let temp1 = {
-      reminders.curr_timestamp with 
-        Unix.tm_mon = succ reminders.curr_timestamp.Unix.tm_mon
+      curr_tm with Unix.tm_mon = succ curr_tm.Unix.tm_mon
    } in
    let temp2 = {
-      reminders.curr_timestamp with 
-        Unix.tm_mon = reminders.curr_timestamp.Unix.tm_mon + 2
+      curr_tm with Unix.tm_mon = curr_tm.Unix.tm_mon + 2
    } in
-   let (_, new_curr_timestamp) = Unix.mktime temp1 in
-   let (_, next_timestamp) = Unix.mktime temp2 in
+   let (new_curr_timestamp, _) = Unix.mktime temp1 in
+   let (next_timestamp, _)     = Unix.mktime temp2 in
    let (t, u) = month_reminders next_timestamp in {
       curr_timestamp = new_curr_timestamp;
       prev_timed     = reminders.curr_timed;
@@ -238,16 +239,15 @@ let next_month reminders =
 
 (* Update a three-month reminders record for the previous month *)
 let prev_month reminders =
+   let curr_tm = Unix.localtime reminders.curr_timestamp in
    let temp1 = {
-      reminders.curr_timestamp with 
-        Unix.tm_mon = pred reminders.curr_timestamp.Unix.tm_mon
+      curr_tm with Unix.tm_mon = pred curr_tm.Unix.tm_mon
    } in
    let temp2 = {
-      reminders.curr_timestamp with 
-        Unix.tm_mon = reminders.curr_timestamp.Unix.tm_mon - 2
+      curr_tm with Unix.tm_mon = curr_tm.Unix.tm_mon - 2
    } in
-   let (_, new_curr_timestamp) = Unix.mktime temp1 in
-   let (_, prev_timestamp) = Unix.mktime temp2 in
+   let (new_curr_timestamp, _) = Unix.mktime temp1 in
+   let (prev_timestamp, _)     = Unix.mktime temp2 in
    let (t, u) = month_reminders prev_timestamp in {
       curr_timestamp = new_curr_timestamp;
       prev_timed     = t;
@@ -268,23 +268,25 @@ let prev_month reminders =
 (* Return a new reminders record centered on the current timestamp,
  * doing as little work as possible. *)
 let update_reminders rem timestamp =
-   if timestamp.Unix.tm_year = rem.curr_timestamp.Unix.tm_year &&
-      timestamp.Unix.tm_mon  = rem.curr_timestamp.Unix.tm_mon then
+   let tm     = Unix.localtime timestamp
+   and rem_tm = Unix.localtime rem.curr_timestamp in
+   if tm.Unix.tm_year = rem_tm.Unix.tm_year &&
+      tm.Unix.tm_mon  = rem_tm.Unix.tm_mon then
       rem
    else
       let temp1 = {
-         rem.curr_timestamp with Unix.tm_mon = pred rem.curr_timestamp.Unix.tm_mon
+         rem_tm with Unix.tm_mon = pred rem_tm.Unix.tm_mon
       } in
       let temp2 = {
-         rem.curr_timestamp with Unix.tm_mon = succ rem.curr_timestamp.Unix.tm_mon
+         rem_tm with Unix.tm_mon = succ rem_tm.Unix.tm_mon
       } in
-      let (_, prev_timestamp) = Unix.mktime temp1 in
-      let (_, next_timestamp) = Unix.mktime temp2 in
-      if timestamp.Unix.tm_year = prev_timestamp.Unix.tm_year &&
-         timestamp.Unix.tm_mon  = prev_timestamp.Unix.tm_mon then
+      let (_, prev_tm) = Unix.mktime temp1 in
+      let (_, next_tm) = Unix.mktime temp2 in
+      if tm.Unix.tm_year = prev_tm.Unix.tm_year &&
+         tm.Unix.tm_mon  = prev_tm.Unix.tm_mon then
          prev_month rem
-      else if timestamp.Unix.tm_year = next_timestamp.Unix.tm_year &&
-         timestamp.Unix.tm_mon  = next_timestamp.Unix.tm_mon then
+      else if tm.Unix.tm_year = next_tm.Unix.tm_year &&
+         tm.Unix.tm_mon = next_tm.Unix.tm_mon then
          next_month rem
       else
          create_three_month timestamp

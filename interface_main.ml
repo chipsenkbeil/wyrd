@@ -211,23 +211,22 @@ let handle_keypress key iface reminders =
    end else if key = int_of_char 'z' then begin
       let new_iface = 
          let curr_ts = timestamp_of_line iface iface.left_selection in
-         let get_new_top delta = {
-            curr_ts with Unix.tm_min = curr_ts.Unix.tm_min - 
-                         (iface.left_selection * delta)
-         } in
          match iface.zoom_level with
          |Hour ->
-            let (_, new_top) = Unix.mktime (get_new_top 30) in {
+            let new_top = curr_ts -. (60.0 *. 30.0 *. 
+                          (float_of_int iface.left_selection)) in {
                iface with top_timestamp = new_top;
                           zoom_level    = HalfHour
             }
          |HalfHour ->
-            let (_, new_top) = Unix.mktime (get_new_top 15) in {
+            let new_top = curr_ts -. (60.0 *. 15.0 *. 
+                          (float_of_int iface.left_selection)) in {
                iface with top_timestamp = new_top;
                           zoom_level    = QuarterHour
             }
          |QuarterHour ->
-            let (_, new_top) = Unix.mktime (get_new_top 60) in {
+            let new_top = curr_ts -. (60.0 *. 60.0 *. 
+                          (float_of_int iface.left_selection)) in {
                iface with top_timestamp = new_top;
                           zoom_level    = Hour
             }

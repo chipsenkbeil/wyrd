@@ -57,7 +57,7 @@ type interface_state_t = {
    version         : string;    (* program version string *)
    scr             : screen_t;  (* curses screen with two or three subwindows *)
    run_remic       : bool;      (* exit when run_remic becomes false *)
-   top_timestamp   : Unix.tm;   (* controls what portion of the schedule is viewable *)
+   top_timestamp   : float;     (* controls what portion of the schedule is viewable *)
    selected_side   : side_t;    (* controls which window has the focus *)
    left_selection  : int;       (* controls which element of the left window is selected *)
    right_selection : int;       (* controls which element of the right window is selected *)
@@ -68,10 +68,11 @@ type interface_state_t = {
 (* create and initialize an interface with default settings *)
 let make (std : screen_t) =
    let curr_time = Unix.localtime (Unix.time ()) in
-   let rounded_time = {
+   let temp = {
       curr_time with Unix.tm_sec = 0;
                      Unix.tm_min = 0
-   } in {
+   } in
+   let (rounded_time, _) = Unix.mktime temp in {
       version         = Version.version;
       scr             = std;
       run_remic       = true;
@@ -83,19 +84,23 @@ let make (std : screen_t) =
    }
                                                
 
+(* time increment in float seconds *)
 let time_inc (iface : interface_state_t) =
+   match iface.zoom_level with
+   | Hour        -> 60.0 *. 60.0
+   | HalfHour    -> 30.0 *. 60.0
+   | QuarterHour -> 15.0 *. 60.0
+
+
+(* time increment in int minutes *)
+let time_inc_min (iface : interface_state_t) =
    match iface.zoom_level with
    | Hour        -> 60
    | HalfHour    -> 30
    | QuarterHour -> 15
 
-
 let timestamp_of_line iface line =
-   let temp = {
-      iface.top_timestamp with
-        Unix.tm_min = iface.top_timestamp.Unix.tm_min + (line * (time_inc iface))
-   } in 
-   let (_, ts) = Unix.mktime temp in ts
+   iface.top_timestamp +. ((float_of_int line) *. (time_inc iface))
 
 
 
