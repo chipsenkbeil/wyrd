@@ -32,9 +32,11 @@ type cal_t = {
 }
 
 
-(* Storage for a three-month window of reminders.
+(* Storage for a three-month window of reminders and
+ * the calendar for the current month.
  * Makes it possible to handle edge effects of moving
- * from month to month without constantly calling 'rem'. *)
+ * from month to month without constantly calling 
+ * rem(1) and cal(1). *)
 type three_month_rem_t = {
    curr_timestamp : Unix.tm;
    prev_timed     : (float * float * string) list;
