@@ -1,0 +1,243 @@
+#
+# sample Makefile for Objective Caml
+# Copyright (C) 2001 Jean-Christophe FILLIATRE
+#
+# modified 10/26/2003 by Paul Pelzl, for the purpose of building Orpie
+# modified 03/28/2005 by Paul Pelzl, for the purpose of building Remic
+# 
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License version 2, as published by the Free Software Foundation.
+# 
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# 
+# See the GNU Library General Public License version 2 for more details
+# (enclosed in the file LGPL).
+
+# where to install the binaries, rcfiles, manpages, etc.
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+sysconfdir  = @sysconfdir@
+BINDIR      = $(DESTDIR)/@bindir@
+MANDIR      = $(DESTDIR)/@mandir@
+
+# other variables set by ./configure
+OCAMLC       = @OCAMLC@
+OCAMLOPT     = @OCAMLOPT@
+OCAMLDEP     = @OCAMLDEP@
+OCAMLLIB     = @OCAMLLIB@
+OCAMLBEST    = @OCAMLBEST@
+OCAMLLEX     = @OCAMLLEX@
+OCAMLYACC    = @OCAMLYACC@
+OCAMLVERSION = @OCAMLVERSION@
+OCAMLWIN32   = @OCAMLWIN32@
+EXE          = @EXE@
+
+CURSES_LIB = @CURSES_LIB@
+
+INCLUDES = -I ./curses
+BFLAGS   = -pp camlp4o -g $(INCLUDES) -thread
+OFLAGS   = -pp camlp4o $(INCLUDES) -thread
+BLFLAGS  = -custom -cclib '$(CURSES_LIB) -lm'
+OLFLAGS  = -cclib '$(CURSES_LIB) -lm'
+DEPFLAGS = -pp camlp4o
+
+# main target
+#############
+
+NAME  = remic
+
+all: $(OCAMLBEST)
+
+
+
+# bytecode and native-code compilation
+######################################
+
+CMO = 
+CMX = $(CMO:.cmo=.cmx)
+CMA = str.cma unix.cma threads.cma
+CMXA = $(CMA:.cma=.cmxa)
+
+CURSES_CMO = curses/curses.cmo
+CURSES_CMX = curses/curses.cmx
+CURSES_COBJS = curses/ml_curses.o
+CURSES_BOBJS = $(CURSES_CMO) $(CURSES_COBJS)
+CURSES_OOBJS = $(CURSES_CMX) $(CURSES_COBJS)
+
+GENERATED = version.ml
+
+byte: $(NAME).byte
+opt: $(NAME).opt
+static: $(NAME).static-opt
+
+$(NAME).byte: $(CURSES_BOBJS) $(CMO)
+	$(OCAMLC) $(BFLAGS) $(BLFLAGS) -o $@ $(CURSES_BOBJS) $(CMA) $(CMO) 
+
+$(NAME).opt: $(CURSES_OOBJS) $(CMX)
+	$(OCAMLOPT) $(OFLAGS) -o $@ $(CURSES_OOBJS) $(CMXA) $(CMX) $(OLFLAGS)
+
+# static build seems to require mashing all the C objects into a library
+$(NAME).static-opt: $(CMX) $(CURSES_OOBJS) my-static-libs
+	$(OCAMLOPT) $(OFLAGS) -I . -ccopt -static -cclib '-lmycurses $(CURSES_LIB) -lm' -o $@ $(CMXA) \
+	curses.cmx $(CMX)
+	strip $(NAME).static-opt
+
+my-static-libs:
+	ar cr libmycurses.a curses/*.o
+
+VERSION=0.1.0
+
+version.ml: Makefile
+	echo "let version = \""$(VERSION)"\"" > version.ml
+	echo "let date = \""`date`"\"" >> version.ml
+
+
+# installation
+##############
+
+install-indep: 
+#	mkdir -p $(BINDIR)
+#	mkdir -p $(DESTDIR)/$(sysconfdir)
+#	install -m 644 remicrc $(DESTDIR)/$(sysconfdir)
+#	install -m 644 -D doc/remic.1 $(MANDIR)/man1/orpie.1
+
+install: install-indep
+	install -m 755 -D $(NAME).$(OCAMLBEST) $(BINDIR)/$(NAME)$(EXE)
+
+install-byte: install-indep
+	install -m 755 -D $(NAME).byte $(BINDIR)/$(NAME)$(EXE)
+
+install-opt: install-indep
+	install -m 755 -D $(NAME).opt $(BINDIR)/$(NAME)$(EXE)
+
+install-static: install-indep
+	install -m 755 -D $(NAME).static-opt $(BINDIR)/$(NAME)$(EXE)
+
+uninstall:
+	rm -f $(BINDIR)/$(NAME)$(EXE)
+	rm -f $(BINDIR)/$(NAME2)$(EXE)
+#	rm -f $(DESTDIR)/$(sysconfdir)/orpierc
+#	rm -f $(MANDIR)/man1/orpie.1
+
+
+# generic rules
+###############
+
+.SUFFIXES:
+
+
+# curses build rules
+curses-opt: $(CURSES_OOBJS)
+curses-byte: $(CURSES_BOBJS)
+
+CURSES_INCLUDES = -I ./curses
+CURSES_BFLAGS = -g $(CURSES_INCLUDES) -thread
+CURSES_OFLAGS = $(CURSES_INCLUDES) -thread
+CURSES_CFLAGS = -Wall -fPIC -DPIC
+
+curses/%.cmi : curses/%.mli
+	$(OCAMLC) -pp cpp -c $(CURSES_BFLAGS) $<
+
+curses/%.cmo : curses/%.ml
+	$(OCAMLC) -pp cpp -c $(CURSES_BFLAGS) $<
+
+curses/%.o : curses/%.ml
+	$(OCAMLOPT) -pp cpp -c $(CURSES_OFLAGS) $<
+
+curses/%.cmx : curses/%.ml
+	$(OCAMLOPT) -pp cpp -c $(CURSES_OFLAGS) $<
+
+curses/%.o : curses/%.c
+	cd curses && $(OCAMLC) -ccopt "$(CURSES_CFLAGS)" -c $*.c
+
+
+# generic build rules for toplevel directory
+%.cmi : %.mli
+	$(OCAMLC) -c $(BFLAGS) $<
+
+%.cmo : %.ml
+	$(OCAMLC) -c $(BFLAGS) $<
+
+%.o : %.ml
+	$(OCAMLOPT) -c $(OFLAGS) $<
+
+%.cmx : %.ml
+	$(OCAMLOPT) -c $(OFLAGS) $<
+
+%.ml : %.mll
+	$(OCAMLLEX) $<
+
+%.ml : %.mly
+	$(OCAMLYACC) -v $<
+
+%.mli : %.mly
+	$(OCAMLYACC) -v $<
+
+
+
+# Emacs tags
+############
+
+tags:
+	find . -name "*.ml*" | sort -r | xargs \
+	etags "--regex=/let[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/let[ \t]+rec[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/and[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/type[ \t]+\([^ \t]+\)/\1/" \
+              "--regex=/exception[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/val[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/module[ \t]+\([^ \t]+\)/\1/"
+
+# vi tags
+#########
+
+vtags:
+	otags -vi -o tags *.ml
+
+
+# Makefile is rebuilt whenever Makefile.in or configure.in is modified
+######################################################################
+
+Makefile: Makefile.in config.status
+	./config.status
+
+config.status: configure
+	./config.status --recheck
+
+configure: configure.in
+	autoconf 
+
+# clean
+#######
+
+partly-clean::
+	rm -f *.cm[iox] *.o *.a *~
+	rm -f $(GENERATED)
+	rm -f $(NAME).byte $(NAME).opt $(NAME).static-opt
+	rm -f *.aux *.log $(NAME).tex $(NAME).dvi $(NAME).ps
+
+curses-clean::
+	rm -f curses/*.cm[iox] curses/*.o *~
+
+clean:: partly-clean curses-clean
+
+dist-clean distclean:: clean
+	rm -f Makefile config.cache config.log config.status install.ml
+
+
+# depend
+########
+
+depend::
+#	$(MAKE) txtin_lexer.ml
+#	$(MAKE) txtin_parser.ml
+	$(OCAMLDEP) -pp camlp4o $(INCLUDES) *.ml *.mli > depend
+	$(OCAMLDEP) -pp cpp -I ./curses curses/*.ml curses/*.mli >> depend
+
+include depend
+
+
+# arch-tag: DO_NOT_CHANGE_bdb62873-ffd0-4d79-819e-880467e18f28 
