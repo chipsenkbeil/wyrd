@@ -248,6 +248,16 @@ let handle_keypress key iface reminders =
                     left_selection = 1
       } in
       handle_selection_change new_iface reminders
+   end else if key = 10 then begin
+      let fl = iface.timed_file_line.(iface.left_selection) in
+      begin match fl with
+      |None ->
+         ()
+      |Some (filename, line_num) -> 
+         let command = "vi +" ^ line_num ^ " " ^ filename in
+         let _ = Unix.system command in ()
+      end;
+      (iface, reminders)
    end else
       (iface, reminders)
 

@@ -39,14 +39,14 @@ type cal_t = {
  * rem(1) and cal(1). *)
 type three_month_rem_t = {
    curr_timestamp : float;
-   prev_timed     : (float * float * string) list;
-   curr_timed     : (float * float * string) list;
-   next_timed     : (float * float * string) list;
-   all_timed      : (float * float * string) list;
-   prev_untimed   : (float * string) list;
-   curr_untimed   : (float * string) list;
-   next_untimed   : (float * string) list;
-   all_untimed    : (float * string) list;
+   prev_timed     : (float * float * string * string * string) list;
+   curr_timed     : (float * float * string * string * string) list;
+   next_timed     : (float * float * string * string * string) list;
+   all_timed      : (float * float * string * string * string) list;
+   prev_untimed   : (float * string * string * string) list;
+   curr_untimed   : (float * string * string * string) list;
+   next_untimed   : (float * string * string * string) list;
+   all_untimed    : (float * string * string * string) list;
    curr_counts    : int array;
    curr_cal       : cal_t
 }
@@ -74,20 +74,22 @@ let string_of_tm_mon i =
 (* Obtain two lists of reminders for the month of the timestamp argument.
  * The first list is for timed reminders, the second is for untimed. *)
 let month_reminders timestamp =
-   let rem_regex = Str.regexp "^\\([^ ]+\\) [^ ]+ [^ ]+ \\([^ ]+\\) \\([^ ]+\\) \\(.*\\)$" in
+   let rem_regex = Str.regexp "^\\([^ ]+\\):\\([^ ]+\\) \\([^ ]+\\) [^ ]+ [^ ]+ \\([^ ]+\\) \\([^ ]+\\) \\(.*\\)$" in
    let tm = Unix.localtime timestamp in
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("rem -s -b2 " ^ rem_date_str) in
+   let remind_channel = Unix.open_process_in ("rem -s -l -b2 " ^ rem_date_str) in
    let rec build_lists timed untimed =
       try
          let line = input_line remind_channel in
          if Str.string_match rem_regex line 0 then begin
-            let date_s     = Str.matched_group 1 line
-            and duration_s = Str.matched_group 2 line
-            and min_s      = Str.matched_group 3 line
-            and msg        = Str.matched_group 4 line in
+            let filename   = Str.matched_group 1 line
+            and line_num_s = Str.matched_group 2 line
+            and date_s     = Str.matched_group 3 line
+            and duration_s = Str.matched_group 4 line
+            and min_s      = Str.matched_group 5 line
+            and msg        = Str.matched_group 6 line in
             (* further subdivide the date string *)
             let date_arr = Array.of_list (Str.split (Str.regexp "/") date_s) in
             let year     = int_of_string date_arr.(0)
@@ -106,7 +108,7 @@ let month_reminders timestamp =
             } in
             if min_s = "*" then
                let (f_rem_ts, _) = Unix.mktime temp in
-               build_lists timed ((f_rem_ts, msg) :: untimed)
+               build_lists timed ((f_rem_ts, msg, filename, line_num_s) :: untimed)
             else
                let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
                let (f_rem_ts, _) = Unix.mktime temp_with_min in
@@ -114,7 +116,8 @@ let month_reminders timestamp =
                   if duration_s = "*" then 0.0
                   else float_of_string duration_s
                in
-               build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg) :: timed) untimed
+               build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg, 
+                             filename, line_num_s) :: timed) untimed
          end else
             (* if there was no regexp match, continue with next line *)
             build_lists timed untimed
@@ -134,12 +137,12 @@ let month_reminders timestamp =
  * the month *)
 let count_reminders timed untimed =
    let rem_counts = Array.make 31 0 in
-   let count_timed (start, _, _) =
+   let count_timed (start, _, _, _, _) =
       let tm = Unix.localtime start in
       let day = pred tm.Unix.tm_mday in
       rem_counts.(day) <- succ rem_counts.(day)
    in
-   let count_untimed (start, _) =
+   let count_untimed (start, _, _, _) =
       let tm = Unix.localtime start in
       let day = pred tm.Unix.tm_mday in
       rem_counts.(day) <- succ rem_counts.(day)

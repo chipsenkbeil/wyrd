@@ -153,8 +153,8 @@ let draw_timed iface reminders =
       if x >= 0.0 then int_of_float x
       else pred (int_of_float x)
    in
-   let is_drawn = Array.make iface.scr.tw_lines false in
-   let messages = Array.make iface.scr.tw_lines None in
+   let is_drawn  = Array.make iface.scr.tw_lines false in
+   let file_line = Array.make iface.scr.tw_lines None in
    let blank = String.make iface.scr.tw_cols ' ' in
    wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
    let top_tm = Unix.localtime iface.top_timestamp in
@@ -165,7 +165,7 @@ let draw_timed iface reminders =
         Unix.tm_hour = 0
    } in
    let (_, before_midnight) = Unix.mktime temp in
-   let process_reminder (start, finish, msg) =
+   let process_reminder (start, finish, msg, filename, line_num) =
       let rem_top_line =
          round_down ((start -. iface.top_timestamp) /. (time_inc iface))
       in
@@ -185,8 +185,8 @@ let draw_timed iface reminders =
             wattron iface.scr.timed_win WA.underline
          else
             wattroff iface.scr.timed_win WA.underline;
-         is_drawn.(rem_top_line) <- true;
-         messages.(rem_top_line) <- Some msg;
+         is_drawn.(rem_top_line)  <- true;
+         file_line.(rem_top_line) <- Some (filename, line_num);
          assert (mvwaddstr iface.scr.timed_win rem_top_line 2 s)
       end else
          ();
@@ -212,8 +212,8 @@ let draw_timed iface reminders =
             else
                wattroff iface.scr.timed_win WA.underline;
             if not is_drawn.(rem_top_line + !count) then begin
-               is_drawn.(rem_top_line + !count) <- true;
-               messages.(rem_top_line + !count) <- Some msg;
+               is_drawn.(rem_top_line + !count)  <- true;
+               file_line.(rem_top_line + !count) <- Some (filename, line_num);
                assert (mvwaddstr iface.scr.timed_win (rem_top_line + !count) 2 s)
             end else
                ();
@@ -246,7 +246,7 @@ let draw_timed iface reminders =
    done;
    wattroff iface.scr.timed_win (WA.reverse lor WA.underline);
    assert (wnoutrefresh iface.scr.timed_win);
-   {iface with timed_messages = messages}
+   {iface with timed_file_line = file_line}
 
 
 

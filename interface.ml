@@ -62,7 +62,8 @@ type interface_state_t = {
    left_selection  : int;                 (* controls which element of the left window is selected *)
    right_selection : int;                 (* controls which element of the right window is selected *)
    zoom_level      : zoom_t;              (* controls the resolution of the timed window *)
-   timed_messages  : string option array  (* keeps track of what MSG is associated with each line of the timed window *)
+   timed_file_line : (string * string) option array (* keeps track of the reminder filename and line number associated *)
+                                                    (* with each line of timed win *)
 }
    
 
@@ -99,7 +100,7 @@ let make (std : screen_t) =
       left_selection  = 1;
       right_selection = 0;
       zoom_level      = Hour;
-      timed_messages  = Array.make std.tw_lines None
+      timed_file_line = Array.make std.tw_lines None
    }
                                                
 
