@@ -1,0 +1,197 @@
+(*  Orpie -- a fullscreen RPN calculator for the console
+ *  Copyright (C) 2003-2004  Paul Pelzl
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License, Version 2,
+ *  as published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *  Please send bug reports, patches, etc. to Paul Pelzl at 
+ *  <pelzlpj@eecs.umich.edu>.
+ *)
+
+(* interface_main.ml
+ * This file has the bulk of the implementation of the curses-based interface,
+ * including the main program loop that grabs keypresses and processes them.
+ * The screen rendering code is found in interface_draw.ml . *)
+
+open Curses;;
+open Printf;;
+open Interface;;
+
+
+exception Interrupt_exception;;
+
+
+
+(*******************************************************************)
+(* RESIZE HANDLER                                                  *)
+(*******************************************************************)
+
+
+(* create the (new) windows corresponding to the different areas of the screen *)
+let create_windows screen =
+   let height, width  = get_size () in
+   let cal_height     = 20
+   and cal_width      = 30 in
+   let msg_height     = 2 in
+   let timed_height   = height - 1 - msg_height
+   and timed_width    = width - cal_width
+   and untimed_height = height - 1 - msg_height - cal_height
+   and untimed_width  = cal_width in
+   if height >= 24 then 
+      if width >= 80 then {
+         stdscr       = screen;
+         lines        = height;
+         cols         = width;
+         help_win     = newwin 1 width 0 0;
+         hw_cols      = width;
+         timed_win    = newwin timed_height timed_width 1 0;
+         tw_lines     = timed_height;
+         tw_cols      = timed_width;
+         calendar_win = newwin cal_height cal_width 1 timed_width;
+         cw_lines     = cal_height;
+         cw_cols      = cal_width;
+         untimed_win  = newwin untimed_height untimed_width (1 + cal_height)
+                        timed_width;
+         uw_lines     = untimed_height;
+         uw_cols      = untimed_width;
+         msg_win      = newwin msg_height (width - 1) (1 + timed_height) 0;
+         mw_lines     = msg_height;
+         mw_cols      = width - 1
+      }
+      else
+         (endwin ();
+         failwith "Remic requires at least an 80 column window.")
+   else
+      (endwin (); 
+      failwith "Remic requires at least a 24 line window.");;
+
+
+(* resize the various windows to fit the new terminal size *)
+(*
+let resize_subwins scr =
+   let height, width = get_size () in
+   if height >= 24 then 
+      if width >= 80 then
+         begin
+            scr.lines <- height;
+            scr.cols <- width;
+            begin match scr.help_win with
+            |None ->
+               scr.help_win <- Some (newwin (height - 2) 40 0 0)
+            |Some win ->
+               assert (wresize win (height - 2) 40);
+            end;
+            scr.hw_lines <- height - 2;
+            scr.hw_cols <- 40;
+            assert (wresize scr.stack_win (height - 2) 40);
+            assert (mvwin scr.stack_win 0 40);
+            scr.sw_lines <- height - 2;
+            scr.sw_cols <- 40;
+            assert (wresize scr.entry_win 2 80);
+            assert (mvwin scr.entry_win (height - 2) 0);
+            scr.ew_lines <- 2;
+            scr.ew_cols <- 80
+         end
+      else if width >= 40 then
+         (* only the stack window is provided *)
+         begin
+            scr.lines <- height;
+            scr.cols <- width;
+            begin match scr.help_win with
+            |None ->
+               ()
+            |Some win ->
+               assert (delwin win);
+               scr.help_win <- None;
+            end;
+            scr.hw_lines <- 0;
+            scr.hw_cols <- 0;
+            assert (wresize scr.stack_win (height - 2) 40);
+            assert (mvwin scr.stack_win 0 0);
+            scr.sw_lines <- height - 2;
+            scr.sw_cols <- 40;
+            assert (wresize scr.entry_win 2 40);
+            assert (mvwin scr.entry_win (height - 2) 0);
+            scr.ew_lines <- 2;
+            scr.ew_cols <- 40
+         end
+      else
+         (endwin ();
+         failwith "Orpie requires at least a 40 column window.")
+   else
+      (endwin (); 
+      failwith "Orpie requires at least a 24 line window.");;
+ *)
+
+
+(* refresh the screen *)
+let handle_refresh (iface : interface_state_t) =
+   let _ = touchwin iface.scr.help_win in
+   let _ = touchwin iface.scr.timed_win in
+   let _ = touchwin iface.scr.calendar_win in
+   let _ = touchwin iface.scr.untimed_win in
+   let _ = touchwin iface.scr.msg_win in ()
+   (* call window drawing code *)
+
+
+(*
+(* handle a terminal resize *)
+let handle_resize (iface : interface_state_t) =
+   (* reset ncurses *)
+   endwin ();
+   assert (refresh ());
+   let rows, cols = get_size () in
+   resize_subwins iface.scr;
+   handle_refresh iface;;
+ *)
+
+let handle_keypress key iface = ()
+
+let do_main_loop (iface : interface_state_t) =
+   while iface.run_remic do
+      let key = wgetch iface.scr.msg_win in
+      (* using the ncurses SIGWINCH handler to catch window resize events *)
+      if key = Key.resize then
+         ()
+         (* handle_resize iface *)
+      else
+         handle_keypress key iface
+   done
+
+
+(* initialize the interface and begin the main loop *)
+let run (iface : interface_state_t) =
+   assert (keypad iface.scr.msg_win true);
+
+   (*
+   begin
+      try
+         iface.calc#set_state (Statefile.load_state ());
+         draw_stack iface;
+         draw_help iface;
+         draw_update_entry iface;
+      with
+         Invalid_argument err ->
+            draw_stack iface;
+            draw_help iface;
+            draw_error iface err;
+            draw_update_entry iface
+   end;
+    *)
+   do_main_loop iface
+        
+
+
+
+
+(* arch-tag: DO_NOT_CHANGE_b4519dd2-7e94-4cbf-931a-bb5f97445cbf *)
