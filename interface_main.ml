@@ -139,13 +139,18 @@ let resize_subwins scr =
 
 
 (* refresh the screen *)
-let handle_refresh (iface : interface_state_t) =
+let handle_refresh (iface : interface_state_t) reminders =
    let _ = touchwin iface.scr.help_win in
    let _ = touchwin iface.scr.timed_win in
    let _ = touchwin iface.scr.calendar_win in
    let _ = touchwin iface.scr.untimed_win in
-   let _ = touchwin iface.scr.msg_win in ()
-   (* call window drawing code *)
+   let _ = touchwin iface.scr.msg_win in 
+   draw_help iface;
+   let new_iface = draw_timed iface reminders.Remind.all_timed in
+   draw_date_strip new_iface;
+   draw_calendar new_iface reminders;
+   (new_iface, reminders)
+   
 
 
 (*
@@ -171,7 +176,7 @@ let handle_selection_change iface reminders =
 
 
 (* Handle keyboard input and update the display appropriately *)
-let handle_keypress key iface reminders =
+let handle_keypress key (iface : interface_state_t) reminders =
    if key = int_of_char 'j' then begin
       begin match iface.selected_side with
       |Left ->
@@ -252,12 +257,14 @@ let handle_keypress key iface reminders =
       let fl = iface.timed_file_line.(iface.left_selection) in
       begin match fl with
       |None ->
-         ()
+         (iface, reminders)
       |Some (filename, line_num) -> 
          let command = "vi +" ^ line_num ^ " " ^ filename in
-         let _ = Unix.system command in ()
-      end;
-      (iface, reminders)
+         endwin();
+         let _ = Unix.system command in 
+         assert (curs_set 0);
+         handle_refresh iface reminders;
+      end
    end else
       (iface, reminders)
 
