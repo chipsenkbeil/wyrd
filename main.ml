@@ -22,6 +22,10 @@ open Interface;;
 open Curses;;
 
 
+(* load run configuration file *)
+Rcfile.process_rcfile None;;
+
+
 let initialize_screen () =
    let std = initscr () in
    assert (start_color ());

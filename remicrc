@@ -1,0 +1,26 @@
+# remic run-configuration file
+
+bind "j"                 scroll_down
+bind "<down>"            scroll_down
+bind "k"                 scroll_up
+bind "<up>"              scroll_up
+bind "h"                 switch_window
+bind "l"                 switch_window
+bind "<left>"            switch_window
+bind "<right>"           switch_window
+bind "<pageup>"          previous_day
+bind "4"                 previous_day
+bind "<pagedown>"        next_day
+bind "6"                 next_day
+bind "8"                 previous_week
+bind "2"                 next_week
+bind "<home>"            home
+bind "z"                 zoom
+bind "<return>"          edit
+bind "t"                 new_timed
+bind "u"                 new_untimed
+bind "Q"                 quit
+
+
+
+# arch-tag: DO_NOT_CHANGE_ee9bb855-2fde-4a61-8645-8ba31b35eaab 
