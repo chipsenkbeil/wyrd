@@ -261,6 +261,99 @@ let handle_scrollup_untimed (iface : interface_state_t) reminders =
       (iface, reminders)
 
 
+(* handle a zoom keypress *)
+let handle_zoom (iface : interface_state_t) reminders =
+   let new_iface = 
+      let curr_ts = timestamp_of_line iface iface.left_selection in
+      let curr_tm = Unix.localtime curr_ts in
+      let hour_tm = {
+         curr_tm with Unix.tm_sec = 0;
+                      Unix.tm_min = 0
+      } in
+      let (hour_ts, _) = Unix.mktime hour_tm in
+      match iface.zoom_level with
+      |Hour ->
+         let new_top = curr_ts -. (60.0 *. 30.0 *. 
+                       (float_of_int iface.left_selection)) in {
+            iface with top_timestamp = new_top;
+                       zoom_level    = HalfHour
+         }
+      |HalfHour ->
+         let new_top = curr_ts -. (60.0 *. 15.0 *. 
+                       (float_of_int iface.left_selection)) in {
+            iface with top_timestamp = new_top;
+                       zoom_level    = QuarterHour
+         }
+      |QuarterHour ->
+         let new_top = hour_ts -. (60.0 *. 60.0 *. 
+                       (float_of_int iface.left_selection)) in {
+            iface with top_timestamp = new_top;
+                       zoom_level    = Hour
+         }
+   in
+   let final_iface = draw_timed new_iface reminders.Remind.all_timed in
+   draw_date_strip final_iface;
+   (final_iface, reminders)
+
+
+(* handle switching window focus *)
+let handle_switch_focus (iface : interface_state_t) reminders =
+   if iface.len_untimed > 0 then
+      let new_iface = 
+         match iface.selected_side with
+         |Left  -> {iface with selected_side = Right}
+         |Right -> {iface with selected_side = Left}
+      in
+      handle_selection_change new_iface reminders
+   else
+      (iface, reminders)
+
+
+(* handle switching to the current timeslot *)
+let handle_home (iface : interface_state_t) reminders =
+   let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
+   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
+   let new_iface = {
+      iface with top_timestamp  = rounded_time;
+                 left_selection = 1
+   } in
+   handle_selection_change new_iface reminders
+
+
+(* handle editing the selected reminder *)
+let handle_edit (iface : interface_state_t) reminders =
+   let fl = iface.timed_lineinfo.(iface.left_selection) in
+   begin match fl with
+   |None ->
+      (iface, reminders)
+   |Some (filename, line_num, msg) -> 
+      let command = "vi +" ^ line_num ^ " " ^ filename in
+      endwin();
+      let _ = Unix.system command in 
+      assert (curs_set 0);
+      handle_refresh iface reminders;
+   end
+
+
+(* handle creation of a new timed reminder *)
+let handle_new_timed (iface : interface_state_t) reminders =
+   let ts = timestamp_of_line iface iface.left_selection in
+   let tm = Unix.localtime ts in
+   let remline = 
+      Printf.sprintf "REM %s %d %d AT %.2d:%.2d DURATION 1:00 MSG "
+         (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
+         (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
+   in
+   let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
+   "/home/paul/.reminders" in
+   output_string remfile_channel remline;
+   close_out remfile_channel;
+   let command = "vi -c '$' ~/.reminders" in
+   endwin();
+   let _ = Unix.system command in 
+   assert (curs_set 0);
+   handle_refresh iface reminders
+
 
 (* Handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
@@ -274,84 +367,15 @@ let handle_keypress key (iface : interface_state_t) reminders =
       |Right -> handle_scrollup_untimed iface reminders
       end
    end else if key = int_of_char 'z' then begin
-      let new_iface = 
-         let curr_ts = timestamp_of_line iface iface.left_selection in
-         let curr_tm = Unix.localtime curr_ts in
-         let hour_tm = {
-            curr_tm with Unix.tm_sec = 0;
-                         Unix.tm_min = 0
-         } in
-         let (hour_ts, _) = Unix.mktime hour_tm in
-         match iface.zoom_level with
-         |Hour ->
-            let new_top = curr_ts -. (60.0 *. 30.0 *. 
-                          (float_of_int iface.left_selection)) in {
-               iface with top_timestamp = new_top;
-                          zoom_level    = HalfHour
-            }
-         |HalfHour ->
-            let new_top = curr_ts -. (60.0 *. 15.0 *. 
-                          (float_of_int iface.left_selection)) in {
-               iface with top_timestamp = new_top;
-                          zoom_level    = QuarterHour
-            }
-         |QuarterHour ->
-            let new_top = hour_ts -. (60.0 *. 60.0 *. 
-                          (float_of_int iface.left_selection)) in {
-               iface with top_timestamp = new_top;
-                          zoom_level    = Hour
-            }
-      in
-      let final_iface = draw_timed new_iface reminders.Remind.all_timed in
-      draw_date_strip final_iface;
-      (final_iface, reminders)
+      handle_zoom iface reminders
    end else if key = int_of_char 'h' || key = int_of_char 'l' then begin
-      if iface.len_untimed > 0 then
-         let new_iface = 
-            match iface.selected_side with
-            |Left  -> {iface with selected_side = Right}
-            |Right -> {iface with selected_side = Left}
-         in
-         handle_selection_change new_iface reminders
-      else
-         (iface, reminders)
+      handle_switch_focus iface reminders
    end else if key = Key.home then begin
-      let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
-      let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
-      let new_iface = {
-         iface with top_timestamp  = rounded_time;
-                    left_selection = 1
-      } in
-      handle_selection_change new_iface reminders
+      handle_home iface reminders
    end else if key = 10 then begin
-      let fl = iface.timed_lineinfo.(iface.left_selection) in
-      begin match fl with
-      |None ->
-         (iface, reminders)
-      |Some (filename, line_num, msg) -> 
-         let command = "vi +" ^ line_num ^ " " ^ filename in
-         endwin();
-         let _ = Unix.system command in 
-         assert (curs_set 0);
-         handle_refresh iface reminders;
-      end
+      handle_edit iface reminders
    end else if key = int_of_char 't' then begin
-      let ts = timestamp_of_line iface iface.left_selection in
-      let tm = Unix.localtime ts in
-      let remline = 
-         Printf.sprintf "REM %s %d %d AT %.2d:%.2d DURATION 1:00 MSG "
-            (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
-            (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
-      in
-      let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
-      "/home/paul/.reminders" in
-      output_string remfile_channel remline;
-      close_out remfile_channel;
-      let command = "vi -c '$' ~/.reminders" in
-      endwin();
-      let _ = Unix.system command in 
-      assert (curs_set 0);
-      handle_refresh iface reminders
+      handle_new_timed iface reminders
    end else
       (iface, reminders)
 
