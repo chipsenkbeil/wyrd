@@ -173,6 +173,10 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
+            if new_reminders <> reminders then
+               draw_calendar new_iface new_reminders
+            else
+               ();
             (new_iface, new_reminders)
          end else begin
             let second_timestamp = timestamp_of_line iface 1 in
@@ -183,6 +187,10 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
+            if new_reminders <> reminders then
+               draw_calendar new_iface new_reminders
+            else
+               ();
             (new_iface, new_reminders)
          end
       |Right ->
@@ -199,6 +207,10 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
+            if new_reminders <> reminders then
+               draw_calendar new_iface new_reminders
+            else
+               ();
             (new_iface, new_reminders)
          end else begin
             let prev_timestamp = timestamp_of_line iface (-1) in
@@ -209,6 +221,10 @@ let handle_keypress key iface reminders =
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
             draw_date_strip new_iface;
+            if new_reminders <> reminders then
+               draw_calendar new_iface new_reminders
+            else
+               ();
             (new_iface, new_reminders)
          end
       |Right ->
@@ -271,6 +287,7 @@ let run (iface : interface_state_t) =
    draw_help iface;
    draw_date_strip iface;
    draw_timed iface reminders.Remind.all_timed;
+   draw_calendar iface reminders;
    assert (doupdate ());
    do_main_loop iface reminders
         

@@ -27,6 +27,11 @@ open Interface
 open Curses
 open Remind
 
+type cal_t = {
+   title    : string;
+   weekdays : string;
+   days     : string list
+}
 
 
 
@@ -220,6 +225,110 @@ let draw_timed iface reminders =
    done;
    wattroff iface.scr.timed_win WA.reverse;
    assert (wnoutrefresh iface.scr.timed_win)
+
+
+
+(* use cal(1) to create a calendar record for the desired timestamp *)
+let make_cal timestamp =
+   let month_s = string_of_int (succ timestamp.Unix.tm_mon)
+   and year_s  = string_of_int (timestamp.Unix.tm_year + 1900) in
+   let command = "cal " ^ month_s ^ " " ^ year_s in
+   let cal_channel = Unix.open_process_in command in
+   let rec add_lines day_lines =
+      try
+         let line = input_line cal_channel in
+         add_lines (line :: day_lines)
+      with End_of_file ->
+         close_in cal_channel;
+         List.rev day_lines
+   in 
+   let t  = input_line cal_channel in
+   let wd = input_line cal_channel in
+   let d  = add_lines [] in {
+      title    = t;
+      weekdays = wd;
+      days     = d
+   }
+
+
+(* render a calendar for the given reminders record *)
+let draw_calendar (iface : interface_state_t) 
+       (reminders : three_month_rem_t) : unit =
+   (* count the number of reminders for each day in the month *)
+   let rem_counts = Array.make 31 0 in
+   let count_timed (start, _, _) =
+      let ts = Unix.localtime start in
+      let day = pred ts.Unix.tm_mday in
+      rem_counts.(day) <- succ rem_counts.(day)
+   in
+   let count_untimed (start, _) =
+      let ts = Unix.localtime start in
+      let day = pred ts.Unix.tm_mday in
+      rem_counts.(day) <- succ rem_counts.(day)
+   in
+   List.iter count_timed reminders.curr_timed;
+   List.iter count_untimed reminders.curr_untimed;
+   let cal = make_cal reminders.curr_timestamp in
+   (* draw the title and weekdays *)
+   assert (wmove iface.scr.calendar_win 1 1);
+   wclrtoeol iface.scr.calendar_win;
+   wattron iface.scr.calendar_win WA.bold;
+   assert (waddstr iface.scr.calendar_win cal.title);
+   wattroff iface.scr.calendar_win WA.bold;
+   assert (wmove iface.scr.calendar_win 2 1);
+   wclrtoeol iface.scr.calendar_win;
+   assert (waddstr iface.scr.calendar_win cal.weekdays);
+   (* draw the day numbers *)
+   let ws = Str.regexp " " in
+   let rec draw_week weeks line =
+      match weeks with
+      | [] ->
+         assert (wmove iface.scr.calendar_win line 1);
+         wclrtoeol iface.scr.calendar_win
+      | week :: tail ->
+         let split_week = Str.full_split ws week in
+         assert (wmove iface.scr.calendar_win line 1);
+         wclrtoeol iface.scr.calendar_win;
+         let rec draw_el elements =
+            match elements with
+            | [] ->
+               ()
+            | el :: days ->
+               begin match el with
+               |Str.Delim s -> 
+                  assert (waddstr iface.scr.calendar_win s)
+               |Str.Text d ->
+                  let day = pred (int_of_string d) in
+                  if rem_counts.(day) = 0 then
+                     assert (waddstr iface.scr.calendar_win d)
+                  else if rem_counts.(day) < 3 then begin
+                     wattron iface.scr.calendar_win (WA.color_pair 7);
+                     assert (waddstr iface.scr.calendar_win d);
+                     wattroff iface.scr.calendar_win (WA.color_pair 7)
+                  end else if rem_counts.(day) < 6 then begin
+                     wattron iface.scr.calendar_win ((WA.color_pair 7) lor WA.bold);
+                     assert (waddstr iface.scr.calendar_win d);
+                     wattroff iface.scr.calendar_win ((WA.color_pair 7) lor WA.bold)
+                  end else if rem_counts.(day) < 9 then begin
+                     wattron iface.scr.calendar_win (WA.color_pair 9);
+                     assert (waddstr iface.scr.calendar_win d);
+                     wattroff iface.scr.calendar_win (WA.color_pair 9)
+                  end else begin
+                     wattron iface.scr.calendar_win ((WA.color_pair 9) lor WA.bold);
+                     assert (waddstr iface.scr.calendar_win d);
+                     wattroff iface.scr.calendar_win ((WA.color_pair 9) lor WA.bold)
+                  end
+               end;
+               draw_el days
+         in
+         draw_el split_week;
+         draw_week tail (succ line)
+   in
+   draw_week cal.days 3;
+   assert (wnoutrefresh iface.scr.calendar_win)
+
+
+
 
 
 
