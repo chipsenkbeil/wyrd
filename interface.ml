@@ -54,16 +54,18 @@ type side_t = Left | Right
 
 (* everything you need to know about the interface state goes in this variable *)
 type interface_state_t = {
-   version         : string;              (* program version string *)
-   scr             : screen_t;            (* curses screen with two or three subwindows *)
-   run_remic       : bool;                (* exit when run_remic becomes false *)
-   top_timestamp   : float;               (* controls what portion of the schedule is viewable *)
-   selected_side   : side_t;              (* controls which window has the focus *)
-   left_selection  : int;                 (* controls which element of the left window is selected *)
-   right_selection : int;                 (* controls which element of the right window is selected *)
-   zoom_level      : zoom_t;              (* controls the resolution of the timed window *)
-   timed_file_line : (string * string) option array (* keeps track of the reminder filename and line number associated *)
-                                                    (* with each line of timed win *)
+   version           : string;              (* program version string *)
+   scr               : screen_t;            (* curses screen with two or three subwindows *)
+   run_remic         : bool;                (* exit when run_remic becomes false *)
+   top_timestamp     : float;               (* controls what portion of the schedule is viewable *)
+   top_untimed       : int;                 (* controls what portion of untimed reminders are viewable *)
+   selected_side     : side_t;              (* controls which window has the focus *)
+   left_selection    : int;                 (* controls which element of the left window is selected *)
+   right_selection   : int;                 (* controls which element of the right window is selected *)
+   zoom_level        : zoom_t;              (* controls the resolution of the timed window *)
+   timed_file_line   : (string * string) option array; (* keeps track of the reminder filename and line number associated *)
+                                                       (* with each line of the timed schedule *) 
+   untimed_file_line : (string * string) option array; (* same as above, for untimed win *)
 }
    
 
@@ -92,15 +94,17 @@ let round_time zoom t =
 let make (std : screen_t) =
    let curr_time = Unix.localtime ((Unix.time ()) -. 60. *. 60.) in
    let (rounded_time, _) = Unix.mktime (round_time Hour curr_time) in {
-      version         = Version.version;
-      scr             = std;
-      run_remic       = true;
-      top_timestamp   = rounded_time;
-      selected_side   = Left;
-      left_selection  = 1;
-      right_selection = 0;
-      zoom_level      = Hour;
-      timed_file_line = Array.make std.tw_lines None
+      version           = Version.version;
+      scr               = std;
+      run_remic         = true;
+      top_timestamp     = rounded_time;
+      top_untimed       = 0;
+      selected_side     = Left;
+      left_selection    = 1;
+      right_selection   = 0;
+      zoom_level        = Hour;
+      timed_file_line   = Array.make std.tw_lines None;
+      untimed_file_line = Array.make std.uw_lines None
    }
                                                
 

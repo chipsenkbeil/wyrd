@@ -149,6 +149,7 @@ let handle_refresh (iface : interface_state_t) reminders =
    let new_iface = draw_timed iface reminders.Remind.all_timed in
    draw_date_strip new_iface;
    draw_calendar new_iface reminders;
+   draw_untimed new_iface reminders.Remind.curr_untimed;
    (new_iface, reminders)
    
 
@@ -172,6 +173,7 @@ let handle_selection_change iface reminders =
    let new_iface = draw_timed iface new_reminders.Remind.all_timed in
    draw_date_strip new_iface;
    draw_calendar new_iface new_reminders;
+   draw_untimed new_iface new_reminders.Remind.curr_untimed;
    (new_iface, new_reminders)
 
 
@@ -315,6 +317,7 @@ let run (iface : interface_state_t) =
    draw_date_strip iface;
    let new_iface = draw_timed iface reminders.Remind.all_timed in
    draw_calendar new_iface reminders;
+   draw_untimed new_iface reminders.Remind.curr_untimed;
    assert (doupdate ());
    do_main_loop new_iface reminders
         

@@ -28,6 +28,18 @@ open Curses
 open Remind
 
 
+(* Draw a string in a specified window and location, using exactly 'len'
+ * characters and truncating with ellipses if necessary. *)
+let trunc_mvwaddstr win line col len s =
+   let fixed_s =
+      if String.length s <= len then
+         let pad = String.make (len - (String.length s)) ' ' in
+         s ^ pad
+      else
+         (Str.string_before s (len - 3)) ^ "..."
+   in
+   assert (mvwaddstr win line col fixed_s)
+
 
 (* Draw the one-line help window at the top of the screen *)
 let draw_help (iface : interface_state_t) =
@@ -174,8 +186,6 @@ let draw_timed iface reminders =
          let ts = timestamp_of_line iface rem_top_line in
          let tm = Unix.localtime ts in
          let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
-         (* FIXME: add ellipses if truncation occurs *)
-         let s = Str.string_before (ts_str ^ msg ^ blank) (iface.scr.tw_cols - 2) in
          if rem_top_line = iface.left_selection then
             wattron iface.scr.timed_win WA.reverse
          else
@@ -187,7 +197,8 @@ let draw_timed iface reminders =
             wattroff iface.scr.timed_win WA.underline;
          is_drawn.(rem_top_line)  <- true;
          file_line.(rem_top_line) <- Some (filename, line_num);
-         assert (mvwaddstr iface.scr.timed_win rem_top_line 2 s)
+         trunc_mvwaddstr iface.scr.timed_win rem_top_line 2 (iface.scr.tw_cols - 2) 
+            (ts_str ^ msg)
       end else
          ();
       (* draw any remaining lines of this reminder, as determined by the duration *)
@@ -322,6 +333,60 @@ let draw_calendar (iface : interface_state_t)
    in
    draw_week cal.days (vspacer + 2);
    assert (wnoutrefresh iface.scr.calendar_win)
+
+
+
+(* Draw the untimed reminders window *)
+let draw_untimed (iface : interface_state_t) reminders =
+   let untimed_file_line = Array.make iface.scr.uw_lines None in
+   let blank = String.make iface.scr.uw_cols ' ' in
+   let curr_ts = Unix.localtime (timestamp_of_line iface iface.left_selection) in
+   let temp1 = {
+      curr_ts with Unix.tm_sec  = 0;
+                   Unix.tm_min  = 0;
+                   Unix.tm_hour = 0
+   } in
+   let temp2 = {
+      curr_ts with Unix.tm_sec  = 0;
+                   Unix.tm_min  = 0;
+                   Unix.tm_hour = 0;
+                   Unix.tm_mday = succ curr_ts.Unix.tm_mday 
+   } in
+   let (day_start_ts, _) = Unix.mktime temp1 in
+   let (day_end_ts, _)   = Unix.mktime temp2 in
+   werase iface.scr.untimed_win;
+   let acs = get_acs_codes () in
+   wattron iface.scr.untimed_win ((WA.color_pair 5) lor WA.bold);
+   assert (mvwaddch iface.scr.untimed_win 0 0 acs.Acs.ltee);
+   mvwhline iface.scr.untimed_win 0 1 acs.Acs.hline (pred iface.scr.uw_cols);
+   mvwvline iface.scr.untimed_win 1 0 acs.Acs.vline (pred iface.scr.uw_lines);
+   wattroff iface.scr.untimed_win (WA.color_pair 5);
+   (* Filter the reminders list to find only those corresponding to the
+    * selected day *)
+   let is_current (rem_ts, msg, filename, line_num) =
+      rem_ts >= day_start_ts && rem_ts < day_end_ts
+   in
+   let today_reminders = List.filter is_current reminders in
+   let rec render_lines rem_list n line =
+      match rem_list with
+      |[] ->
+         ()
+      |(rem_ts, msg, filename, line_num) :: tail ->
+         if line < iface.scr.uw_lines then
+            if n >= iface.top_untimed then begin
+               trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 2) 
+                  ("* " ^ msg);
+               untimed_file_line.(line) <- Some (filename, line_num);
+               render_lines tail (succ n) (succ line)
+            end else
+               render_lines tail (succ n) line
+         else
+            ()
+   in
+   render_lines today_reminders 0 2;
+   wattroff iface.scr.untimed_win WA.bold;
+   assert (wnoutrefresh iface.scr.untimed_win)
+
 
 
 
