@@ -27,12 +27,6 @@ open Interface
 open Curses
 open Remind
 
-type cal_t = {
-   title    : string;
-   weekdays : string;
-   days     : string list
-}
-
 
 
 (* Draw the one-line help window at the top of the screen *)
@@ -228,33 +222,11 @@ let draw_timed iface reminders =
 
 
 
-(* use cal(1) to create a calendar record for the desired timestamp *)
-let make_cal timestamp =
-   let month_s = string_of_int (succ timestamp.Unix.tm_mon)
-   and year_s  = string_of_int (timestamp.Unix.tm_year + 1900) in
-   let command = "cal " ^ month_s ^ " " ^ year_s in
-   let cal_channel = Unix.open_process_in command in
-   let rec add_lines day_lines =
-      try
-         let line = input_line cal_channel in
-         add_lines (line :: day_lines)
-      with End_of_file ->
-         close_in cal_channel;
-         List.rev day_lines
-   in 
-   let t  = input_line cal_channel in
-   let wd = input_line cal_channel in
-   let d  = add_lines [] in {
-      title    = t;
-      weekdays = wd;
-      days     = d
-   }
-
-
 (* render a calendar for the given reminders record *)
 let draw_calendar (iface : interface_state_t) 
        (reminders : three_month_rem_t) : unit =
-   let cal = make_cal reminders.curr_timestamp in
+   let curr_ts = timestamp_of_line iface iface.left_selection in
+   let cal = reminders.curr_cal in
    assert (wmove iface.scr.calendar_win 1 1);
    wclrtoeol iface.scr.calendar_win;
    wattron iface.scr.calendar_win WA.bold;
@@ -284,7 +256,12 @@ let draw_calendar (iface : interface_state_t)
                   assert (waddstr iface.scr.calendar_win s)
                |Str.Text d ->
                   let day = pred (int_of_string d) in
-                  if reminders.curr_counts.(day) = 0 then
+                  if succ day = curr_ts.Unix.tm_mday then begin
+                     (* highlight selected day *)
+                     wattron iface.scr.calendar_win ((WA.color_pair 2) lor WA.reverse);
+                     assert (waddstr iface.scr.calendar_win d);
+                     wattroff iface.scr.calendar_win ((WA.color_pair 2) lor WA.reverse)
+                  end else if reminders.curr_counts.(day) = 0 then
                      assert (waddstr iface.scr.calendar_win d)
                   else if reminders.curr_counts.(day) < 3 then begin
                      wattron iface.scr.calendar_win (WA.color_pair 7);

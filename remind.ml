@@ -24,6 +24,14 @@
 
 exception String_of_tm_mon_failure of string
 
+
+type cal_t = {
+   title    : string;
+   weekdays : string;
+   days     : string list
+}
+
+
 (* Storage for a three-month window of reminders.
  * Makes it possible to handle edge effects of moving
  * from month to month without constantly calling 'rem'. *)
@@ -37,7 +45,8 @@ type three_month_rem_t = {
    curr_untimed   : (float * string) list;
    next_untimed   : (float * string) list;
    all_untimed    : (float * string) list;
-   curr_counts    : int array
+   curr_counts    : int array;
+   curr_cal       : cal_t
 }
 
 
@@ -108,7 +117,7 @@ let month_reminders timestamp =
             build_lists timed untimed
       with
       | End_of_file ->
-           close_in remind_channel;
+           let _ = Unix.close_process_in remind_channel in
            (timed, untimed)
       | _ ->
            (* if there's an error in regexp matching or string coersion,
@@ -135,6 +144,30 @@ let count_reminders timed untimed =
    List.iter count_timed timed;
    List.iter count_untimed untimed;
    rem_counts
+
+
+(* use cal(1) to create a calendar record for the desired timestamp *)
+let make_cal timestamp =
+   let month_s = string_of_int (succ timestamp.Unix.tm_mon)
+   and year_s  = string_of_int (timestamp.Unix.tm_year + 1900) in
+   let command = "cal " ^ month_s ^ " " ^ year_s in
+   let cal_channel = Unix.open_process_in command in
+   let rec add_lines day_lines =
+      try
+         let line = input_line cal_channel in
+         add_lines (line :: day_lines)
+      with End_of_file ->
+         let _ = Unix.close_process_in cal_channel in
+         List.rev day_lines
+   in 
+   let t  = input_line cal_channel in
+   let wd = input_line cal_channel in
+   let d  = add_lines [] in {
+      title    = t;
+      weekdays = wd;
+      days     = d
+   }
+
 
 
 (* initialize a new three-month reminder record *)
@@ -166,7 +199,8 @@ let create_three_month timestamp =
       curr_untimed   = cu;
       next_untimed   = nu;
       all_untimed    = List.rev_append (List.rev_append cu pu) nu;
-      curr_counts    = count_reminders ct cu
+      curr_counts    = count_reminders ct cu;
+      curr_cal       = make_cal curr_ts
    }
 
 
@@ -195,7 +229,8 @@ let next_month reminders =
       next_untimed   = u;
       all_untimed    = List.rev_append 
                           (List.rev_append reminders.next_untimed reminders.curr_untimed) u;
-      curr_counts    = count_reminders reminders.next_timed reminders.next_untimed
+      curr_counts    = count_reminders reminders.next_timed reminders.next_untimed;
+      curr_cal       = make_cal new_curr_timestamp
    }
 
 
@@ -223,7 +258,8 @@ let prev_month reminders =
       next_untimed   = reminders.curr_untimed;
       all_untimed    = List.rev_append 
                           (List.rev_append reminders.prev_untimed u) reminders.curr_untimed;
-      curr_counts    = count_reminders reminders.prev_timed reminders.prev_untimed
+      curr_counts    = count_reminders reminders.prev_timed reminders.prev_untimed;
+      curr_cal       = make_cal new_curr_timestamp
    }
 
 
