@@ -387,7 +387,7 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
             (tm.Unix.tm_year + 1900)
    in
    let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
-   "/home/paul/.reminders" in
+   (Utility.expand_file !Rcfile.reminders_file) in
    output_string remfile_channel remline;
    close_out remfile_channel;
    let filename_sub = Str.regexp "%f" in
