@@ -60,9 +60,9 @@ let month_reminders timestamp =
             and msg        = Str.matched_group 4 line in
             (* further subdivide the date string *)
             let date_arr = Array.of_list (Str.split (Str.regexp "/") date_s) in
-            let year     = int_of_string date_arr.(0) in
-            let month    = int_of_string date_arr.(1) in
-            let day      = int_of_string date_arr.(2) in
+            let year     = int_of_string date_arr.(0)
+            and month    = int_of_string date_arr.(1)
+            and day      = int_of_string date_arr.(2) in
             let temp = {
                Unix.tm_sec   = 0;
                Unix.tm_min   = 0;
@@ -75,13 +75,13 @@ let month_reminders timestamp =
                Unix.tm_isdst = false
             } in
             if duration_s = "*" then
-               let (_, reminder_timestamp) = Unix.mktime temp in
-               build_lists timed ((reminder_timestamp, msg) :: untimed)
+               let (f_rem_ts, _) = Unix.mktime temp in
+               build_lists timed ((f_rem_ts, msg) :: untimed)
             else
                let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
-               let (_, reminder_timestamp) = Unix.mktime temp_with_min in
-               let duration = int_of_string duration_s in
-               build_lists ((reminder_timestamp, duration, msg) :: timed) untimed
+               let (f_rem_ts, _) = Unix.mktime temp_with_min in
+               let duration = float_of_string duration_s in
+               build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg) :: timed) untimed
          end else
             (* if there was no regexp match, continue with next line *)
             build_lists timed untimed

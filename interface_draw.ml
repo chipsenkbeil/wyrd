@@ -34,7 +34,7 @@ open Remind
 let draw_help (iface : interface_state_t) =
    wattron iface.scr.help_win ((WA.color_pair 1) lor WA.bold lor WA.underline);
    let s = "t:new timed    u:new untimed    <enter>:edit    z:zoom" in
-   let blanks = String.make (iface.scr.hw_cols - (String.length s) - 1) ' ' in
+   let blanks = String.make (iface.scr.hw_cols - (String.length s)) ' ' in
    assert (mvwaddstr iface.scr.help_win 0 0 (s ^ blanks));
    assert (wnoutrefresh iface.scr.help_win)
 
@@ -61,6 +61,7 @@ let draw_date_strip (iface : interface_state_t) =
    let acs = get_acs_codes () in
    wattron iface.scr.timed_win ((WA.color_pair 5) lor WA.bold);
    mvwvline iface.scr.timed_win 0 1 acs.Acs.vline iface.scr.tw_lines;
+   wattroff iface.scr.timed_win (WA.color_pair 5);
    (* determine the line numbers and timestamps of any date changes within the
     * timed window *)
    let rec check_timestamp date_changes timestamp line =
@@ -127,18 +128,84 @@ let draw_date_strip (iface : interface_state_t) =
    (* draw the date string vertically, one character at a time *)
    for i = 0 to pred iface.scr.tw_lines do
       if date_chars.[i] = '-' then begin
-         wattron iface.scr.timed_win ((WA.color_pair 5) lor WA.bold);
+         wattron iface.scr.timed_win (WA.color_pair 5);
          assert (mvwaddch iface.scr.timed_win i 0 acs.Acs.hline);
-         assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.rtee)
+         assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.rtee);
+         wattroff iface.scr.timed_win (WA.color_pair 5);
       end else begin
-         wattron iface.scr.timed_win ((WA.color_pair 4) lor WA.bold);
-         assert (mvwaddch iface.scr.timed_win i 0 (int_of_char date_chars.[i]))
+         wattron iface.scr.timed_win (WA.color_pair 4);
+         assert (mvwaddch iface.scr.timed_win i 0 (int_of_char date_chars.[i]));
+         wattroff iface.scr.timed_win (WA.color_pair 4)
       end
+   done;
+   wattroff iface.scr.timed_win WA.bold;
+   assert (wnoutrefresh iface.scr.timed_win)
+
+
+
+let draw_timed iface reminders =
+   let blank = String.make iface.scr.tw_cols ' ' in
+   for i = 0 to pred iface.scr.tw_lines do
+      if iface.selected_side = Left && i = iface.left_selection then
+         wattron iface.scr.timed_win WA.reverse
+      else
+         wattroff iface.scr.timed_win WA.bold;
+      let temp1 = {
+         iface.top_timestamp with
+           Unix.tm_min = iface.top_timestamp.Unix.tm_min + (i * (time_inc iface))
+      } in
+      let temp2 = {
+         iface.top_timestamp with
+           Unix.tm_min = iface.top_timestamp.Unix.tm_min + ((succ i) * (time_inc iface))
+      } in
+      let (f_curr_ts, curr_ts) = Unix.mktime temp1
+      and (f_next_ts, next_ts) = Unix.mktime temp2 in
+      let ts_str = Printf.sprintf "%.2d:%.2d " curr_ts.Unix.tm_hour curr_ts.Unix.tm_min in
+      let blank_ts = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
+      (* iterate through all of this month's reminders to determine whether anything
+       * special has to be drawn on this line *)
+      let has_msg     = ref false in
+      let has_overlap = ref false in
+      let test_reminder (start, finish, rem_msg) =
+         (* test for start of a timed reminder *)
+         if start >= f_curr_ts && start < f_next_ts then begin
+            wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
+            let s = ts_str ^ rem_msg in
+            let trunc_s = 
+               if String.length s > iface.scr.tw_cols - 3 then
+                  (Str.string_before s (iface.scr.tw_cols - 5)) ^ "..."
+               else
+                  Str.string_before (s ^ blank) (iface.scr.tw_cols - 2)
+            in
+            has_msg := true;
+            assert (mvwaddstr iface.scr.timed_win i 2 trunc_s)
+         (* test for a timed reminder that started earlier, but has duration
+          * carrying it over this timeslot *)
+         end else if (not !has_msg) && start < f_curr_ts && finish > f_curr_ts then begin
+            wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
+            has_overlap := true;
+            assert (mvwaddstr iface.scr.timed_win i 2 blank_ts)
+         end else
+            ()
+      in
+      List.iter test_reminder reminders;
+      if (not !has_msg) && (not !has_overlap) then begin
+         wattron iface.scr.timed_win (WA.color_pair 0);
+         assert (mvwaddstr iface.scr.timed_win i 2 blank_ts)
+      end else
+         ();
+      wattroff iface.scr.timed_win ((WA.color_pair 3) lor WA.bold lor WA.reverse)
    done;
    assert (wnoutrefresh iface.scr.timed_win)
 
 
 
+
+
+
+      
+      
+      
 
 
 

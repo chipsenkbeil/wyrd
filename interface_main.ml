@@ -39,6 +39,9 @@ exception Interrupt_exception;;
 
 
 (* create the (new) windows corresponding to the different areas of the screen *)
+(* note: to get around curses issues with addch on the last character of the
+ * last row, all windows are created one line too long.  The last lines are
+ * never used. (Is this the best way to do things?) *)
 let create_windows screen =
    let height, width  = get_size () in
    let cal_height     = 20
@@ -53,19 +56,19 @@ let create_windows screen =
          stdscr       = screen;
          lines        = height;
          cols         = width;
-         help_win     = newwin 1 width 0 0;
+         help_win     = newwin 2 width 0 0;
          hw_cols      = width;
-         timed_win    = newwin timed_height timed_width 1 0;
+         timed_win    = newwin (succ timed_height) timed_width 1 0;
          tw_lines     = timed_height;
          tw_cols      = timed_width;
-         calendar_win = newwin cal_height cal_width 1 timed_width;
+         calendar_win = newwin (succ cal_height) cal_width 1 timed_width;
          cw_lines     = cal_height;
          cw_cols      = cal_width;
-         untimed_win  = newwin untimed_height untimed_width (1 + cal_height)
+         untimed_win  = newwin (succ untimed_height) untimed_width (1 + cal_height)
                         timed_width;
          uw_lines     = untimed_height;
          uw_cols      = untimed_width;
-         msg_win      = newwin msg_height (width - 1) (1 + timed_height) 0;
+         msg_win      = newwin (succ msg_height) (width - 1) (1 + timed_height) 0;
          mw_lines     = msg_height;
          mw_cols      = width - 1
       }
@@ -172,9 +175,11 @@ let do_main_loop (iface : interface_state_t) =
 
 (* initialize the interface and begin the main loop *)
 let run (iface : interface_state_t) =
-   assert (keypad iface.scr.msg_win true);
+   let (timed, untimed) = Remind.month_reminders (iface.top_timestamp) in
+   assert (keypad iface.scr.help_win true);
    draw_help iface;
    draw_date_strip iface;
+   draw_timed iface timed;
    assert (doupdate ());
    do_main_loop iface
         
