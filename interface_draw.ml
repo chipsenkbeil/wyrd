@@ -154,6 +154,7 @@ let draw_timed iface reminders =
       else pred (int_of_float x)
    in
    let is_drawn = Array.make iface.scr.tw_lines false in
+   let messages = Array.make iface.scr.tw_lines None in
    let blank = String.make iface.scr.tw_cols ' ' in
    wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
    let top_tm = Unix.localtime iface.top_timestamp in
@@ -185,6 +186,7 @@ let draw_timed iface reminders =
          else
             wattroff iface.scr.timed_win WA.underline;
          is_drawn.(rem_top_line) <- true;
+         messages.(rem_top_line) <- Some msg;
          assert (mvwaddstr iface.scr.timed_win rem_top_line 2 s)
       end else
          ();
@@ -211,6 +213,7 @@ let draw_timed iface reminders =
                wattroff iface.scr.timed_win WA.underline;
             if not is_drawn.(rem_top_line + !count) then begin
                is_drawn.(rem_top_line + !count) <- true;
+               messages.(rem_top_line + !count) <- Some msg;
                assert (mvwaddstr iface.scr.timed_win (rem_top_line + !count) 2 s)
             end else
                ();
@@ -242,7 +245,8 @@ let draw_timed iface reminders =
          ()
    done;
    wattroff iface.scr.timed_win (WA.reverse lor WA.underline);
-   assert (wnoutrefresh iface.scr.timed_win)
+   assert (wnoutrefresh iface.scr.timed_win);
+   {iface with timed_messages = messages}
 
 
 

@@ -54,14 +54,15 @@ type side_t = Left | Right
 
 (* everything you need to know about the interface state goes in this variable *)
 type interface_state_t = {
-   version         : string;    (* program version string *)
-   scr             : screen_t;  (* curses screen with two or three subwindows *)
-   run_remic       : bool;      (* exit when run_remic becomes false *)
-   top_timestamp   : float;     (* controls what portion of the schedule is viewable *)
-   selected_side   : side_t;    (* controls which window has the focus *)
-   left_selection  : int;       (* controls which element of the left window is selected *)
-   right_selection : int;       (* controls which element of the right window is selected *)
-   zoom_level      : zoom_t     (* controls the resolution of the timed window *)
+   version         : string;              (* program version string *)
+   scr             : screen_t;            (* curses screen with two or three subwindows *)
+   run_remic       : bool;                (* exit when run_remic becomes false *)
+   top_timestamp   : float;               (* controls what portion of the schedule is viewable *)
+   selected_side   : side_t;              (* controls which window has the focus *)
+   left_selection  : int;                 (* controls which element of the left window is selected *)
+   right_selection : int;                 (* controls which element of the right window is selected *)
+   zoom_level      : zoom_t;              (* controls the resolution of the timed window *)
+   timed_messages  : string option array  (* keeps track of what MSG is associated with each line of the timed window *)
 }
    
 
@@ -97,7 +98,8 @@ let make (std : screen_t) =
       selected_side   = Left;
       left_selection  = 1;
       right_selection = 0;
-      zoom_level      = Hour
+      zoom_level      = Hour;
+      timed_messages  = Array.make std.tw_lines None
    }
                                                
 

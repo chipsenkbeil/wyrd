@@ -161,10 +161,10 @@ let handle_resize (iface : interface_state_t) =
 
 (* Any time a new item is selected, the reminders
  * record needs updating and the screen need redrawing *)
-let handle_selection_change new_iface reminders =
+let handle_selection_change iface reminders =
    let new_reminders = Remind.update_reminders reminders 
-   (timestamp_of_line new_iface new_iface.left_selection) in
-   draw_timed new_iface new_reminders.Remind.all_timed;
+   (timestamp_of_line iface iface.left_selection) in
+   let new_iface = draw_timed iface new_reminders.Remind.all_timed in
    draw_date_strip new_iface;
    draw_calendar new_iface new_reminders;
    (new_iface, new_reminders)
@@ -237,9 +237,9 @@ let handle_keypress key iface reminders =
                           zoom_level    = Hour
             }
       in
-      draw_timed new_iface reminders.Remind.all_timed;
-      draw_date_strip new_iface;
-      (new_iface, reminders)
+      let final_iface = draw_timed new_iface reminders.Remind.all_timed in
+      draw_date_strip final_iface;
+      (final_iface, reminders)
    end else if key = Key.home then begin
       let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
       let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
@@ -277,10 +277,10 @@ let run (iface : interface_state_t) =
    assert (keypad iface.scr.help_win true);
    draw_help iface;
    draw_date_strip iface;
-   draw_timed iface reminders.Remind.all_timed;
-   draw_calendar iface reminders;
+   let new_iface = draw_timed iface reminders.Remind.all_timed in
+   draw_calendar new_iface reminders;
    assert (doupdate ());
-   do_main_loop iface reminders
+   do_main_loop new_iface reminders
         
 
 
