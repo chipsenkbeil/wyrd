@@ -265,6 +265,23 @@ let handle_keypress key (iface : interface_state_t) reminders =
          assert (curs_set 0);
          handle_refresh iface reminders;
       end
+   end else if key = int_of_char 't' then begin
+      let ts = timestamp_of_line iface iface.left_selection in
+      let tm = Unix.localtime ts in
+      let remline = 
+         Printf.sprintf "REM %s %d %d AT %.2d:%.2d DURATION 1:00 MSG "
+            (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
+            (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
+      in
+      let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
+      "/home/paul/.reminders" in
+      output_string remfile_channel remline;
+      close_out remfile_channel;
+      let command = "vi -c '$' ~/.reminders" in
+      endwin();
+      let _ = Unix.system command in 
+      assert (curs_set 0);
+      handle_refresh iface reminders
    end else
       (iface, reminders)
 
@@ -276,10 +293,12 @@ let rec do_main_loop (iface : interface_state_t) reminders =
       let key = wgetch iface.scr.help_win in
       (* using the ncurses SIGWINCH handler to catch window resize events *)
       let new_iface, new_reminders = 
-         if key = Key.resize then
+         if key = Key.resize then begin
             (* handle_resize iface *)
+            Printf.fprintf stderr "Error: window resize not handled yet.\n";
+            flush stderr;
             (iface, reminders)
-         else
+         end else
             handle_keypress key iface reminders
       in
       do_main_loop new_iface new_reminders
