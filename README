@@ -1,0 +1,222 @@
+
+                             Wyrd v0.1.0 README
+
+                                 Paul Pelzl
+
+                               April 4, 2005
+
+
+
+INTRODUCTION
+
+Wyrd is a text-based front-end to Remind, a sophisticated calendar and alarm
+program available from
+http://www.roaringpenguin.com/penguin/open_source_remind.php .  Wyrd serves two
+purposes:
+
+   1) It displays reminders in a day-calendar view suitable for seeing your
+      schedule at a glance.
+
+   2) It makes creating and editing reminders faster.  However, Wyrd does not hide
+      Remind's textfile programmability, for this is what makes Remind a truly
+      powerful program.
+
+Wyrd also requires only a fraction of the resources of most calendar programs
+available today.
+
+Wyrd is Free Software, available under Version 2 of the GNU General Public
+License.  See 'COPYING' for details.
+
+
+
+REQUIREMENTS
+
+Wyrd is written in OCaml, a high-performance functional programming language
+available from http://caml.inria.fr .  Wyrd depends on the following software
+packages:
+
+   * the ncurses library (and development headers)
+   * remind
+   * cal (the standard Unix utility)
+
+
+
+INSTALLATION
+
+From the root of the wyrd-0.1.0 source tree, execute
+
+   ./configure
+   make
+
+Finally, become root and execute
+
+   make install
+
+
+
+USAGE
+
+First off, learn how to use Remind.  Wyrd makes no attempt to hide the details
+of Remind from the user.
+
+Display:
+   At the top of the window is a short (incomplete) list of keybindings.  
+   
+   The left window displays a scrollable day schedule view, with reminders
+   highlighted in blue.  If the DURATION specifier is used for a reminder, the
+   highlighted area will be rendered with an appropriate size.
+   
+   The upper right window displays a month calendar, with the color of each day
+   representing the number of reminders it contains.  The colors range over
+   shades of white -> blue -> magenta as the number of reminders increases.  The
+   selected date is highlighted in cyan.
+
+   The lower right window displays a list of the untimed reminders falling on
+   the selected date.
+
+   The bottom window displays the full text of the MSG for the reminder that is
+   currently selected.
+
+Navigation:
+
+   Scroll up and down the schedule : <up>/<down> or k/j
+   Jump back or forward by a day   : <pageup>/<pagedown> or 4/6
+   Jump back or forward by a week  : 8/2
+   Jump to current date and time   : <home>
+   Switch between schedule and
+      untimed reminders window     : <left>/<right>/h/l
+   Zoom in on the schedule         : z
+
+   Notice that if you have a numeric keypad, the 4/6/8/2 keys will let you move
+   directionally in the month calendar view at the upper-right of the screen.
+
+Editing reminders:
+
+   Note: By default, Wyrd is configured to use the Vim editor for modifying your
+   reminder files.  To use a different editor, see the CONFIGURATION section
+   below.
+
+   If you select a timeslot in the schedule view, then hit 't', you will begin
+   creating a new timed reminder.  Wyrd will open up your reminders file in your
+   favorite editor and move the cursor to the end of the file, where a new
+   reminder template has been created.  The template has the selected date and
+   time filled in, so in many cases you will only need to fill in a MSG value.
+
+   Similarly, hitting 'u' will begin creating an untimed reminder.
+
+   If you select a reminder (either timed or untimed) and hit <enter>, you will
+   begin editing that reminder.  Wyrd will open up the appropriate reminders
+   file in your editor and move the cursor to the appropriate REM line.
+
+
+
+CONFIGURATION
+
+   Many of Wyrd's settings may be controlled by creating a run-configuration
+   file in ~/.wyrdrc.  You may wish to look at the default wyrdrc file, which is
+   probably found in /usr/local/etc .  
+   
+Configuration Commands:
+   
+   The configuration file format supports three commands:
+
+      include <filename string>
+      set <variable>=<value string>
+      bind <key string> <operation>
+
+   The 'include' command will load in another run-configuration file.  When you
+   create a ~/.wyrdrc file, you may want to save some typing by including the
+   system default wyrdrc.  The filename must be formatted as a quoted string.
+
+   The 'set' command is used to set the value of a system variable.  The values
+   must be quoted strings.
+
+   The 'bind' command will bind a keypress to an interface operation.  The
+   keypress must be a quoted string.  In addition to ordinary characters, the
+   following special key strings will be recognized:
+
+      <esc>, <tab>, <enter>, <return>, <insert>, <delete>, <home>, <end>,
+      <pageup>, <pagedown>, <space>, <backspace>, <left>, <right>, <up>,
+      <down>, <f1>-<f12>
+
+   Ctrl and Alt/Meta modifiers may be specified by prefixing the key string with
+   "\\C" or "\\M", respectively.
+
+Configuration Variables:
+
+   The following configuration variables may be set using the 'set' syntax
+   defined above:
+
+      reminders_file   : Controls which Remind file Wyrd will operate on.  The
+                         default is ~/.reminders .
+
+      edit_old_command : Controls the command used to edit a pre-existing
+                         reminder.  The special characters '%f' and '%n' will be
+                         substituted with a filename to edit and a line number
+                         to navigate to within that file.
+
+      edit_new_command : Controls the command used to edit a new reminder.  The
+                         special character '%f' will be substituted with a
+                         filename to edit.  Ideally, this command should move
+                         the cursor to the last line of the file, where the new
+                         reminder template is created.
+
+      busy_level1      : An integer value specifying the maximum number of
+                         reminders in a day colored white on the month calendar.
+      busy_level2      : Same as above, colored blue.
+      busy_level3      : Same as above, colored bold blue.
+      busy_level4      : Same as above, colored magenta.  Any day with more
+                         reminders than this threshold will be colored bold
+                         magenta.
+
+      (For maximum usefulness, busy_level1 < busy_level2 < busy_level3 <
+      busy_level4.)
+
+Bindable Operations:
+
+   The following Wyrd operations may be bound to keypresses using the 'bind'
+   syntax defined above:
+
+      scroll_up        : move cursor up one increment
+      scroll_down      : move cursor down one increment
+      next_day         : jump ahead one day
+      previous_day     : jump backward one day
+      next_week        : jump ahead one week
+      previous_week    : jump backward one week
+      home             : jump to the current date and time
+      zoom             : zoom in on the day schedule view
+      edit             : edit a preexisting reminder
+      new_timed        : create a new timed reminder
+      new_untimed      : create a new untimed reminder
+      switch_window    : switch between the day schedule window on the left,
+                         and the untimed reminder window on the right
+      quit             : exit Wyrd
+
+
+
+ACKNOWLEDGMENTS
+
+   Thanks, of course, to David Skoll for writing such a powerful reminder
+   system.  Thanks also to Nicolas George, who wrote the OCaml curses bindings
+   used within Wyrd.
+
+
+
+CONTACT INFO
+
+   Wyrd is written by Paul Pelzl <pelzlpj@eecs.umich.edu>.  Feel free to contact
+   me with bugs, feature requests, etc.
+
+   Wyrd is maintained with the aid of GNU Arch.  Interested developers are
+   encouraged to track Wyrd development via my public archive:
+
+      pelzlpj@eecs.umich.edu--2005 \
+            http://www-personal.engin.umich.edu/~pelzlpj/tla/2005
+
+
+MISCELLANEOUS
+
+   "Wyrd is a concept in ancient Anglo-saxon and Nordic cultures roughly
+   corresponding to fate."  -- Wikipedia
+
+
