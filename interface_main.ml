@@ -414,6 +414,78 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    handle_refresh new_iface r
 
 
+(* Search forward for the next occurrence of the search regex. *)
+let handle_find_next (iface : interface_state_t) reminders =
+   try
+      (* Note: begin looking *after* the selected timestamp, to prevent
+       * finding the same time over and over again *)
+      let selected_ts = timestamp_of_line iface (succ iface.left_selection) in
+      let occurrence_day = Remind.find_next iface.search_regex selected_ts in
+      let new_reminders = Remind.update_reminders reminders occurrence_day in
+      (* test the untimed reminders list *)
+      let oc_tm = Unix.localtime occurrence_day in
+      Printf.fprintf stderr "found occurrence: %d/%d/%d %.2d:%.2d\n"
+         (oc_tm.Unix.tm_year + 1900) (succ oc_tm.Unix.tm_mon) oc_tm.Unix.tm_mday
+         oc_tm.Unix.tm_hour oc_tm.Unix.tm_min;
+      flush stderr;
+      let rec check_untimed untimed =
+         match untimed with
+         |[] ->
+            Printf.fprintf stderr "check_untimed: not found\n"; flush stderr;
+            let _ = beep () in
+            (iface, reminders)
+         |(ts, msg, _, _) :: tail ->
+            begin try
+               if ts > selected_ts then
+                  let _ = Str.search_forward iface.search_regex msg 0 in
+                  let tm = Unix.localtime ts in
+                  let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
+                  let new_iface = {
+                     iface with top_timestamp   = rounded_time;
+                                left_selection  = 0;
+                                right_selection = 1;
+                                selected_side   = Right
+                  } in
+                  handle_selection_change new_iface new_reminders
+               else
+                  raise Not_found
+            with Not_found ->
+               check_untimed tail
+            end
+      in
+      (* test the timed reminders list *)
+      let rec check_timed timed =
+         match timed with
+         |[] ->
+            Printf.fprintf stderr "check_timed: not found\n"; flush stderr;
+            check_untimed new_reminders.Remind.all_untimed
+         |(ts, _, msg, _, _) :: tail ->
+            begin try
+               if ts > selected_ts then
+                  let _ = Str.search_forward iface.search_regex msg 0 in
+                  let tm = Unix.localtime ts in
+                  let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
+                  let new_iface = {
+                     iface with top_timestamp   = rounded_time;
+                                left_selection  = 0;
+                                right_selection = 1;
+                                selected_side   = Left
+                  } in
+                  handle_selection_change new_iface new_reminders
+               else
+                  raise Not_found
+            with Not_found ->
+               check_timed tail
+            end
+      in
+      check_timed new_reminders.Remind.all_timed
+   with Not_found ->
+      Printf.fprintf stderr "handle_find_next: caught Not_found in Remind.find_next\n"; flush stderr;
+      let _ = beep () in
+      (iface, reminders)
+
+
+
 
 (* Handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
@@ -451,6 +523,8 @@ let handle_keypress key (iface : interface_state_t) reminders =
          handle_new_reminder iface reminders Timed
       |Rcfile.NewUntimed ->
          handle_new_reminder iface reminders Untimed
+      |Rcfile.FindNext ->
+         handle_find_next iface reminders
       |Rcfile.Quit ->
          let new_iface = {iface with run_wyrd = false} in
          (new_iface, reminders)

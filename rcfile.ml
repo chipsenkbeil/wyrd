@@ -33,7 +33,8 @@ let config_failwith s = raise (Config_failure s)
 
 type operation_t = | ScrollUp | ScrollDown | NextDay | PrevDay 
                    | NextWeek | PrevWeek | Home | Zoom | Edit
-                   | NewTimed | NewUntimed | SwitchWindow | Quit
+                   | NewTimed | NewUntimed | SwitchWindow | FindNext 
+                   | Quit
 
 
 (* These hashtables store conversions between curses keys and the operations
@@ -208,6 +209,7 @@ let operation_of_string command_str =
    |"new_timed"     -> NewTimed
    |"new_untimed"   -> NewUntimed
    |"switch_window" -> SwitchWindow
+   |"find_next"     -> FindNext
    |"quit"          -> Quit
    |_               -> config_failwith ("Unknown command name \"" ^ command_str ^ "\"")
    end

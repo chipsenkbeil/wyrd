@@ -33,6 +33,7 @@ bind "<return>"          edit
 bind "<enter>"           edit
 bind "t"                 new_timed
 bind "u"                 new_untimed
+bind "n"                 find_next
 bind "Q"                 quit
 
 

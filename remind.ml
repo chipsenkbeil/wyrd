@@ -24,6 +24,7 @@
 
 exception String_of_tm_mon_failure of string
 exception String_of_tm_wday_failure of string
+exception Occurrence_not_found
 
 
 type cal_t = {
@@ -151,7 +152,7 @@ let month_reminders timestamp =
       with
       | End_of_file ->
            let _ = Unix.close_process_in remind_channel in
-           (timed, List.rev untimed)
+           (List.rev timed, List.rev untimed)
       | _ ->
            (* if there's an error in regexp matching or string coersion,
             * just drop that reminder and go to the next line *)
@@ -203,6 +204,17 @@ let make_cal timestamp =
    }
 
 
+(* comparison functions for sorting reminders chronologically *)
+let cmp_timed rem_a rem_b =
+   let (ts_a, _, _, _, _) = rem_a
+   and (ts_b, _, _, _, _) = rem_b in
+   compare ts_a ts_b
+
+let cmp_untimed rem_a rem_b =
+   let (ts_a, _, _, _) = rem_a
+   and (ts_b, _, _, _) = rem_b in
+   compare ts_a ts_b
+
 
 (* initialize a new three-month reminder record *)
 let create_three_month timestamp =
@@ -228,11 +240,13 @@ let create_three_month timestamp =
       prev_timed     = pt;
       curr_timed     = ct;
       next_timed     = nt;
-      all_timed      = List.rev_append (List.rev_append ct pt) nt;
+      all_timed      = List.fast_sort cmp_timed 
+                          (List.rev_append (List.rev_append ct pt) nt);
       prev_untimed   = pu;
       curr_untimed   = cu;
       next_untimed   = nu;
-      all_untimed    = List.rev_append (List.rev_append cu pu) nu;
+      all_untimed    = List.fast_sort cmp_untimed 
+                          (List.rev_append (List.rev_append cu pu) nu);
       curr_counts    = count_reminders ct cu;
       curr_cal       = make_cal curr_ts
    }
@@ -255,13 +269,13 @@ let next_month reminders =
       prev_timed     = reminders.curr_timed;
       curr_timed     = reminders.next_timed;
       next_timed     = t;
-      all_timed      = List.rev_append 
-                          (List.rev_append reminders.next_timed reminders.curr_timed) t;
+      all_timed      = List.fast_sort cmp_timed (List.rev_append
+                          (List.rev_append reminders.next_timed reminders.curr_timed) t);
       prev_untimed   = reminders.curr_untimed;
       curr_untimed   = reminders.next_untimed;
       next_untimed   = u;
-      all_untimed    = List.rev_append 
-                          (List.rev_append reminders.next_untimed reminders.curr_untimed) u;
+      all_untimed    = List.fast_sort cmp_untimed (List.rev_append 
+                          (List.rev_append reminders.next_untimed reminders.curr_untimed) u);
       curr_counts    = count_reminders reminders.next_timed reminders.next_untimed;
       curr_cal       = make_cal new_curr_timestamp
    }
@@ -283,13 +297,13 @@ let prev_month reminders =
       prev_timed     = t;
       curr_timed     = reminders.prev_timed;
       next_timed     = reminders.curr_timed;
-      all_timed      = List.rev_append 
-                          (List.rev_append reminders.prev_timed t) reminders.curr_timed;
+      all_timed      = List.fast_sort cmp_timed (List.rev_append 
+                          (List.rev_append reminders.prev_timed t) reminders.curr_timed);
       prev_untimed   = u;
       curr_untimed   = reminders.prev_untimed;
       next_untimed   = reminders.curr_untimed;
-      all_untimed    = List.rev_append 
-                          (List.rev_append reminders.prev_untimed u) reminders.curr_untimed;
+      all_untimed    = List.fast_sort cmp_untimed (List.rev_append 
+                          (List.rev_append reminders.prev_untimed u) reminders.curr_untimed);
       curr_counts    = count_reminders reminders.prev_timed reminders.prev_untimed;
       curr_cal       = make_cal new_curr_timestamp
    }
@@ -322,7 +336,74 @@ let update_reminders rem timestamp =
          create_three_month timestamp
 
 
+(* Look at all 'next' reminders after the given timestamp.  Search
+ * through the list for the first occurrence of the search regexp, and return
+ * a timestamp for that date.
+ * This calls 'remind -n' twice--once for the current day, once for the next day.
+ * The second call is necessary because reminders falling on the current day
+ * but before the current timestamp will effectively suppress later recurrences
+ * of that reminder. *)
+let find_next msg_regex timestamp =
+   Printf.fprintf stderr "calling find_next\n"; flush stderr;
+   let rem_regex = Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([^ ]+.*\\)$" in
+   let tm1 = Unix.localtime timestamp in
+   let tm2 = Unix.localtime (timestamp +. 86400.) in      (* 24 hours *)
+   let rem_date_str1 = (string_of_tm_mon tm1.Unix.tm_mon) ^ " " ^ 
+                       (string_of_int tm1.Unix.tm_mday) ^ " " ^
+                       (string_of_int (tm1.Unix.tm_year + 1900)) in
+   let rem_date_str2 = (string_of_tm_mon tm2.Unix.tm_mon) ^ " " ^ 
+                       (string_of_int tm2.Unix.tm_mday) ^ " " ^
+                       (string_of_int (tm2.Unix.tm_year + 1900)) in
+   let remind_channel = Unix.open_process_in ("remind -n -b2 " ^ !Rcfile.reminders_file ^
+   " " ^ rem_date_str1 ^ " > /tmp/wyrd-tmp && remind -n -b2 " ^ !Rcfile.reminders_file ^
+   " " ^ rem_date_str2 ^ " | cat /tmp/wyrd-tmp - | sort") in
+   let rec check_messages () =
+      try
+         let line = input_line remind_channel in
+         if Str.string_match rem_regex line 0 then begin
+            let year  = int_of_string (Str.matched_group 1 line)
+            and month = int_of_string (Str.matched_group 2 line)
+            and day   = int_of_string (Str.matched_group 3 line)
+            and msg   = Str.matched_group 4 line in
+            let temp = {
+               Unix.tm_sec   = 0;
+               Unix.tm_min   = 0;
+               Unix.tm_hour  = 0;
+               Unix.tm_mday  = day;
+               Unix.tm_mon   = pred month;
+               Unix.tm_year  = year - 1900;
+               Unix.tm_wday  = 0;
+               Unix.tm_yday  = 0;
+               Unix.tm_isdst = false
+            } in
+            let (ts, _) = Unix.mktime temp in
+            if ts > timestamp then
+               begin try
+                  let _ = Str.search_forward msg_regex msg 0 in
+                  let _ = Unix.close_process_in remind_channel in
+                  ts
+               with Not_found ->
+                  check_messages ()
+               end
+            else
+               check_messages ()
+         end else
+            (* if there was no regexp match, continue with next line *)
+            check_messages ()
+      with
+      | End_of_file ->
+         let _ = Unix.close_process_in remind_channel in
+         Printf.fprintf stderr "check_messages: EOF\n"; flush stderr;
+         raise Not_found
+      | Failure s ->
+        (* if there's an error in string coersion, just drop that reminder and go
+         * to the next line *)
+        Printf.fprintf stderr "caught string coersion error\n"; flush stderr;
+        check_messages ()
+   in
+   check_messages ()
 
 
+   
 
 (* arch-tag: DO_NOT_CHANGE_6bb48a1c-2b0c-4254-ba3a-ee9b48007169 *)

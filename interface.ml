@@ -66,7 +66,8 @@ type interface_state_t = {
    timed_lineinfo    : (string * string * string) option array; (* keeps track of the filename, line number, and message 
                                                                  * associated with each line of the timed reminders window *)
    untimed_lineinfo  : (string * string * string) option array; (* same as above, for untimed window *)
-   len_untimed       : int
+   len_untimed       : int;                 (* number of entries in the untimed reminders list *)
+   search_regex      : Str.regexp           (* most recent search string *)
 }
    
 
@@ -106,7 +107,8 @@ let make (std : screen_t) =
       zoom_level        = Hour;
       timed_lineinfo    = Array.make std.tw_lines None;
       untimed_lineinfo  = Array.make std.uw_lines None;
-      len_untimed       = 0
+      len_untimed       = 0;
+      search_regex      = Str.regexp "Dave"
    }
                                                
 
