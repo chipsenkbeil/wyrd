@@ -262,6 +262,19 @@ let handle_scrollup_untimed (iface : interface_state_t) reminders =
       (iface, reminders)
 
 
+(* handle a jump to a different day *)
+let handle_jump (iface : interface_state_t) reminders jump_func =
+   let temp = Unix.localtime iface.top_timestamp in
+   let next_tm = {
+      temp with Unix.tm_mday = jump_func temp.Unix.tm_mday
+   } in
+   let (next_ts, _) = Unix.mktime next_tm in
+   let new_iface = {
+      iface with top_timestamp = next_ts
+   } in
+   handle_selection_change new_iface reminders
+
+
 (* handle a zoom keypress *)
 let handle_zoom (iface : interface_state_t) reminders =
    let new_iface = 
@@ -378,6 +391,16 @@ let handle_keypress key (iface : interface_state_t) reminders =
       |Left  -> handle_scrollup_timed iface reminders
       |Right -> handle_scrollup_untimed iface reminders
       end
+   end else if key = Key.npage || key = int_of_char '6' then begin
+      handle_jump iface reminders succ
+   end else if key = Key.ppage || key = int_of_char '4' then begin
+      handle_jump iface reminders pred
+   end else if key = int_of_char '8' then begin
+      let prev_week i = i - 7 in
+      handle_jump iface reminders prev_week
+   end else if key = int_of_char '2' then begin
+      let next_week i = i + 7 in
+      handle_jump iface reminders next_week
    end else if key = int_of_char 'z' then begin
       handle_zoom iface reminders
    end else if key = int_of_char 'h' || key = int_of_char 'l' ||
