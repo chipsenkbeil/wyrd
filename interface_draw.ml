@@ -140,7 +140,7 @@ let draw_date_strip (iface : interface_state_t) =
          wattroff iface.scr.timed_win (WA.color_pair 4)
       end
    done;
-   wattroff iface.scr.timed_win WA.bold;
+   wattroff iface.scr.timed_win (WA.bold lor WA.underline);
    assert (wnoutrefresh iface.scr.timed_win)
 
 
@@ -241,7 +241,7 @@ let draw_timed iface reminders =
       end else
          ()
    done;
-   wattroff iface.scr.timed_win WA.reverse;
+   wattroff iface.scr.timed_win (WA.reverse lor WA.underline);
    assert (wnoutrefresh iface.scr.timed_win)
 
 
