@@ -107,6 +107,7 @@ let month_reminders timestamp =
             build_lists timed untimed
       with
       | End_of_file ->
+           close_in remind_channel;
            (timed, untimed)
       | _ ->
            (* if there's an error in regexp matching or string coersion,
@@ -207,8 +208,7 @@ let prev_month reminders =
  * doing as little work as possible. *)
 let update_reminders rem timestamp =
    if timestamp.Unix.tm_year = rem.curr_timestamp.Unix.tm_year &&
-      timestamp.Unix.tm_mon  = rem.curr_timestamp.Unix.tm_mon &&
-      timestamp.Unix.tm_mday = rem.curr_timestamp.Unix.tm_mday then
+      timestamp.Unix.tm_mon  = rem.curr_timestamp.Unix.tm_mon then
       rem
    else
       let temp1 = {
@@ -220,12 +220,10 @@ let update_reminders rem timestamp =
       let (_, prev_timestamp) = Unix.mktime temp1 in
       let (_, next_timestamp) = Unix.mktime temp2 in
       if timestamp.Unix.tm_year = prev_timestamp.Unix.tm_year &&
-         timestamp.Unix.tm_mon  = prev_timestamp.Unix.tm_mon &&
-         timestamp.Unix.tm_mday = prev_timestamp.Unix.tm_mday then
+         timestamp.Unix.tm_mon  = prev_timestamp.Unix.tm_mon then
          prev_month rem
       else if timestamp.Unix.tm_year = next_timestamp.Unix.tm_year &&
-         timestamp.Unix.tm_mon  = next_timestamp.Unix.tm_mon &&
-         timestamp.Unix.tm_mday = next_timestamp.Unix.tm_mday then
+         timestamp.Unix.tm_mon  = next_timestamp.Unix.tm_mon then
          next_month rem
       else
          create_three_month timestamp
