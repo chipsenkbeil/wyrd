@@ -31,6 +31,7 @@ open Interface_draw;;
 
 exception Interrupt_exception;;
 
+type reminder_type_t = Timed | Untimed
 
 
 (*******************************************************************)
@@ -340,13 +341,19 @@ let handle_edit (iface : interface_state_t) reminders =
 
 
 (* handle creation of a new timed reminder *)
-let handle_new_timed (iface : interface_state_t) reminders =
+let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
    let remline = 
-      Printf.sprintf "REM %s %d %d AT %.2d:%.2d DURATION 1:00 MSG "
-         (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
-         (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
+      match rem_type with
+      | Timed ->
+         Printf.sprintf "REM %s %d %d AT %.2d:%.2d DURATION 1:00 MSG "
+            (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
+            (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
+      | Untimed ->
+         Printf.sprintf "REM %s %d %d MSG "
+            (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
+            (tm.Unix.tm_year + 1900)
    in
    let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
    "/home/paul/.reminders" in
@@ -357,6 +364,7 @@ let handle_new_timed (iface : interface_state_t) reminders =
    let _ = Unix.system command in 
    assert (curs_set 0);
    handle_refresh iface reminders
+
 
 
 (* Handle keyboard input and update the display appropriately *)
@@ -379,7 +387,9 @@ let handle_keypress key (iface : interface_state_t) reminders =
    end else if key = 10 then begin
       handle_edit iface reminders
    end else if key = int_of_char 't' then begin
-      handle_new_timed iface reminders
+      handle_new_reminder iface reminders Timed
+   end else if key = int_of_char 'u' then begin
+      handle_new_reminder iface reminders Untimed
    end else
       (iface, reminders)
 
