@@ -1,5 +1,5 @@
-(*  Orpie -- a fullscreen RPN calculator for the console
- *  Copyright (C) 2003-2004  Paul Pelzl
+(*  Remic -- a curses-based front-end for Remind
+ *  Copyright (C) 2005 Paul Pelzl
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License, Version 2,
