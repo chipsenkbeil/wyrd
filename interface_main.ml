@@ -175,6 +175,7 @@ let run (iface : interface_state_t) =
    assert (keypad iface.scr.msg_win true);
    draw_help iface;
    assert (doupdate ());
+   draw_date_strip iface;
    do_main_loop iface
         
 
