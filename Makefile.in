@@ -100,9 +100,9 @@ version.ml: Makefile
 ##############
 
 install-indep: 
-#	mkdir -p $(BINDIR)
-#	mkdir -p $(DESTDIR)/$(sysconfdir)
-#	install -m 644 wyrdrc $(DESTDIR)/$(sysconfdir)
+	mkdir -p $(BINDIR)
+	mkdir -p $(DESTDIR)/$(sysconfdir)
+	install -m 644 wyrdrc $(DESTDIR)/$(sysconfdir)
 #	install -m 644 -D doc/wyrd.1 $(MANDIR)/man1/wyrd.1
 
 install: install-indep
