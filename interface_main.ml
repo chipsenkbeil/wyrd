@@ -173,6 +173,7 @@ let handle_keypress key iface reminders =
             let new_reminders = Remind.update_reminders reminders 
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
+            draw_date_strip new_iface;
             assert (doupdate ());
             (new_iface, new_reminders)
          end else begin
@@ -183,6 +184,7 @@ let handle_keypress key iface reminders =
             let new_reminders = Remind.update_reminders reminders 
             (timestamp_of_line new_iface new_iface.left_selection) in
             draw_timed new_iface new_reminders.Remind.all_timed;
+            draw_date_strip new_iface;
             assert (doupdate ());
             (new_iface, new_reminders)
          end

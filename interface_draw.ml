@@ -66,7 +66,15 @@ let draw_date_strip (iface : interface_state_t) =
               Unix.tm_min = timestamp.Unix.tm_min + (time_inc iface)
          } in
          let (_, next_timestamp) = Unix.mktime temp in
-         if timestamp.Unix.tm_min = 0 && timestamp.Unix.tm_hour = 0 then
+         let temp2 = {
+            timestamp with
+              Unix.tm_sec = 0;
+              Unix.tm_min = ~- (time_inc iface);
+              Unix.tm_hour = 0
+         } in
+         let (_, before_midnight) = Unix.mktime temp2 in
+         if timestamp.Unix.tm_min = before_midnight.Unix.tm_min && 
+            timestamp.Unix.tm_hour = before_midnight.Unix.tm_hour then
             check_timestamp ((line, timestamp) :: date_changes) next_timestamp (succ line)
          else
             check_timestamp date_changes next_timestamp (succ line)
@@ -210,6 +218,7 @@ let draw_timed iface reminders =
       end else
          ()
    done;
+   wattroff iface.scr.timed_win WA.reverse;
    assert (wnoutrefresh iface.scr.timed_win)
 
 
