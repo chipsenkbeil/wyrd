@@ -163,7 +163,7 @@ let handle_keypress key iface = ()
 
 let do_main_loop (iface : interface_state_t) =
    while iface.run_remic do
-      let key = wgetch iface.scr.msg_win in
+      let key = wgetch iface.scr.help_win in
       (* using the ncurses SIGWINCH handler to catch window resize events *)
       if key = Key.resize then
          ()

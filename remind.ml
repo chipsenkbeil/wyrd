@@ -24,6 +24,20 @@
 
 exception String_of_tm_mon_failure of string
 
+(* Storage for a three-month window of reminders.
+ * Makes it possible to handle edge effects of moving
+ * from month to month without constantly calling 'rem'. *)
+type three_month_rem_t = {
+   curr_timestamp : Unix.tm;
+   prev_timed     : (float * float * string) list;
+   curr_timed     : (float * float * string) list;
+   next_timed     : (float * float * string) list;
+   prev_untimed   : (float * string) list;
+   curr_untimed   : (float * string) list;
+   next_untimed   : (float * string) list
+}
+
+
 let string_of_tm_mon i =
    match i with
    | 0 -> "Jan"
@@ -39,6 +53,7 @@ let string_of_tm_mon i =
    |10 -> "Nov"
    |11 -> "Dec"
    | x -> raise (String_of_tm_mon_failure ("unknown month " ^ (string_of_int x)))
+
 
 
 
@@ -95,6 +110,82 @@ let month_reminders timestamp =
    in
    build_lists [] []
 
+
+(* initialize a new three-month reminder record *)
+let create_three_month timestamp =
+   let temp = {
+      timestamp with Unix.tm_sec = 0;
+                     Unix.tm_min = 0;
+                     Unix.tm_hour = 0;
+                     Unix.tm_mday = 1
+   } in
+   let (_, curr_ts) = Unix.mktime temp in
+   let temp_prev = {
+      temp with Unix.tm_mon = pred temp.Unix.tm_mon
+   } in
+   let temp_next = {
+      temp with Unix.tm_mon = succ temp.Unix.tm_mon
+   } in
+   let (_, prev_ts) = Unix.mktime temp_prev
+   and (_, next_ts) = Unix.mktime temp_next in
+   let (pt, pu) = month_reminders prev_ts in
+   let (ct, cu) = month_reminders curr_ts in
+   let (nt, nu) = month_reminders next_ts in {
+      curr_timestamp = curr_ts;
+      prev_timed     = pt;
+      curr_timed     = ct;
+      next_timed     = nt;
+      prev_untimed   = pu;
+      curr_untimed   = cu;
+      next_untimed   = nu
+   }
+
+
+
+(* Update a three-month reminders record for the next month *)
+let next_month reminders =
+   let temp1 = {
+      reminders.curr_timestamp with 
+        Unix.tm_mon = succ reminders.curr_timestamp.Unix.tm_mon
+   } in
+   let temp2 = {
+      reminders.curr_timestamp with 
+        Unix.tm_mon = reminders.curr_timestamp.Unix.tm_mon + 2
+   } in
+   let (_, new_curr_timestamp) = Unix.mktime temp1 in
+   let (_, next_timestamp) = Unix.mktime temp2 in
+   let (t, u) = month_reminders next_timestamp in {
+      curr_timestamp = new_curr_timestamp;
+      prev_timed = reminders.curr_timed;
+      curr_timed = reminders.next_timed;
+      next_timed = t;
+      prev_untimed = reminders.curr_untimed;
+      curr_untimed = reminders.next_untimed;
+      next_untimed = u
+   }
+
+
+(* Update a three-month reminders record for the previous month *)
+let prev_month reminders =
+   let temp1 = {
+      reminders.curr_timestamp with 
+        Unix.tm_mon = pred reminders.curr_timestamp.Unix.tm_mon
+   } in
+   let temp2 = {
+      reminders.curr_timestamp with 
+        Unix.tm_mon = reminders.curr_timestamp.Unix.tm_mon - 2
+   } in
+   let (_, new_curr_timestamp) = Unix.mktime temp1 in
+   let (_, prev_timestamp) = Unix.mktime temp2 in
+   let (t, u) = month_reminders prev_timestamp in {
+      curr_timestamp = new_curr_timestamp;
+      prev_timed = t;
+      curr_timed = reminders.prev_timed;
+      next_timed = reminders.curr_timed;
+      prev_untimed = u;
+      curr_untimed = reminders.prev_untimed;
+      next_untimed = reminders.curr_untimed
+   }
 
 
 
