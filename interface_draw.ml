@@ -129,10 +129,10 @@ let draw_date_strip (iface : interface_state_t) =
    for i = 0 to pred iface.scr.tw_lines do
       if date_chars.[i] = '-' then begin
          wattron iface.scr.timed_win ((WA.color_pair 4) lor WA.underline);
-         assert (mvwaddch iface.scr.timed_win i 0 (int_of_char ' '));
+         assert (mvwaddch iface.scr.timed_win i 0 acs.Acs.hline);
          wattroff iface.scr.timed_win ((WA.color_pair 4) lor WA.underline);
          wattron iface.scr.timed_win ((WA.color_pair 5) lor WA.underline);
-         assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.vline);
+         assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.rtee);
          wattroff iface.scr.timed_win ((WA.color_pair 5) lor WA.underline)
       end else begin
          wattron iface.scr.timed_win (WA.color_pair 4);
@@ -255,12 +255,18 @@ let draw_calendar (iface : interface_state_t)
        (reminders : three_month_rem_t) : unit =
    let curr_tm = Unix.localtime (timestamp_of_line iface iface.left_selection) in
    let cal = reminders.curr_cal in
-   assert (wmove iface.scr.calendar_win 1 1);
+   let acs = get_acs_codes () in
+   wattron iface.scr.calendar_win ((WA.color_pair 5) lor WA.bold);
+   mvwvline iface.scr.calendar_win 0 0 acs.Acs.vline iface.scr.cw_lines;
+   wattroff iface.scr.calendar_win (WA.color_pair 5);
+   let hspacer = (iface.scr.cw_cols - 20) / 2 in
+   let vspacer = (iface.scr.cw_lines - 8) / 2 in
+   assert (wmove iface.scr.calendar_win vspacer hspacer);
    wclrtoeol iface.scr.calendar_win;
    wattron iface.scr.calendar_win WA.bold;
    assert (waddstr iface.scr.calendar_win cal.title);
    wattroff iface.scr.calendar_win WA.bold;
-   assert (wmove iface.scr.calendar_win 2 1);
+   assert (wmove iface.scr.calendar_win (vspacer + 1) hspacer);
    wclrtoeol iface.scr.calendar_win;
    assert (waddstr iface.scr.calendar_win cal.weekdays);
    (* draw the day numbers *)
@@ -268,11 +274,11 @@ let draw_calendar (iface : interface_state_t)
    let rec draw_week weeks line =
       match weeks with
       | [] ->
-         assert (wmove iface.scr.calendar_win line 1);
+         assert (wmove iface.scr.calendar_win line hspacer);
          wclrtoeol iface.scr.calendar_win
       | week :: tail ->
          let split_week = Str.full_split ws week in
-         assert (wmove iface.scr.calendar_win line 1);
+         assert (wmove iface.scr.calendar_win line hspacer);
          wclrtoeol iface.scr.calendar_win;
          let rec draw_el elements =
             match elements with
@@ -314,7 +320,7 @@ let draw_calendar (iface : interface_state_t)
          draw_el split_week;
          draw_week tail (succ line)
    in
-   draw_week cal.days 3;
+   draw_week cal.days (vspacer + 2);
    assert (wnoutrefresh iface.scr.calendar_win)
 
 

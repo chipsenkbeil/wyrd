@@ -44,7 +44,7 @@ exception Interrupt_exception;;
  * never used. (Is this the best way to do things?) *)
 let create_windows screen =
    let height, width  = get_size () in
-   let cal_height     = 20
+   let cal_height     = 10
    and cal_width      = 30 in
    let msg_height     = 2 in
    let timed_height   = height - 1 - msg_height
