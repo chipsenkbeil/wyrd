@@ -378,17 +378,17 @@ let draw_calendar (iface : interface_state_t)
                      wattron iface.scr.calendar_win ((WA.color_pair 2) lor WA.reverse);
                      assert (waddstr iface.scr.calendar_win d);
                      wattroff iface.scr.calendar_win ((WA.color_pair 2) lor WA.reverse)
-                  end else if reminders.curr_counts.(day) = 0 then
+                  end else if reminders.curr_counts.(day) <= !Rcfile.busy_level1 then
                      assert (waddstr iface.scr.calendar_win d)
-                  else if reminders.curr_counts.(day) < 2 then begin
+                  else if reminders.curr_counts.(day) <= !Rcfile.busy_level2  then begin
                      wattron iface.scr.calendar_win (WA.color_pair 7);
                      assert (waddstr iface.scr.calendar_win d);
                      wattroff iface.scr.calendar_win (WA.color_pair 7)
-                  end else if reminders.curr_counts.(day) < 4 then begin
+                  end else if reminders.curr_counts.(day) <= !Rcfile.busy_level3 then begin
                      wattron iface.scr.calendar_win ((WA.color_pair 7) lor WA.bold);
                      assert (waddstr iface.scr.calendar_win d);
                      wattroff iface.scr.calendar_win ((WA.color_pair 7) lor WA.bold)
-                  end else if reminders.curr_counts.(day) < 6 then begin
+                  end else if reminders.curr_counts.(day) <= !Rcfile.busy_level4 then begin
                      wattron iface.scr.calendar_win (WA.color_pair 9);
                      assert (waddstr iface.scr.calendar_win d);
                      wattroff iface.scr.calendar_win (WA.color_pair 9)

@@ -1,8 +1,17 @@
 # Wyrd run-configuration file
 
 set reminders_file="~/.reminders"
+# command for editing an old appointment, given a line number %n and filename %f
 set edit_old_command="vim +%n %f"
+# command for editing a new appointment, given a filename %f
 set edit_new_command="vim -c '$' %f"
+# number of reminders per day allowed for each calendar colorization level
+set busy_level1="1"   # uncolored
+set busy_level2="3"   # blue
+set busy_level3="5"   # bold blue
+set busy_level4="7"   # magenta
+                      # (everything else is bold magenta)
+
 
 bind "j"                 scroll_down
 bind "<down>"            scroll_down

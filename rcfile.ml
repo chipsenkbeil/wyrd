@@ -47,6 +47,11 @@ let reminders_file = ref "~/.reminders"
 (* Default editing command strings *)
 let edit_old_command = ref "vim +%n + %f"
 let edit_new_command = ref "vim -c '$' %f"
+(* Default thresholds for calendar colorization *)
+let busy_level1 = ref 2
+let busy_level2 = ref 4
+let busy_level3 = ref 6
+let busy_level4 = ref 8
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -301,6 +306,78 @@ let parse_line line_stream =
             end
          | [< >] ->
             config_failwith ("Expected \"=\" after \"set edit_new_command\"")
+         end
+      | [< 'Ident "busy_level1" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String num >] ->
+               begin try
+                  busy_level1 := int_of_string num
+               with _ ->
+                  config_failwith ("Expected an integer string after " ^
+                  "\"set busy_level1 = \"")
+               end
+            | [< >] ->
+               config_failwith ("Expected an integer string after " ^
+               "\"set busy_level1 = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set busy_level1\"")
+         end
+      | [< 'Ident "busy_level2" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String num >] ->
+               begin try
+                  busy_level2 := int_of_string num
+               with _ ->
+                  config_failwith ("Expected an integer string after " ^
+                  "\"set busy_level2 = \"")
+               end
+            | [< >] ->
+               config_failwith ("Expected an integer string after " ^
+               "\"set busy_level2 = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set busy_level2\"")
+         end
+      | [< 'Ident "busy_level3" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String num >] ->
+               begin try
+                  busy_level3 := int_of_string num
+               with _ ->
+                  config_failwith ("Expected an integer string after " ^
+                  "\"set busy_level3 = \"")
+               end
+            | [< >] ->
+               config_failwith ("Expected an integer string after " ^
+               "\"set busy_level3 = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set busy_level3\"")
+         end
+      | [< 'Ident "busy_level4" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String num >] ->
+               begin try
+                  busy_level4 := int_of_string num
+               with _ ->
+                  config_failwith ("Expected an integer string after " ^
+                  "\"set busy_level4 = \"")
+               end
+            | [< >] ->
+               config_failwith ("Expected an integer string after " ^
+               "\"set busy_level4 = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set busy_level4\"")
          end
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
