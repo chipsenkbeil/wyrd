@@ -135,70 +135,82 @@ let draw_date_strip (iface : interface_state_t) =
    assert (wnoutrefresh iface.scr.timed_win)
 
 
-(* Draw the timed schedule *)
+(* Draw the timed schedule.  The algorithm iterates across all reminders in
+ * a three month period, and draws them in one by one.  An array is used
+ * to keep track of which lines have not yet been drawn, so that these can
+ * be filled in later. *)
 let draw_timed iface reminders =
+   let round_down x =
+      if x >= 0.0 then int_of_float x
+      else pred (int_of_float x)
+   in
+   let is_drawn = Array.make iface.scr.tw_lines false in
    let blank = String.make iface.scr.tw_cols ' ' in
-   for i = 0 to pred iface.scr.tw_lines do
-      if iface.selected_side = Left && i = iface.left_selection then
-         wattron iface.scr.timed_win WA.reverse
-      else
-         wattroff iface.scr.timed_win WA.bold;
-      let temp1 = {
-         iface.top_timestamp with
-           Unix.tm_min = iface.top_timestamp.Unix.tm_min + (i * (time_inc iface))
-      } in
-      let temp2 = {
-         iface.top_timestamp with
-           Unix.tm_min = iface.top_timestamp.Unix.tm_min + ((succ i) * (time_inc iface))
-      } in
-      let (f_curr_ts, curr_ts) = Unix.mktime temp1
-      and (f_next_ts, next_ts) = Unix.mktime temp2 in
-      let ts_str = Printf.sprintf "%.2d:%.2d " curr_ts.Unix.tm_hour curr_ts.Unix.tm_min in
-      let blank_ts = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
-      (* iterate through all of this month's reminders to determine whether anything
-       * special has to be drawn on this line *)
-      let has_msg     = ref false in
-      let has_overlap = ref false in
-      let test_reminder (start, finish, rem_msg) =
-         (* test for start of a timed reminder *)
-         if start >= f_curr_ts && start < f_next_ts then begin
-            wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
-            let s = ts_str ^ rem_msg in
-            let trunc_s = 
-               if String.length s > iface.scr.tw_cols - 3 then
-                  (Str.string_before s (iface.scr.tw_cols - 5)) ^ "..."
-               else
-                  Str.string_before (s ^ blank) (iface.scr.tw_cols - 2)
-            in
-            has_msg := true;
-            assert (mvwaddstr iface.scr.timed_win i 2 trunc_s)
-         (* test for a timed reminder that started earlier, but has duration
-          * carrying it over this timeslot *)
-         end else if (not !has_msg) && start < f_curr_ts && finish > f_curr_ts then begin
-            wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
-            has_overlap := true;
-            assert (mvwaddstr iface.scr.timed_win i 2 blank_ts)
-         end else
-            ()
+   let (f_top, _) = Unix.mktime iface.top_timestamp in
+   wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
+   let process_reminder (start, finish, msg) =
+      let rem_top_line =
+         round_down ((start -. f_top) /. (float_of_int (60 * (time_inc iface))))
       in
-      List.iter test_reminder reminders;
-      if (not !has_msg) && (not !has_overlap) then begin
-         wattron iface.scr.timed_win (WA.color_pair 0);
-         assert (mvwaddstr iface.scr.timed_win i 2 blank_ts)
+      (* draw the top line of a reminder *)
+      if rem_top_line >= 0 && rem_top_line < iface.scr.tw_lines then begin
+         let ts = timestamp_of_line iface rem_top_line in
+         let ts_str = Printf.sprintf "%.2d:%.2d " ts.Unix.tm_hour ts.Unix.tm_min in
+         (* FIXME: add ellipses if truncation occurs *)
+         let s = Str.string_before (ts_str ^ msg ^ blank) (iface.scr.tw_cols - 2) in
+         if rem_top_line = iface.left_selection then
+            wattron iface.scr.timed_win WA.reverse
+         else
+            wattroff iface.scr.timed_win WA.reverse;
+         is_drawn.(rem_top_line) <- true;
+         assert (mvwaddstr iface.scr.timed_win rem_top_line 2 s)
       end else
          ();
-      wattroff iface.scr.timed_win ((WA.color_pair 3) lor WA.bold lor WA.reverse)
+      (* draw any remaining lines of this reminder, as determined by the duration *)
+      let count = ref 1 in
+      while 
+         let (f_ts, _) = 
+            Unix.mktime (timestamp_of_line iface (rem_top_line + !count))
+         in
+         (f_ts < finish) && (rem_top_line + !count < iface.scr.tw_lines)
+      do
+         if rem_top_line + !count >= 0 then begin
+            let (_, ts) = 
+               Unix.mktime (timestamp_of_line iface (rem_top_line + !count))
+            in
+            let ts_str = Printf.sprintf "%.2d:%.2d " ts.Unix.tm_hour ts.Unix.tm_min in
+            let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
+            if rem_top_line + !count = iface.left_selection then
+               wattron iface.scr.timed_win WA.reverse
+            else
+               wattroff iface.scr.timed_win WA.reverse;
+            if not is_drawn.(rem_top_line + !count) then begin
+               is_drawn.(rem_top_line + !count) <- true;
+               assert (mvwaddstr iface.scr.timed_win (rem_top_line + !count) 2 s)
+            end else
+               ();
+         end else
+            ();
+         count := succ !count
+      done
+   in
+   List.iter process_reminder reminders;
+   wattroff iface.scr.timed_win ((WA.color_pair 3) lor WA.bold lor WA.reverse);
+   (* finish off by drawing in the blank timeslots *)
+   for i = 0 to pred iface.scr.tw_lines do
+      if not is_drawn.(i) then begin
+         if i = iface.left_selection then
+            wattron iface.scr.timed_win WA.reverse
+         else
+            wattroff iface.scr.timed_win WA.reverse;
+         let ts = timestamp_of_line iface i in
+         let ts_str = Printf.sprintf "%.2d:%.2d " ts.Unix.tm_hour ts.Unix.tm_min in
+         let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
+         assert (mvwaddstr iface.scr.timed_win i 2 s)
+      end else
+         ()
    done;
    assert (wnoutrefresh iface.scr.timed_win)
-
-
-
-
-
-
-      
-      
-      
 
 
 

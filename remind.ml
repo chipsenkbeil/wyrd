@@ -91,13 +91,16 @@ let month_reminders timestamp =
                Unix.tm_yday  = 0;
                Unix.tm_isdst = false
             } in
-            if duration_s = "*" then
+            if min_s = "*" then
                let (f_rem_ts, _) = Unix.mktime temp in
                build_lists timed ((f_rem_ts, msg) :: untimed)
             else
                let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
                let (f_rem_ts, _) = Unix.mktime temp_with_min in
-               let duration = float_of_string duration_s in
+               let duration =
+                  if duration_s = "*" then 0.0
+                  else float_of_string duration_s
+               in
                build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg) :: timed) untimed
          end else
             (* if there was no regexp match, continue with next line *)
