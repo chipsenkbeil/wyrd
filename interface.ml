@@ -65,14 +65,31 @@ type interface_state_t = {
 }
    
 
+(* round to the nearest displayed time value *)
+let round_time zoom t =
+   match zoom with
+   |Hour -> {
+          t with Unix.tm_sec = 0;
+                 Unix.tm_min = 0
+       }
+   |HalfHour -> {
+       t with Unix.tm_sec = 0;
+              Unix.tm_min = if t.Unix.tm_min >= 30 then 30 else 0
+      }
+   |QuarterHour -> {
+       t with Unix.tm_sec = 0;
+              Unix.tm_min = if t.Unix.tm_min >= 45 then 45
+                            else if t.Unix.tm_min >= 30 then 30
+                            else if t.Unix.tm_min >= 15 then 15
+                            else 0
+      }
+
+
+
 (* create and initialize an interface with default settings *)
 let make (std : screen_t) =
    let curr_time = Unix.localtime ((Unix.time ()) -. 60. *. 60.) in
-   let temp = {
-      curr_time with Unix.tm_sec = 0;
-                     Unix.tm_min = 0
-   } in
-   let (rounded_time, _) = Unix.mktime temp in {
+   let (rounded_time, _) = Unix.mktime (round_time Hour curr_time) in {
       version         = Version.version;
       scr             = std;
       run_remic       = true;
@@ -98,6 +115,8 @@ let time_inc_min (iface : interface_state_t) =
    | Hour        -> 60
    | HalfHour    -> 30
    | QuarterHour -> 15
+
+
 
 let timestamp_of_line iface line =
    iface.top_timestamp +. ((float_of_int line) *. (time_inc iface))
