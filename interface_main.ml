@@ -162,8 +162,7 @@ let handle_resize (iface : interface_state_t) =
 
 
 let handle_keypress key iface reminders =
-   match (char_of_int key) with
-   |'j' ->
+   if key = int_of_char 'j' then begin
       begin match iface.selected_side with
       |Left ->
          if iface.left_selection < pred iface.scr.tw_lines then begin
@@ -189,7 +188,7 @@ let handle_keypress key iface reminders =
       |Right ->
            (iface, reminders)
       end
-   |'k' ->
+   end else if key = int_of_char 'k' then begin
       begin match iface.selected_side with
       |Left ->
          if iface.left_selection > 0 then begin
@@ -215,7 +214,34 @@ let handle_keypress key iface reminders =
       |Right ->
            (iface, reminders)
       end
-   |_ ->
+   end else if key = int_of_char 'z' then begin
+      let new_iface = 
+         let curr_ts = timestamp_of_line iface iface.left_selection in
+         let get_new_top delta = {
+            curr_ts with Unix.tm_min = curr_ts.Unix.tm_min - 
+                         (iface.left_selection * delta)
+         } in
+         match iface.zoom_level with
+         |Hour ->
+            let (_, new_top) = Unix.mktime (get_new_top 30) in {
+               iface with top_timestamp = new_top;
+                          zoom_level    = HalfHour
+            }
+         |HalfHour ->
+            let (_, new_top) = Unix.mktime (get_new_top 15) in {
+               iface with top_timestamp = new_top;
+                          zoom_level    = QuarterHour
+            }
+         |QuarterHour ->
+            let (_, new_top) = Unix.mktime (get_new_top 60) in {
+               iface with top_timestamp = new_top;
+                          zoom_level    = Hour
+            }
+      in
+      draw_timed new_iface reminders.Remind.all_timed;
+      draw_date_strip new_iface;
+      (new_iface, reminders)
+   end else
       (iface, reminders)
 
 
