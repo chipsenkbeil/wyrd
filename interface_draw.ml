@@ -496,7 +496,10 @@ let draw_msg iface =
       |Right ->
          day_s
    in
-   werase iface.scr.msg_win;
+   for i = 0 to pred iface.scr.mw_lines do
+      assert (wmove iface.scr.msg_win i 0);
+      wclrtoeol iface.scr.msg_win
+   done;
    (* draw the date stamp *)
    let acs = get_acs_codes () in
    wattron iface.scr.msg_win ((WA.color_pair 1) lor WA.bold lor WA.underline);
@@ -512,7 +515,7 @@ let draw_msg iface =
          curr_tm.Unix.tm_mday (twelve_hour_string curr_tm)
    in
    trunc_mvwaddstr iface.scr.msg_win (pred iface.scr.mw_lines) 0
-      (pred iface.scr.mw_cols) s;
+      iface.scr.mw_cols s;
    wattroff iface.scr.msg_win ((WA.color_pair 1) lor WA.bold);
    (* draw the full MSG string, word wrapping as necessary *)
    let rec render_line lines i =
@@ -542,6 +545,11 @@ let draw_msg iface =
    render_line message 1;
    assert (wnoutrefresh iface.scr.msg_win)
 
+
+let draw_error iface err =
+   werase iface.scr.err_win;
+   trunc_mvwaddstr iface.scr.err_win 0 0 iface.scr.ew_cols err;
+   assert (wnoutrefresh iface.scr.err_win)
 
 
 

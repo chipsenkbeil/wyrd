@@ -46,7 +46,10 @@ type screen_t = {
    uw_cols      : int;
    msg_win      : window;
    mw_lines     : int;
-   mw_cols      : int
+   mw_cols      : int;
+   err_win      : window;
+   ew_lines     : int;
+   ew_cols      : int
 }
 
 type zoom_t = Hour | HalfHour | QuarterHour
@@ -108,7 +111,7 @@ let make (std : screen_t) =
       timed_lineinfo    = Array.make std.tw_lines None;
       untimed_lineinfo  = Array.make std.uw_lines None;
       len_untimed       = 0;
-      search_regex      = Str.regexp "Dave"
+      search_regex      = Str.regexp "Dave blah"
    }
                                                
 

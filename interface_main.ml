@@ -48,9 +48,10 @@ let create_windows screen =
    let cal_height     = 10
    and cal_width      = 40 in
    let msg_height     = 5 in
-   let timed_height   = height - 1 - msg_height
+   let err_height     = 1 in
+   let timed_height   = height - 1 - msg_height - err_height
    and timed_width    = width - cal_width
-   and untimed_height = height - 1 - msg_height - cal_height
+   and untimed_height = height - 1 - msg_height - err_height - cal_height
    and untimed_width  = cal_width in
    if height >= 24 then 
       if width >= 80 then {
@@ -69,9 +70,12 @@ let create_windows screen =
                         timed_width;
          uw_lines     = untimed_height;
          uw_cols      = untimed_width;
-         msg_win      = newwin msg_height width (1 + timed_height) 0;
+         msg_win      = newwin (succ msg_height) width (1 + timed_height) 0;
          mw_lines     = msg_height;
-         mw_cols      = width
+         mw_cols      = width;
+         err_win      = newwin err_height width (pred height) 0;
+         ew_lines     = err_height;
+         ew_cols      = pred width       (* don't print in last line of the last column *)
       }
       else
          (endwin ();
@@ -152,6 +156,7 @@ let handle_refresh (iface : interface_state_t) reminders =
    draw_calendar new_iface reminders;
    let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
    (* draw_msg new_iface; *)
+   draw_error new_iface "";
    (new_iface, reminders)
    
 
@@ -177,6 +182,7 @@ let handle_selection_change iface reminders =
    draw_calendar new_iface new_reminders;
    let new_iface = draw_untimed new_iface new_reminders.Remind.curr_untimed in
    (* draw_msg new_iface; *)
+   draw_error new_iface "";
    (new_iface, new_reminders)
 
 
@@ -431,8 +437,9 @@ let handle_find_next (iface : interface_state_t) reminders =
       let rec check_untimed untimed =
          match untimed with
          |[] ->
-            Printf.fprintf stderr "check_untimed: not found\n"; flush stderr;
             let _ = beep () in
+            draw_error iface "search expression not found";
+            assert (doupdate ());
             (iface, reminders)
          |(ts, msg, _, _) :: tail ->
             begin try
@@ -480,8 +487,8 @@ let handle_find_next (iface : interface_state_t) reminders =
       in
       check_timed new_reminders.Remind.all_timed
    with Not_found ->
-      Printf.fprintf stderr "handle_find_next: caught Not_found in Remind.find_next\n"; flush stderr;
       let _ = beep () in
+      draw_error iface "search expression not found";
       (iface, reminders)
 
 
@@ -585,6 +592,7 @@ let run (iface : interface_state_t) =
    draw_calendar new_iface reminders;
    let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
    draw_msg new_iface;
+   draw_error new_iface "";
    assert (doupdate ());
    do_main_loop new_iface reminders (Unix.time ())
         

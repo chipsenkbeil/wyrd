@@ -344,7 +344,6 @@ let update_reminders rem timestamp =
  * but before the current timestamp will effectively suppress later recurrences
  * of that reminder. *)
 let find_next msg_regex timestamp =
-   Printf.fprintf stderr "calling find_next\n"; flush stderr;
    let rem_regex = Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([^ ]+.*\\)$" in
    let tm1 = Unix.localtime timestamp in
    let tm2 = Unix.localtime (timestamp +. 86400.) in      (* 24 hours *)
@@ -393,12 +392,10 @@ let find_next msg_regex timestamp =
       with
       | End_of_file ->
          let _ = Unix.close_process_in remind_channel in
-         Printf.fprintf stderr "check_messages: EOF\n"; flush stderr;
          raise Not_found
       | Failure s ->
         (* if there's an error in string coersion, just drop that reminder and go
          * to the next line *)
-        Printf.fprintf stderr "caught string coersion error\n"; flush stderr;
         check_messages ()
    in
    check_messages ()
