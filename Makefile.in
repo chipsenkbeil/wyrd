@@ -38,8 +38,8 @@ EXE          = @EXE@
 CURSES_LIB = @CURSES_LIB@
 
 INCLUDES = -I ./curses
-BFLAGS   = -pp camlp4o -g $(INCLUDES) -thread
-OFLAGS   = -pp camlp4o $(INCLUDES) -thread
+BFLAGS   = -pp camlp4o -g $(INCLUDES)
+OFLAGS   = -pp camlp4o $(INCLUDES)
 BLFLAGS  = -custom -cclib '$(CURSES_LIB) -lm'
 OLFLAGS  = -cclib '$(CURSES_LIB) -lm'
 DEPFLAGS = -pp camlp4o
@@ -59,7 +59,7 @@ all: $(OCAMLBEST)
 CMO = install.cmo version.cmo interface.cmo utility.ml rcfile.ml remind.cmo interface_draw.cmo \
 		interface_main.cmo main.cmo
 CMX = $(CMO:.cmo=.cmx)
-CMA = str.cma unix.cma threads.cma
+CMA = str.cma unix.cma
 CMXA = $(CMA:.cma=.cmxa)
 
 CURSES_CMO = curses/curses.cmo
@@ -134,8 +134,8 @@ curses-opt: $(CURSES_OOBJS)
 curses-byte: $(CURSES_BOBJS)
 
 CURSES_INCLUDES = -I ./curses
-CURSES_BFLAGS = -g $(CURSES_INCLUDES) -thread
-CURSES_OFLAGS = $(CURSES_INCLUDES) -thread
+CURSES_BFLAGS = -g $(CURSES_INCLUDES)
+CURSES_OFLAGS = $(CURSES_INCLUDES)
 CURSES_CFLAGS = -Wall -fPIC -DPIC
 
 curses/%.cmi : curses/%.mli
