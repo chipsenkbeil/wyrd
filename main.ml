@@ -35,7 +35,7 @@ let initialize_screen () =
    assert (init_pair 8 Color.white Color.blue);
    assert (init_pair 9 Color.magenta Color.black);
    assert (keypad std true);
-   assert (cbreak ());
+   assert (halfdelay 10);
    assert (noecho ());
    assert (curs_set 0);
    Interface_main.create_windows std;;

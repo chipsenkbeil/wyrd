@@ -349,7 +349,8 @@ let handle_edit (iface : interface_state_t) reminders =
       endwin();
       let _ = Unix.system command in 
       assert (curs_set 0);
-      handle_refresh iface reminders;
+      let r = Remind.create_three_month iface.top_timestamp in
+      handle_refresh iface r
    end
 
 
@@ -376,7 +377,8 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    endwin();
    let _ = Unix.system command in 
    assert (curs_set 0);
-   handle_refresh iface reminders
+   let r = Remind.create_three_month iface.top_timestamp in
+   handle_refresh iface r
 
 
 
@@ -422,7 +424,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
 
 
 
-let rec do_main_loop (iface : interface_state_t) reminders =
+let rec do_main_loop (iface : interface_state_t) reminders last_update =
    if iface.run_remic then begin
       assert (doupdate ());
       let key = wgetch iface.scr.help_win in
@@ -436,7 +438,14 @@ let rec do_main_loop (iface : interface_state_t) reminders =
          end else
             handle_keypress key iface reminders
       in
-      do_main_loop new_iface new_reminders
+      let curr_time = Unix.time () in
+      (* poll remind(1) every 5 minutes and update display *)
+      if curr_time -. last_update > 300.0 then begin
+         let r = Remind.create_three_month new_iface.top_timestamp in
+         let (iface2, reminders2) = handle_refresh new_iface r in
+         do_main_loop iface2 reminders2 curr_time
+      end else
+         do_main_loop new_iface new_reminders last_update
    end else
       endwin () (* exit main loop *)
 
@@ -453,7 +462,7 @@ let run (iface : interface_state_t) =
    let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
    draw_msg new_iface;
    assert (doupdate ());
-   do_main_loop new_iface reminders
+   do_main_loop new_iface reminders (Unix.time ())
         
 
 
