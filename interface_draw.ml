@@ -87,25 +87,25 @@ let draw_date_strip (iface : interface_state_t) =
           * top of the screen *)
          let (line, timestamp) = List.hd date_changes in
          let top_date_str = 
-            let temp = {
-               timestamp with Unix.tm_mday = pred timestamp.Unix.tm_mday
-            } in
-            let (_, prev_day) = Unix.mktime temp in
             if line >= 7 then
                (* the date will fit completely *)
-               (Printf.sprintf " %s %.2d" (string_of_tm_mon prev_day.Unix.tm_mon) 
-                   prev_day.Unix.tm_mday) ^ (String.make (line - 7) ' ')
+               (Printf.sprintf " %s %.2d" (string_of_tm_mon timestamp.Unix.tm_mon) 
+                   timestamp.Unix.tm_mday) ^ (String.make (line - 7) ' ')
             else
                (* there's not enough room for the date, so truncate it *)
                Str.last_chars
-               (Printf.sprintf " %s %.2d" (string_of_tm_mon prev_day.Unix.tm_mon) 
-                   prev_day.Unix.tm_mday) line
+               (Printf.sprintf " %s %.2d" (string_of_tm_mon timestamp.Unix.tm_mon) 
+                   timestamp.Unix.tm_mday) line
          in
          (* all other dates are just rendered at the top of their respective windows *)
          let rec add_date date_str changes =
             match changes with
             | [] -> date_str
             | (line, timestamp) :: tail -> 
+               let temp = {
+                  timestamp with Unix.tm_mday = succ timestamp.Unix.tm_mday
+               } in
+               let (_, next_day) = Unix.mktime temp in
                let s_len = 
                   if List.length tail > 0 then
                      let (next_line, _) = List.hd tail in
@@ -114,8 +114,8 @@ let draw_date_strip (iface : interface_state_t) =
                      iface.scr.tw_lines - line
                in
                let temp_s = 
-                  (Printf.sprintf "-%s %.2d" (string_of_tm_mon timestamp.Unix.tm_mon) 
-                      timestamp.Unix.tm_mday) ^ (String.make 100 ' ')
+                  (Printf.sprintf "-%s %.2d" (string_of_tm_mon next_day.Unix.tm_mon) 
+                      next_day.Unix.tm_mday) ^ (String.make 100 ' ')
                in
                add_date (date_str ^ (Str.string_before temp_s s_len)) tail
          in
@@ -123,7 +123,7 @@ let draw_date_strip (iface : interface_state_t) =
       end else
          (* if there are no date changes (e.g. for small window) then just grab the proper
           * date from the top_timestamp *)
-         (Printf.sprintf "%s %.2d" (string_of_tm_mon iface.top_timestamp.Unix.tm_mon) 
+         (Printf.sprintf " %s %.2d" (string_of_tm_mon iface.top_timestamp.Unix.tm_mon) 
              iface.top_timestamp.Unix.tm_mday) ^ (String.make (iface.scr.tw_lines - 6) ' ') 
    in
    (* draw the date string vertically, one character at a time *)
