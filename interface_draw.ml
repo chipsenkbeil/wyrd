@@ -94,7 +94,7 @@ let trunc_mvwaddstr win line col len s =
 (* Draw the one-line help window at the top of the screen *)
 let draw_help (iface : interface_state_t) =
    wattron iface.scr.help_win ((WA.color_pair 1) lor WA.bold lor WA.underline);
-   let s = "t:new timed    u:new untimed    <enter>:edit    z:zoom" in
+   let s = "t:new timed    u:new untimed    <enter>:edit    z:zoom    Q:quit" in
    let blanks = String.make (iface.scr.hw_cols - (String.length s)) ' ' in
    assert (mvwaddstr iface.scr.help_win 0 0 (s ^ blanks));
    assert (wnoutrefresh iface.scr.help_win)

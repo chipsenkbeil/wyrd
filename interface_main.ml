@@ -369,27 +369,31 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
 
 (* Handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
-   if key = int_of_char 'j' then begin
+   if key = int_of_char 'j' || key = Key.down then begin
       match iface.selected_side with
       |Left  -> handle_scrolldown_timed iface reminders
       |Right -> handle_scrolldown_untimed iface reminders
-   end else if key = int_of_char 'k' then begin
+   end else if key = int_of_char 'k' || key = Key.up then begin
       begin match iface.selected_side with
       |Left  -> handle_scrollup_timed iface reminders
       |Right -> handle_scrollup_untimed iface reminders
       end
    end else if key = int_of_char 'z' then begin
       handle_zoom iface reminders
-   end else if key = int_of_char 'h' || key = int_of_char 'l' then begin
+   end else if key = int_of_char 'h' || key = int_of_char 'l' ||
+   key = Key.left || key = Key.right then begin
       handle_switch_focus iface reminders
    end else if key = Key.home then begin
       handle_home iface reminders
-   end else if key = 10 then begin
+   end else if key = 10 || key = Key.enter then begin
       handle_edit iface reminders
    end else if key = int_of_char 't' then begin
       handle_new_reminder iface reminders Timed
    end else if key = int_of_char 'u' then begin
       handle_new_reminder iface reminders Untimed
+   end else if key = int_of_char 'Q' then begin
+      let new_iface = {iface with run_remic = false} in
+      (new_iface, reminders)
    end else
       (iface, reminders)
 
@@ -411,7 +415,7 @@ let rec do_main_loop (iface : interface_state_t) reminders =
       in
       do_main_loop new_iface new_reminders
    end else
-      () (* exit main loop *)
+      endwin () (* exit main loop *)
 
 
 

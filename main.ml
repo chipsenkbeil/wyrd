@@ -50,9 +50,4 @@ with error ->
    Printf.fprintf stderr "Caught error at toplevel:\n%s\n" (Printexc.to_string error);;
 
 
-(* For some reason this call fails if it is moved to interface_draw... *)
-endwin ();;
-
-
-
 (* arch-tag: DO_NOT_CHANGE_eeac13df-e93f-4359-8b70-44fefc40e225 *)
