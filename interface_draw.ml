@@ -94,9 +94,23 @@ let trunc_mvwaddstr win line col len s =
 (* Draw the one-line help window at the top of the screen *)
 let draw_help (iface : interface_state_t) =
    wattron iface.scr.help_win ((WA.color_pair 1) lor WA.bold lor WA.underline);
-   let s = "t:new timed    u:new untimed    <enter>:edit    z:zoom    Q:quit" in
-   let blanks = String.make (iface.scr.hw_cols - (String.length s)) ' ' in
-   assert (mvwaddstr iface.scr.help_win 0 0 (s ^ blanks));
+   let rec build_help_line operations s =
+      match operations with
+      |[] -> 
+         s
+      |(op, op_string) :: tail ->
+         try
+            let key_string = Rcfile.key_of_command op in
+            build_help_line tail (s ^ key_string ^ ":" ^ op_string ^ "   ")
+         with Not_found ->
+            build_help_line tail s
+   in
+   let help_string = 
+      build_help_line [(Rcfile.NewTimed, "new timed"); (Rcfile.NewUntimed, "new untimed");
+                       (Rcfile.Edit, "edit"); (Rcfile.Home, "home"); (Rcfile.Zoom, "zoom"); 
+                       (Rcfile.Quit, "quit")] ""
+   in
+   trunc_mvwaddstr iface.scr.help_win 0 0 iface.scr.hw_cols help_string;
    assert (wnoutrefresh iface.scr.help_win)
 
 
