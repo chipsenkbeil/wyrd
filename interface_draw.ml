@@ -128,10 +128,12 @@ let draw_date_strip (iface : interface_state_t) =
    (* draw the date string vertically, one character at a time *)
    for i = 0 to pred iface.scr.tw_lines do
       if date_chars.[i] = '-' then begin
-         wattron iface.scr.timed_win (WA.color_pair 5);
-         assert (mvwaddch iface.scr.timed_win i 0 acs.Acs.hline);
-         assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.rtee);
-         wattroff iface.scr.timed_win (WA.color_pair 5);
+         wattron iface.scr.timed_win ((WA.color_pair 4) lor WA.underline);
+         assert (mvwaddch iface.scr.timed_win i 0 (int_of_char ' '));
+         wattroff iface.scr.timed_win ((WA.color_pair 4) lor WA.underline);
+         wattron iface.scr.timed_win ((WA.color_pair 5) lor WA.underline);
+         assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.vline);
+         wattroff iface.scr.timed_win ((WA.color_pair 5) lor WA.underline)
       end else begin
          wattron iface.scr.timed_win (WA.color_pair 4);
          assert (mvwaddch iface.scr.timed_win i 0 (int_of_char date_chars.[i]));
@@ -155,6 +157,13 @@ let draw_timed iface reminders =
    let blank = String.make iface.scr.tw_cols ' ' in
    let (f_top, _) = Unix.mktime iface.top_timestamp in
    wattron iface.scr.timed_win ((WA.color_pair 3) lor WA.bold);
+   let temp = {
+      iface.top_timestamp with
+        Unix.tm_sec = 0;
+        Unix.tm_min = ~- (time_inc iface);
+        Unix.tm_hour = 0
+   } in
+   let (_, before_midnight) = Unix.mktime temp in
    let process_reminder (start, finish, msg) =
       let rem_top_line =
          round_down ((start -. f_top) /. (float_of_int (60 * (time_inc iface))))
@@ -169,6 +178,11 @@ let draw_timed iface reminders =
             wattron iface.scr.timed_win WA.reverse
          else
             wattroff iface.scr.timed_win WA.reverse;
+         if ts.Unix.tm_hour = before_midnight.Unix.tm_hour &&
+            ts.Unix.tm_min  = before_midnight.Unix.tm_min then
+            wattron iface.scr.timed_win WA.underline
+         else
+            wattroff iface.scr.timed_win WA.underline;
          is_drawn.(rem_top_line) <- true;
          assert (mvwaddstr iface.scr.timed_win rem_top_line 2 s)
       end else
@@ -191,6 +205,11 @@ let draw_timed iface reminders =
                wattron iface.scr.timed_win WA.reverse
             else
                wattroff iface.scr.timed_win WA.reverse;
+            if ts.Unix.tm_hour = before_midnight.Unix.tm_hour &&
+               ts.Unix.tm_min  = before_midnight.Unix.tm_min then
+               wattron iface.scr.timed_win WA.underline
+            else
+               wattroff iface.scr.timed_win WA.underline;
             if not is_drawn.(rem_top_line + !count) then begin
                is_drawn.(rem_top_line + !count) <- true;
                assert (mvwaddstr iface.scr.timed_win (rem_top_line + !count) 2 s)
@@ -213,6 +232,11 @@ let draw_timed iface reminders =
          let ts = timestamp_of_line iface i in
          let ts_str = Printf.sprintf "%.2d:%.2d " ts.Unix.tm_hour ts.Unix.tm_min in
          let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
+         if ts.Unix.tm_hour = before_midnight.Unix.tm_hour &&
+            ts.Unix.tm_min  = before_midnight.Unix.tm_min then
+            wattron iface.scr.timed_win WA.underline
+         else
+            wattroff iface.scr.timed_win WA.underline;
          assert (mvwaddstr iface.scr.timed_win i 2 s)
       end else
          ()
