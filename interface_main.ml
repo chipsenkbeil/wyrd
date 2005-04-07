@@ -429,16 +429,11 @@ let handle_find_next (iface : interface_state_t) reminders =
       let occurrence_day = Remind.find_next iface.search_regex selected_ts in
       let new_reminders = Remind.update_reminders reminders occurrence_day in
       (* test the untimed reminders list *)
-      let oc_tm = Unix.localtime occurrence_day in
-      Printf.fprintf stderr "found occurrence: %d/%d/%d %.2d:%.2d\n"
-         (oc_tm.Unix.tm_year + 1900) (succ oc_tm.Unix.tm_mon) oc_tm.Unix.tm_mday
-         oc_tm.Unix.tm_hour oc_tm.Unix.tm_min;
-      flush stderr;
       let rec check_untimed untimed =
          match untimed with
          |[] ->
             let _ = beep () in
-            draw_error iface "search expression not found";
+            draw_error iface "search expression not found.";
             assert (doupdate ());
             (iface, reminders)
          |(ts, msg, _, _) :: tail ->
@@ -464,7 +459,6 @@ let handle_find_next (iface : interface_state_t) reminders =
       let rec check_timed timed =
          match timed with
          |[] ->
-            Printf.fprintf stderr "check_timed: not found\n"; flush stderr;
             check_untimed new_reminders.Remind.all_untimed
          |(ts, _, msg, _, _) :: tail ->
             begin try
@@ -488,55 +482,110 @@ let handle_find_next (iface : interface_state_t) reminders =
       check_timed new_reminders.Remind.all_timed
    with Not_found ->
       let _ = beep () in
-      draw_error iface "search expression not found";
+      draw_error iface "search expression not found.";
       (iface, reminders)
 
 
+(* Begin entry of a search string *)
+let handle_begin_search (iface : interface_state_t) reminders =
+   let new_iface = {
+      iface with is_entering_search = true
+   } in
+   draw_error iface "search expression: ";
+   (new_iface, reminders)
 
 
 (* Handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
-   try
-      match Rcfile.command_of_key key with
-      |Rcfile.ScrollDown ->
-         begin match iface.selected_side with
-         |Left  -> handle_scrolldown_timed iface reminders
-         |Right -> handle_scrolldown_untimed iface reminders
+   if not iface.is_entering_search then begin
+      try
+         match Rcfile.command_of_key key with
+         |Rcfile.ScrollDown ->
+            begin match iface.selected_side with
+            |Left  -> handle_scrolldown_timed iface reminders
+            |Right -> handle_scrolldown_untimed iface reminders
+            end
+         |Rcfile.ScrollUp ->
+            begin match iface.selected_side with
+            |Left  -> handle_scrollup_timed iface reminders
+            |Right -> handle_scrollup_untimed iface reminders
+            end
+         |Rcfile.NextDay ->
+            handle_jump iface reminders succ
+         |Rcfile.PrevDay ->
+            handle_jump iface reminders pred
+         |Rcfile.NextWeek ->
+            let next_week i = i + 7 in
+            handle_jump iface reminders next_week
+         |Rcfile.PrevWeek ->
+            let prev_week i = i - 7 in
+            handle_jump iface reminders prev_week
+         |Rcfile.Zoom ->
+            handle_zoom iface reminders
+         |Rcfile.SwitchWindow ->
+            handle_switch_focus iface reminders
+         |Rcfile.Home ->
+            handle_home iface reminders
+         |Rcfile.Edit ->
+            handle_edit iface reminders
+         |Rcfile.NewTimed ->
+            handle_new_reminder iface reminders Timed
+         |Rcfile.NewUntimed ->
+            handle_new_reminder iface reminders Untimed
+         |Rcfile.SearchNext ->
+            handle_find_next iface reminders
+         |Rcfile.BeginSearch ->
+            handle_begin_search iface reminders
+         |Rcfile.Quit ->
+            let new_iface = {iface with run_wyrd = false} in
+            (new_iface, reminders)
+      with Not_found ->
+         (iface, reminders)
+   end else begin
+      (* user is entering a search string *)
+      try
+         begin match Rcfile.entry_of_key key with
+         |Rcfile.EntryComplete ->
+            let new_iface = {
+               iface with search_regex = Str.regexp_case_fold iface.search_input;
+                          search_input = "";
+                          is_entering_search = false
+            } in
+            handle_find_next new_iface reminders
+         |Rcfile.EntryBackspace ->
+            let len = String.length iface.search_input in
+            if len > 0 then 
+               let new_iface = {
+               iface with search_input = 
+                           Str.string_before iface.search_input (pred len)
+               } in
+               draw_error iface ("search expression: " ^ new_iface.search_input);
+               (new_iface, reminders)
+            else
+               let _ = beep () in
+               (iface, reminders)
+         |Rcfile.EntryExit ->
+            let new_iface = {
+               iface with search_input = "";
+                          is_entering_search = false
+            } in
+            draw_error new_iface "search cancelled.";
+            (new_iface, reminders)
          end
-      |Rcfile.ScrollUp ->
-         begin match iface.selected_side with
-         |Left  -> handle_scrollup_timed iface reminders
-         |Right -> handle_scrollup_untimed iface reminders
+      with Not_found ->
+         begin try
+            let c = char_of_int key in
+            let new_iface = {
+               iface with search_input = iface.search_input ^ (String.make 1 c)
+            } in
+            draw_error new_iface ("search expression: " ^ new_iface.search_input);
+            (new_iface, reminders)
+         with Failure _ ->
+            let _ = beep () in
+            (iface, reminders)
          end
-      |Rcfile.NextDay ->
-         handle_jump iface reminders succ
-      |Rcfile.PrevDay ->
-         handle_jump iface reminders pred
-      |Rcfile.NextWeek ->
-         let next_week i = i + 7 in
-         handle_jump iface reminders next_week
-      |Rcfile.PrevWeek ->
-         let prev_week i = i - 7 in
-         handle_jump iface reminders prev_week
-      |Rcfile.Zoom ->
-         handle_zoom iface reminders
-      |Rcfile.SwitchWindow ->
-         handle_switch_focus iface reminders
-      |Rcfile.Home ->
-         handle_home iface reminders
-      |Rcfile.Edit ->
-         handle_edit iface reminders
-      |Rcfile.NewTimed ->
-         handle_new_reminder iface reminders Timed
-      |Rcfile.NewUntimed ->
-         handle_new_reminder iface reminders Untimed
-      |Rcfile.FindNext ->
-         handle_find_next iface reminders
-      |Rcfile.Quit ->
-         let new_iface = {iface with run_wyrd = false} in
-         (new_iface, reminders)
-   with Not_found ->
-      (iface, reminders)
+   end
+
 
 
 

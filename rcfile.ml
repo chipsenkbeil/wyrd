@@ -31,10 +31,14 @@ open Curses
 exception Config_failure of string
 let config_failwith s = raise (Config_failure s)
 
-type operation_t = | ScrollUp | ScrollDown | NextDay | PrevDay 
-                   | NextWeek | PrevWeek | Home | Zoom | Edit
-                   | NewTimed | NewUntimed | SwitchWindow | FindNext 
-                   | Quit
+type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay 
+                 | NextWeek | PrevWeek | Home | Zoom | Edit
+                 | NewTimed | NewUntimed | SwitchWindow | SearchNext 
+                 | BeginSearch | Quit
+
+type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
+
+type operation_t = CommandOp of command_t | EntryOp of entry_operation_t
 
 
 (* These hashtables store conversions between curses keys and the operations
@@ -42,6 +46,8 @@ type operation_t = | ScrollUp | ScrollDown | NextDay | PrevDay
 let table_key_command = Hashtbl.create 20
 let table_command_key = Hashtbl.create 20
 
+let table_key_entry = Hashtbl.create 20
+let table_entry_key = Hashtbl.create 20
 
 (* Default reminders file *)
 let reminders_file = ref "~/.reminders"
@@ -62,9 +68,10 @@ let command_of_key key =
 let key_of_command command =
    Hashtbl.find table_command_key command
 
-
-let key_of_operation (op : operation_t) =
-   Hashtbl.find table_command_key op
+let entry_of_key key =
+   Hashtbl.find table_key_entry key
+let key_of_entry entry =
+   Hashtbl.find table_entry_key entry
 
 
 let decode_single_key_string key_string =
@@ -166,8 +173,13 @@ let decode_single_key_string key_string =
 (* Register a key binding.  This adds hash table entries for translation
  * between curses chtypes and commands (in both directions). *)
 let register_binding_internal k k_string op =
-   Hashtbl.add table_key_command k op;
-   Hashtbl.add table_command_key op k_string
+   match op with
+   |CommandOp x ->
+      Hashtbl.add table_key_command k x;
+      Hashtbl.add table_command_key x k_string
+   |EntryOp x ->
+      Hashtbl.add table_key_entry k x;
+      Hashtbl.add table_entry_key x k_string
 
 
 (* convenience routine for previous *)
@@ -181,37 +193,44 @@ let register_binding key_string op =
 (* unregister a binding *)
 let unregister_binding key_string =
    let k, _ = decode_single_key_string key_string in
-   try
+   begin try
       let op = Hashtbl.find table_key_command k in
       Hashtbl.remove table_key_command k;
       Hashtbl.remove table_command_key op
-   with Not_found -> ()
-
-
-(* Remove a key binding. *)
-let remove_binding k op =
-   Hashtbl.remove table_key_command k;
-   Hashtbl.remove table_command_key op
+   with Not_found -> 
+      ()
+   end;
+   begin try
+      let op = Hashtbl.find table_key_entry k in
+      Hashtbl.remove table_key_entry k;
+      Hashtbl.remove table_entry_key op
+   with Not_found -> 
+      ()
+   end
 
 
 (* translate a command string to the command type it represents *)
 let operation_of_string command_str =
    begin match command_str with
-   |"scroll_up"     -> ScrollUp
-   |"scroll_down"   -> ScrollDown
-   |"next_day"      -> NextDay
-   |"previous_day"  -> PrevDay
-   |"next_week"     -> NextWeek
-   |"previous_week" -> PrevWeek
-   |"home"          -> Home
-   |"zoom"          -> Zoom
-   |"edit"          -> Edit
-   |"new_timed"     -> NewTimed
-   |"new_untimed"   -> NewUntimed
-   |"switch_window" -> SwitchWindow
-   |"find_next"     -> FindNext
-   |"quit"          -> Quit
-   |_               -> config_failwith ("Unknown command name \"" ^ command_str ^ "\"")
+   |"scroll_up"       -> CommandOp ScrollUp
+   |"scroll_down"     -> CommandOp ScrollDown
+   |"next_day"        -> CommandOp NextDay
+   |"previous_day"    -> CommandOp PrevDay
+   |"next_week"       -> CommandOp NextWeek
+   |"previous_week"   -> CommandOp PrevWeek
+   |"home"            -> CommandOp Home
+   |"zoom"            -> CommandOp Zoom
+   |"edit"            -> CommandOp Edit
+   |"new_timed"       -> CommandOp NewTimed
+   |"new_untimed"     -> CommandOp NewUntimed
+   |"switch_window"   -> CommandOp SwitchWindow
+   |"search_next"     -> CommandOp SearchNext
+   |"begin_search"    -> CommandOp BeginSearch
+   |"entry_complete"  -> EntryOp EntryComplete
+   |"entry_backspace" -> EntryOp EntryBackspace
+   |"entry_exit"      -> EntryOp EntryExit
+   |"quit"            -> CommandOp Quit
+   |_                 -> config_failwith ("Unknown command name \"" ^ command_str ^ "\"")
    end
 
 

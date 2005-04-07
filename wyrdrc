@@ -33,9 +33,13 @@ bind "<return>"          edit
 bind "<enter>"           edit
 bind "t"                 new_timed
 bind "u"                 new_untimed
-bind "n"                 find_next
+bind "n"                 search_next
+bind "/"                 begin_search
 bind "Q"                 quit
 
-
+bind "<return>"          entry_complete
+bind "<enter>"           entry_complete
+bind "<backspace>"       entry_backspace
+bind "<esc>"             entry_exit
 
 # arch-tag: DO_NOT_CHANGE_ee9bb855-2fde-4a61-8645-8ba31b35eaab 

@@ -70,7 +70,9 @@ type interface_state_t = {
                                                                  * associated with each line of the timed reminders window *)
    untimed_lineinfo  : (string * string * string) option array; (* same as above, for untimed window *)
    len_untimed       : int;                 (* number of entries in the untimed reminders list *)
-   search_regex      : Str.regexp           (* most recent search string *)
+   search_regex      : Str.regexp;          (* most recent search string *)
+   search_input      : string;              (* buffer to hold search string input *)
+   is_entering_search: bool                 (* whether or not the user is entering a search string *)
 }
    
 
@@ -99,19 +101,21 @@ let round_time zoom t =
 let make (std : screen_t) =
    let curr_time = Unix.localtime ((Unix.time ()) -. 60. *. 60.) in
    let (rounded_time, _) = Unix.mktime (round_time Hour curr_time) in {
-      version           = Version.version;
-      scr               = std;
-      run_wyrd          = true;
-      top_timestamp     = rounded_time;
-      top_untimed       = 0;
-      selected_side     = Left;
-      left_selection    = 1;
-      right_selection   = 1;
-      zoom_level        = Hour;
-      timed_lineinfo    = Array.make std.tw_lines None;
-      untimed_lineinfo  = Array.make std.uw_lines None;
-      len_untimed       = 0;
-      search_regex      = Str.regexp "Dave blah"
+      version            = Version.version;
+      scr                = std;
+      run_wyrd           = true;
+      top_timestamp      = rounded_time;
+      top_untimed        = 0;
+      selected_side      = Left;
+      left_selection     = 1;
+      right_selection    = 1;
+      zoom_level         = Hour;
+      timed_lineinfo     = Array.make std.tw_lines None;
+      untimed_lineinfo   = Array.make std.uw_lines None;
+      len_untimed        = 0;
+      search_regex       = Str.regexp "";
+      search_input       = "";
+      is_entering_search = false
    }
                                                
 
