@@ -106,7 +106,7 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("remind -s -l -b2 " ^ !Rcfile.reminders_file ^
+   let remind_channel = Unix.open_process_in ("remind -s -l -g -b2 " ^ !Rcfile.reminders_file ^
    " " ^ rem_date_str) in
    let rec build_lists timed untimed =
       try
@@ -216,6 +216,10 @@ let cmp_untimed rem_a rem_b =
    compare ts_a ts_b
 
 
+(* same thing as List.append (or @), but tail-recursive *)
+let safe_append a b = List.rev_append (List.rev a) b
+
+
 (* initialize a new three-month reminder record *)
 let create_three_month timestamp =
    let temp = {
@@ -240,13 +244,11 @@ let create_three_month timestamp =
       prev_timed     = pt;
       curr_timed     = ct;
       next_timed     = nt;
-      all_timed      = List.fast_sort cmp_timed 
-                          (List.rev_append (List.rev_append ct pt) nt);
+      all_timed      = safe_append pt (safe_append ct pt);
       prev_untimed   = pu;
       curr_untimed   = cu;
       next_untimed   = nu;
-      all_untimed    = List.fast_sort cmp_untimed 
-                          (List.rev_append (List.rev_append cu pu) nu);
+      all_untimed    = safe_append cu (safe_append pu nu);
       curr_counts    = count_reminders ct cu;
       curr_cal       = make_cal curr_ts
    }
@@ -269,13 +271,11 @@ let next_month reminders =
       prev_timed     = reminders.curr_timed;
       curr_timed     = reminders.next_timed;
       next_timed     = t;
-      all_timed      = List.fast_sort cmp_timed (List.rev_append
-                          (List.rev_append reminders.next_timed reminders.curr_timed) t);
+      all_timed      = safe_append reminders.curr_timed (safe_append reminders.next_timed t);
       prev_untimed   = reminders.curr_untimed;
       curr_untimed   = reminders.next_untimed;
       next_untimed   = u;
-      all_untimed    = List.fast_sort cmp_untimed (List.rev_append 
-                          (List.rev_append reminders.next_untimed reminders.curr_untimed) u);
+      all_untimed    = safe_append reminders.curr_untimed (safe_append reminders.next_untimed u);
       curr_counts    = count_reminders reminders.next_timed reminders.next_untimed;
       curr_cal       = make_cal new_curr_timestamp
    }
@@ -297,13 +297,11 @@ let prev_month reminders =
       prev_timed     = t;
       curr_timed     = reminders.prev_timed;
       next_timed     = reminders.curr_timed;
-      all_timed      = List.fast_sort cmp_timed (List.rev_append 
-                          (List.rev_append reminders.prev_timed t) reminders.curr_timed);
+      all_timed      = safe_append t (safe_append reminders.prev_timed reminders.curr_timed);
       prev_untimed   = u;
       curr_untimed   = reminders.prev_untimed;
       next_untimed   = reminders.curr_untimed;
-      all_untimed    = List.fast_sort cmp_untimed (List.rev_append 
-                          (List.rev_append reminders.prev_untimed u) reminders.curr_untimed);
+      all_untimed    = safe_append u (safe_append reminders.prev_untimed reminders.curr_untimed);
       curr_counts    = count_reminders reminders.prev_timed reminders.prev_untimed;
       curr_cal       = make_cal new_curr_timestamp
    }

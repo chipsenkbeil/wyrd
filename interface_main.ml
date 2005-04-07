@@ -459,7 +459,7 @@ let handle_find_next (iface : interface_state_t) reminders =
       let rec check_timed timed =
          match timed with
          |[] ->
-            check_untimed new_reminders.Remind.all_untimed
+            check_untimed new_reminders.Remind.curr_untimed
          |(ts, _, msg, _, _) :: tail ->
             begin try
                if ts > selected_ts then
@@ -479,7 +479,7 @@ let handle_find_next (iface : interface_state_t) reminders =
                check_timed tail
             end
       in
-      check_timed new_reminders.Remind.all_timed
+      check_timed new_reminders.Remind.curr_timed
    with Not_found ->
       let _ = beep () in
       draw_error iface "search expression not found.";
