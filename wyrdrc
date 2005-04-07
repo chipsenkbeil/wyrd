@@ -40,6 +40,6 @@ bind "Q"                 quit
 bind "<return>"          entry_complete
 bind "<enter>"           entry_complete
 bind "<backspace>"       entry_backspace
-bind "<esc>"             entry_exit
+bind "<esc>"             entry_cancel
 
 # arch-tag: DO_NOT_CHANGE_ee9bb855-2fde-4a61-8645-8ba31b35eaab 

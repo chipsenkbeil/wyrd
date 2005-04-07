@@ -228,7 +228,7 @@ let operation_of_string command_str =
    |"begin_search"    -> CommandOp BeginSearch
    |"entry_complete"  -> EntryOp EntryComplete
    |"entry_backspace" -> EntryOp EntryBackspace
-   |"entry_exit"      -> EntryOp EntryExit
+   |"entry_cancel"    -> EntryOp EntryExit
    |"quit"            -> CommandOp Quit
    |_                 -> config_failwith ("Unknown command name \"" ^ command_str ^ "\"")
    end
