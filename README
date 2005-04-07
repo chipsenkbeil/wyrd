@@ -3,7 +3,7 @@
 
                                  Paul Pelzl
 
-                               April 4, 2005
+                               April 6, 2005
 
 
 
@@ -31,12 +31,11 @@ License.  See 'COPYING' for details.
 
 REQUIREMENTS
 
-Wyrd is written in OCaml, a high-performance functional programming language
-available from http://caml.inria.fr .  Wyrd depends on the following software
-packages:
+Wyrd depends on the following software packages:
 
+   * OCaml >= 3.07
    * the ncurses library (and development headers)
-   * remind
+   * Remind >= 3.0.23
    * standard Unix utilities such as 'cat', 'sort', and 'cal'
 
 
