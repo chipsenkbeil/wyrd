@@ -117,6 +117,8 @@ Searching:
    repeat the same search.  Entry of a search string may be cancelled with
    '<esc>'.
 
+   The regular expression syntax is Emacs-compatible.
+
    Note: Sorry, there is no "search backward" function.  The search function
          requires the use of "remind -n", which operates only forward in time.
 
