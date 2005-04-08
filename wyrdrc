@@ -5,6 +5,15 @@ set reminders_file="~/.reminders"
 set edit_old_command="vim +%n %f"
 # command for editing a new appointment, given a filename %f
 set edit_new_command="vim -c '$' %f"
+
+# emacs settings
+#set edit_old_command="emacs +%n %f"
+#set edit_new_command="emacs %f -f end-of-buffer -f beginning-of-line"
+
+# nano settings
+#set edit_old_command="nano +%n %f"
+#set edit_new_command="nano +9999999 %f"
+
 # number of reminders per day allowed for each calendar colorization level
 set busy_level1="1"   # uncolored
 set busy_level2="3"   # blue
