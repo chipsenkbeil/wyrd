@@ -78,12 +78,13 @@ Display:
 
 Navigation:
 
-   Scroll up and down the schedule : <up>/<down> or k/j
-   Jump back or forward by a day   : <pageup>/<pagedown> or 4/6
-   Jump back or forward by a week  : 8/2
+   Scroll up and down the schedule : <up>, <down> or k, j
+   Jump back or forward by a day   : <pageup>, <pagedown> or 4, 6 or <, >
+   Jump back or forward by a week  : 8, 2 or [, ]
+   Jump back or forward by a month : {, }
    Jump to current date and time   : <home>
    Switch between schedule and
-      untimed reminders window     : <left>/<right>/h/l
+      untimed reminders window     : <left>, <right>, h, l
    Zoom in on the schedule         : z
 
    Notice that if you have a numeric keypad, the 4/6/8/2 keys will let you move

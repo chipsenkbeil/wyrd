@@ -32,9 +32,9 @@ exception Config_failure of string
 let config_failwith s = raise (Config_failure s)
 
 type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay 
-                 | NextWeek | PrevWeek | Home | Zoom | Edit
-                 | NewTimed | NewUntimed | SwitchWindow | SearchNext 
-                 | BeginSearch | Quit
+                 | NextWeek | PrevWeek | NextMonth | PrevMonth
+                 | Home | Zoom | Edit | NewTimed | NewUntimed | SwitchWindow 
+                 | SearchNext | BeginSearch | Quit
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
@@ -218,6 +218,8 @@ let operation_of_string command_str =
    |"previous_day"    -> CommandOp PrevDay
    |"next_week"       -> CommandOp NextWeek
    |"previous_week"   -> CommandOp PrevWeek
+   |"next_month"      -> CommandOp NextMonth
+   |"previous_month"  -> CommandOp PrevMonth
    |"home"            -> CommandOp Home
    |"zoom"            -> CommandOp Zoom
    |"edit"            -> CommandOp Edit

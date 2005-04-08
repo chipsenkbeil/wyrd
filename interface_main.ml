@@ -281,6 +281,32 @@ let handle_jump (iface : interface_state_t) reminders jump_func =
    handle_selection_change new_iface reminders
 
 
+(* handle a jump to the previous month *)
+let handle_prev_month (iface : interface_state_t) reminders =
+   let top = Unix.localtime iface.top_timestamp in
+   let temp = {
+      top with Unix.tm_mon = pred top.Unix.tm_mon
+   } in
+   let (prev_mon_ts, _) = Unix.mktime temp in
+   let new_iface = {
+      iface with top_timestamp = prev_mon_ts
+   } in
+   handle_selection_change new_iface reminders
+
+
+(* handle a jump to the next month *)
+let handle_next_month (iface : interface_state_t) reminders =
+   let top = Unix.localtime iface.top_timestamp in
+   let temp = {
+      top with Unix.tm_mon = succ top.Unix.tm_mon
+   } in
+   let (next_mon_ts, _) = Unix.mktime temp in
+   let new_iface = {
+      iface with top_timestamp = next_mon_ts
+   } in
+   handle_selection_change new_iface reminders
+
+
 (* handle a zoom keypress *)
 let handle_zoom (iface : interface_state_t) reminders =
    let new_iface = 
@@ -563,6 +589,10 @@ let handle_keypress key (iface : interface_state_t) reminders =
          |Rcfile.PrevWeek ->
             let prev_week i = i - 7 in
             handle_jump iface reminders prev_week
+         |Rcfile.NextMonth ->
+            handle_next_month iface reminders
+         |Rcfile.PrevMonth ->
+            handle_prev_month iface reminders
          |Rcfile.Zoom ->
             handle_zoom iface reminders
          |Rcfile.SwitchWindow ->

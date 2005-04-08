@@ -23,10 +23,16 @@ bind "<left>"            switch_window
 bind "<right>"           switch_window
 bind "<pageup>"          previous_day
 bind "4"                 previous_day
+bind "<"                 previous_day
 bind "<pagedown>"        next_day
 bind "6"                 next_day
+bind ">"                 next_day
 bind "8"                 previous_week
+bind "["                 previous_week
 bind "2"                 next_week
+bind "]"                 next_week
+bind "{"                 previous_month
+bind "}"                 next_month
 bind "<home>"            home
 bind "z"                 zoom
 bind "<return>"          edit
