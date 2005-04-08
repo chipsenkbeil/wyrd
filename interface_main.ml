@@ -335,6 +335,7 @@ let handle_home (iface : interface_state_t) reminders =
    let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
    let new_iface = {
       iface with top_timestamp  = rounded_time;
+                 selected_side  = Left;
                  left_selection = 1
    } in
    handle_selection_change new_iface reminders
@@ -430,10 +431,13 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
  * Finally, reconfigure the iface record to highlight the matched entry. *)
 let handle_find_next (iface : interface_state_t) reminders =
    try
-      let selected_ts    = timestamp_of_line iface iface.left_selection in
-      let occurrence_day = Remind.find_next iface.search_regex selected_ts in
-      let new_reminders  = Remind.update_reminders reminders occurrence_day in
-      let occurrence_tm  = Unix.localtime occurrence_day in
+      (* Note: selected_ts is the timestamp of the next timeslot, minus one second.
+       *       This ensures that searching begins immediately after the current
+       *       selection. *)
+      let selected_ts     = (timestamp_of_line iface (succ iface.left_selection)) -. 1.0 in
+      let occurrence_time = Remind.find_next iface.search_regex selected_ts in
+      let new_reminders   = Remind.update_reminders reminders occurrence_time in
+      let occurrence_tm   = Unix.localtime occurrence_time in
       let temp1 = {
          occurrence_tm with Unix.tm_sec  = 0;
                             Unix.tm_min  = 0;

@@ -342,7 +342,10 @@ let update_reminders rem timestamp =
  * but before the current timestamp will effectively suppress later recurrences
  * of that reminder. *)
 let find_next msg_regex timestamp =
-   let rem_regex = Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([^ ]+.*\\)$" in
+   let rem_regex_timed = 
+      Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([0-9]+\\):\\([0-9]+\\) \\([^ ]+.*\\)$"
+   in
+   let rem_regex_untimed = Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([^ ]+.*\\)$" in
    let tm1 = Unix.localtime timestamp in
    let tm2 = Unix.localtime (timestamp +. 86400.) in      (* 24 hours *)
    let rem_date_str1 = (string_of_tm_mon tm1.Unix.tm_mon) ^ " " ^ 
@@ -351,13 +354,44 @@ let find_next msg_regex timestamp =
    let rem_date_str2 = (string_of_tm_mon tm2.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm2.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("remind -n -b2 " ^ !Rcfile.reminders_file ^
-   " " ^ rem_date_str1 ^ " > /tmp/wyrd-tmp && remind -n -b2 " ^ !Rcfile.reminders_file ^
+   let remind_channel = Unix.open_process_in ("remind -n -b1 " ^ !Rcfile.reminders_file ^
+   " " ^ rem_date_str1 ^ " > /tmp/wyrd-tmp && remind -n -b1 " ^ !Rcfile.reminders_file ^
    " " ^ rem_date_str2 ^ " | cat /tmp/wyrd-tmp - | sort") in
    let rec check_messages () =
       try
          let line = input_line remind_channel in
-         if Str.string_match rem_regex line 0 then begin
+         if Str.string_match rem_regex_timed line 0 then begin
+            (* go here if this line is a timed reminder *)
+            let year  = int_of_string (Str.matched_group 1 line)
+            and month = int_of_string (Str.matched_group 2 line)
+            and day   = int_of_string (Str.matched_group 3 line)
+            and hour  = int_of_string (Str.matched_group 4 line)
+            and min   = int_of_string (Str.matched_group 5 line)
+            and msg   = Str.matched_group 6 line in
+            let temp = {
+               Unix.tm_sec   = 0;
+               Unix.tm_min   = min;
+               Unix.tm_hour  = hour;
+               Unix.tm_mday  = day;
+               Unix.tm_mon   = pred month;
+               Unix.tm_year  = year - 1900;
+               Unix.tm_wday  = 0;
+               Unix.tm_yday  = 0;
+               Unix.tm_isdst = false
+            } in
+            let (ts, _) = Unix.mktime temp in
+            if ts > timestamp then
+               begin try
+                  let _ = Str.search_forward msg_regex msg 0 in
+                  let _ = Unix.close_process_in remind_channel in
+                  ts
+               with Not_found ->
+                  check_messages ()
+               end
+            else
+               check_messages ()
+         end else if Str.string_match rem_regex_untimed line 0 then begin
+            (* go here if this line is an untimed reminder *)
             let year  = int_of_string (Str.matched_group 1 line)
             and month = int_of_string (Str.matched_group 2 line)
             and day   = int_of_string (Str.matched_group 3 line)
