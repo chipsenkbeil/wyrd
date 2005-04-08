@@ -108,7 +108,7 @@ let draw_help (iface : interface_state_t) =
    let help_string = 
       build_help_line [(Rcfile.NewTimed, "new timed"); (Rcfile.NewUntimed, "new untimed");
                        (Rcfile.Edit, "edit"); (Rcfile.Home, "home"); (Rcfile.Zoom, "zoom"); 
-                       (Rcfile.Quit, "quit")] ""
+                       (Rcfile.BeginSearch, "search"); (Rcfile.Quit, "quit")] ""
    in
    trunc_mvwaddstr iface.scr.help_win 0 0 iface.scr.hw_cols help_string;
    assert (wnoutrefresh iface.scr.help_win)
