@@ -430,12 +430,10 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
  * Finally, reconfigure the iface record to highlight the matched entry. *)
 let handle_find_next (iface : interface_state_t) reminders =
    try
-      (* Note: begin looking *after* the selected timestamp, to prevent
-       * finding the same time over and over again *)
-      let selected_ts = timestamp_of_line iface (succ iface.left_selection) in
+      let selected_ts    = timestamp_of_line iface iface.left_selection in
       let occurrence_day = Remind.find_next iface.search_regex selected_ts in
-      let new_reminders = Remind.update_reminders reminders occurrence_day in
-      let occurrence_tm = Unix.localtime occurrence_day in
+      let new_reminders  = Remind.update_reminders reminders occurrence_day in
+      let occurrence_tm  = Unix.localtime occurrence_day in
       let temp1 = {
          occurrence_tm with Unix.tm_sec  = 0;
                             Unix.tm_min  = 0;
