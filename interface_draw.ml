@@ -546,9 +546,18 @@ let draw_msg iface =
    assert (wnoutrefresh iface.scr.msg_win)
 
 
-let draw_error iface err =
+(* Draw a message in the error window.  If draw_cursor = true, then
+ * add a blinking cursor at the end of the message. *)
+let draw_error iface err draw_cursor =
    werase iface.scr.err_win;
    trunc_mvwaddstr iface.scr.err_win 0 0 iface.scr.ew_cols err;
+   let len = String.length err in
+   if draw_cursor && len <= pred iface.scr.ew_cols then begin
+      wattron iface.scr.err_win WA.blink;
+      assert (mvwaddch iface.scr.err_win 0 len (int_of_char '_'));
+      wattroff iface.scr.err_win WA.blink
+   end else
+      ();
    assert (wnoutrefresh iface.scr.err_win)
 
 

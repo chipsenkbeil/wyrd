@@ -156,7 +156,7 @@ let handle_refresh (iface : interface_state_t) reminders =
    draw_calendar new_iface reminders;
    let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
    (* draw_msg new_iface; *)
-   draw_error new_iface "";
+   draw_error new_iface "" false;
    (new_iface, reminders)
    
 
@@ -182,7 +182,7 @@ let handle_selection_change iface reminders =
    draw_calendar new_iface new_reminders;
    let new_iface = draw_untimed new_iface new_reminders.Remind.curr_untimed in
    (* draw_msg new_iface; *)
-   draw_error new_iface "";
+   draw_error new_iface "" false;
    (new_iface, new_reminders)
 
 
@@ -463,7 +463,7 @@ let handle_find_next (iface : interface_state_t) reminders =
          match untimed with
          |[] ->
             let _ = beep () in
-            draw_error iface "search expression not found.";
+            draw_error iface "search expression not found." false;
             assert (doupdate ());
             (iface, reminders)
          |(ts, msg, _, _) :: tail ->
@@ -525,7 +525,7 @@ let handle_find_next (iface : interface_state_t) reminders =
       check_timed (List.filter is_current_timed new_reminders.Remind.curr_timed)
    with Not_found ->
       let _ = beep () in
-      draw_error iface "search expression not found.";
+      draw_error iface "search expression not found." false;
       (iface, reminders)
 
 
@@ -534,7 +534,7 @@ let handle_begin_search (iface : interface_state_t) reminders =
    let new_iface = {
       iface with is_entering_search = true
    } in
-   draw_error iface "search expression: ";
+   draw_error iface "search expression: " true;
    (new_iface, reminders)
 
 
@@ -602,7 +602,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
                iface with search_input = 
                            Str.string_before iface.search_input (pred len)
                } in
-               draw_error iface ("search expression: " ^ new_iface.search_input);
+               draw_error iface ("search expression: " ^ new_iface.search_input) true;
                (new_iface, reminders)
             else
                let _ = beep () in
@@ -612,7 +612,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
                iface with search_input = "";
                           is_entering_search = false
             } in
-            draw_error new_iface "search cancelled.";
+            draw_error new_iface "search cancelled." false;
             (new_iface, reminders)
          end
       with Not_found ->
@@ -621,7 +621,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
             let new_iface = {
                iface with search_input = iface.search_input ^ (String.make 1 c)
             } in
-            draw_error new_iface ("search expression: " ^ new_iface.search_input);
+            draw_error new_iface ("search expression: " ^ new_iface.search_input) true;
             (new_iface, reminders)
          with Failure _ ->
             let _ = beep () in
@@ -684,7 +684,7 @@ let run (iface : interface_state_t) =
    draw_calendar new_iface reminders;
    let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
    draw_msg new_iface;
-   draw_error new_iface "";
+   draw_error new_iface "" false;
    assert (doupdate ());
    do_main_loop new_iface reminders (Unix.time ())
         
