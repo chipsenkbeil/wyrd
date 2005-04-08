@@ -1,12 +1,11 @@
 Wyrd To-Do list
 ------------------------------------------------------------------------
 
-* When the search function matches an untimed reminder, highlight the
-  matched reminder rather than the first in the list.
-
 * Handle terminal resizes.
 
-* Figure out some way to handle overlapping reminders.
+* Figure out some way to handle overlapping timed reminders.
+
+
 
 
 # arch-tag: DO_NOT_CHANGE_13b859a4-395f-4c00-a604-d384b6490bbc 

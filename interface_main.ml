@@ -420,7 +420,14 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    handle_refresh new_iface r
 
 
-(* Search forward for the next occurrence of the search regex. *)
+(* Search forward for the next occurrence of the current search regex.  
+ *
+ * First find the date of the occurrence, by matching on the output of 'remind
+ * -n'.  For that date, recompute timed and untimed reminder lists.  Filter the
+ * timed and untimed reminder lists to get only the entries falling on the
+ * occurrence date.  Search through the filtered timed list first, then the
+ * filtered untimed list, and locate the first entry that matches the regex.
+ * Finally, reconfigure the iface record to highlight the matched entry. *)
 let handle_find_next (iface : interface_state_t) reminders =
    try
       (* Note: begin looking *after* the selected timestamp, to prevent
@@ -428,8 +435,29 @@ let handle_find_next (iface : interface_state_t) reminders =
       let selected_ts = timestamp_of_line iface (succ iface.left_selection) in
       let occurrence_day = Remind.find_next iface.search_regex selected_ts in
       let new_reminders = Remind.update_reminders reminders occurrence_day in
-      (* test the untimed reminders list *)
-      let rec check_untimed untimed =
+      let occurrence_tm = Unix.localtime occurrence_day in
+      let temp1 = {
+         occurrence_tm with Unix.tm_sec  = 0;
+                            Unix.tm_min  = 0;
+                            Unix.tm_hour = 0
+      } in
+      let temp2 = {
+         occurrence_tm with Unix.tm_sec  = 0;
+                            Unix.tm_min  = 0;
+                            Unix.tm_hour = 0;
+                            Unix.tm_mday = succ occurrence_tm.Unix.tm_mday 
+      } in
+      let (day_start_ts, _) = Unix.mktime temp1 in
+      let (day_end_ts, _)   = Unix.mktime temp2 in
+      (* filter functions to determine reminders falling on the occurrence day *)
+      let is_current_untimed (rem_ts, msg, _, _) =
+         rem_ts >= day_start_ts && rem_ts < day_end_ts
+      in
+      let is_current_timed (rem_ts, msg, _, _, _) =
+         rem_ts >= day_start_ts && rem_ts < day_end_ts
+      in
+      (* test the untimed reminders list for entries that match the regex *)
+      let rec check_untimed untimed n =
          match untimed with
          |[] ->
             let _ = beep () in
@@ -442,24 +470,37 @@ let handle_find_next (iface : interface_state_t) reminders =
                   let _ = Str.search_forward iface.search_regex msg 0 in
                   let tm = Unix.localtime ts in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
-                  let new_iface = {
-                     iface with top_timestamp   = rounded_time;
-                                left_selection  = 0;
-                                right_selection = 1;
-                                selected_side   = Right
-                  } in
+                  let new_iface =
+                     (* take care of highlighting the correct untimed reminder *)
+                     if n >= iface.scr.uw_lines then {
+                        iface with top_timestamp   = rounded_time;
+                                   top_untimed     = n - iface.scr.uw_lines + 1;
+                                   left_selection  = 0;
+                                   right_selection = pred iface.scr.uw_lines;
+                                   selected_side   = Right
+                     } else {
+                        iface with top_timestamp   = rounded_time;
+                                   top_untimed     = 0;
+                                   left_selection  = 0;
+                                   right_selection = n;
+                                   selected_side   = Right
+                     }
+                  in
                   handle_selection_change new_iface new_reminders
                else
                   raise Not_found
             with Not_found ->
-               check_untimed tail
+               check_untimed tail (succ n)
             end
       in
-      (* test the timed reminders list *)
+      (* test the timed reminders list for entries that match the regex *)
       let rec check_timed timed =
          match timed with
          |[] ->
-            check_untimed new_reminders.Remind.curr_untimed
+            let today_untimed = 
+               List.filter is_current_untimed new_reminders.Remind.curr_untimed
+            in
+            check_untimed today_untimed 1
          |(ts, _, msg, _, _) :: tail ->
             begin try
                if ts > selected_ts then
@@ -479,7 +520,7 @@ let handle_find_next (iface : interface_state_t) reminders =
                check_timed tail
             end
       in
-      check_timed new_reminders.Remind.curr_timed
+      check_timed (List.filter is_current_timed new_reminders.Remind.curr_timed)
    with Not_found ->
       let _ = beep () in
       draw_error iface "search expression not found.";
