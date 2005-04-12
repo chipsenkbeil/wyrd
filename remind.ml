@@ -101,7 +101,8 @@ let string_of_tm_wday i =
 (* Obtain two lists of reminders for the month of the timestamp argument.
  * The first list is for timed reminders, the second is for untimed. *)
 let month_reminders timestamp =
-   let rem_regex = Str.regexp "^\\([^ ]+\\):\\([^ ]+\\) \\([^ ]+\\) [^ ]+ [^ ]+ \\([^ ]+\\) \\([^ ]+\\) \\(.*\\)$" in
+   let comment_regex = Str.regexp "^#.*fileinfo \\([^ ]+\\) \\(.*\\)$" in
+   let rem_regex = Str.regexp "\\([^ ]+\\) [^ ]+ [^ ]+ \\([^ ]+\\) \\([^ ]+\\) \\(.*\\)$" in
    let tm = Unix.localtime timestamp in
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
@@ -111,43 +112,48 @@ let month_reminders timestamp =
    let rec build_lists timed untimed =
       try
          let line = input_line remind_channel in
-         if Str.string_match rem_regex line 0 then begin
-            let filename   = Str.matched_group 1 line
-            and line_num_s = Str.matched_group 2 line
-            and date_s     = Str.matched_group 3 line
-            and duration_s = Str.matched_group 4 line
-            and min_s      = Str.matched_group 5 line
-            and msg        = Str.matched_group 6 line in
-            (* further subdivide the date string *)
-            let date_arr = Array.of_list (Str.split (Str.regexp "/") date_s) in
-            let year     = int_of_string date_arr.(0)
-            and month    = int_of_string date_arr.(1)
-            and day      = int_of_string date_arr.(2) in
-            let temp = {
-               Unix.tm_sec   = 0;
-               Unix.tm_min   = 0;
-               Unix.tm_hour  = 0;
-               Unix.tm_mday  = day;
-               Unix.tm_mon   = pred month;
-               Unix.tm_year  = year - 1900;
-               Unix.tm_wday  = 0;
-               Unix.tm_yday  = 0;
-               Unix.tm_isdst = false
-            } in
-            if min_s = "*" then
-               let (f_rem_ts, _) = Unix.mktime temp in
-               build_lists timed ((f_rem_ts, msg, filename, line_num_s) :: untimed)
-            else
-               let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
-               let (f_rem_ts, _) = Unix.mktime temp_with_min in
-               let duration =
-                  if duration_s = "*" then 0.0
-                  else float_of_string duration_s
-               in
-               build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg, 
-                             filename, line_num_s) :: timed) untimed
+         if Str.string_match comment_regex line 0 then begin
+            let line_num_s = Str.matched_group 1 line
+            and filename   = Str.matched_group 2 line in
+            let rem_line   = input_line remind_channel in
+            if Str.string_match rem_regex rem_line 0 then begin
+               let date_s     = Str.matched_group 1 rem_line
+               and duration_s = Str.matched_group 2 rem_line
+               and min_s      = Str.matched_group 3 rem_line
+               and msg        = Str.matched_group 4 rem_line in
+               (* further subdivide the date string *)
+               let date_arr = Array.of_list (Str.split (Str.regexp "/") date_s) in
+               let year     = int_of_string date_arr.(0)
+               and month    = int_of_string date_arr.(1)
+               and day      = int_of_string date_arr.(2) in
+               let temp = {
+                  Unix.tm_sec   = 0;
+                  Unix.tm_min   = 0;
+                  Unix.tm_hour  = 0;
+                  Unix.tm_mday  = day;
+                  Unix.tm_mon   = pred month;
+                  Unix.tm_year  = year - 1900;
+                  Unix.tm_wday  = 0;
+                  Unix.tm_yday  = 0;
+                  Unix.tm_isdst = false
+               } in
+               if min_s = "*" then
+                  let (f_rem_ts, _) = Unix.mktime temp in
+                  build_lists timed ((f_rem_ts, msg, filename, line_num_s) :: untimed)
+               else
+                  let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
+                  let (f_rem_ts, _) = Unix.mktime temp_with_min in
+                  let duration =
+                     if duration_s = "*" then 0.0
+                     else float_of_string duration_s
+                  in
+                  build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg, 
+                                filename, line_num_s) :: timed) untimed
+            end else
+               (* if there was no rem_regex match, continue with next line *)
+               build_lists timed untimed
          end else
-            (* if there was no regexp match, continue with next line *)
+            (* if there was no comment_regex match, continue with next line *)
             build_lists timed untimed
       with
       | End_of_file ->
