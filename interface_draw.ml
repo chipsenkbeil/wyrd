@@ -245,7 +245,7 @@ let draw_timed iface reminders =
       let rem_top_line =
          round_down ((start -. iface.top_timestamp) /. (time_inc iface))
       in
-      let time_str =
+      let get_time_str () =
          if finish > start then
             (twelve_hour_string (Unix.localtime start)) ^ "-" ^
             (twelve_hour_string (Unix.localtime finish)) ^ " "
@@ -254,6 +254,7 @@ let draw_timed iface reminders =
       in
       (* draw the top line of a reminder *)
       if rem_top_line >= 0 && rem_top_line < iface.scr.tw_lines then begin
+         let time_str = get_time_str () in
          let ts = timestamp_of_line iface rem_top_line in
          let tm = Unix.localtime ts in
          let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
@@ -279,6 +280,7 @@ let draw_timed iface reminders =
          (rem_top_line + !count < iface.scr.tw_lines)
       do
          if rem_top_line + !count >= 0 then begin
+            let time_str = get_time_str () in
             let ts = timestamp_of_line iface (rem_top_line + !count) in
             let tm = Unix.localtime ts in
             let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
