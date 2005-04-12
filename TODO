@@ -5,6 +5,8 @@ Wyrd To-Do list
 
 * Figure out some way to handle overlapping timed reminders.
 
+* Implement a memoization mechanism to speed up drawing of timed 
+  reminders window when scrolling.
 
 
 
