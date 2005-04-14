@@ -404,20 +404,32 @@ let handle_edit (iface : interface_state_t) reminders =
    end
 
 
-(* handle creation of a new timed reminder *)
+(* handle creation of a new timed or untimed reminder *)
 let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
+   let substitute template =
+      let rec substitute_aux subst_list s =
+         match subst_list with
+         |[] ->
+            s
+         |(regex, replacement) :: tail ->
+            let new_s = Str.global_replace regex replacement s in
+            substitute_aux tail new_s
+      in
+      substitute_aux [
+         (Str.regexp "%M", Remind.string_of_tm_mon tm.Unix.tm_mon);
+         (Str.regexp "%d", string_of_int tm.Unix.tm_mday);
+         (Str.regexp "%y", string_of_int (tm.Unix.tm_year + 1900));
+         (Str.regexp "%h", Printf.sprintf "%.2d" tm.Unix.tm_hour);
+         (Str.regexp "%m", Printf.sprintf "%.2d" tm.Unix.tm_min);
+         (Str.regexp "%w", Remind.string_of_tm_wday tm.Unix.tm_wday)
+      ] template
+   in
    let remline = 
       match rem_type with
-      | Timed ->
-         Printf.sprintf "REM %s %d %d AT %.2d:%.2d DURATION 1:00 MSG "
-            (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
-            (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
-      | Untimed ->
-         Printf.sprintf "REM %s %d %d MSG "
-            (Remind.string_of_tm_mon tm.Unix.tm_mon) tm.Unix.tm_mday
-            (tm.Unix.tm_year + 1900)
+      | Timed   -> substitute !Rcfile.timed_template
+      | Untimed -> substitute !Rcfile.untimed_template
    in
    let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
    (Utility.expand_file !Rcfile.reminders_file) in

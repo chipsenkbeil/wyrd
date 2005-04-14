@@ -88,6 +88,17 @@ let full_string_of_tm_mon i =
 
 let string_of_tm_wday i =
    match i with
+   | 0 -> "Sun"
+   | 1 -> "Mon"
+   | 2 -> "Tuey"
+   | 3 -> "Wed"
+   | 4 -> "Thu"
+   | 5 -> "Fri"
+   | 6 -> "Sat"
+   | x -> raise (String_of_tm_wday_failure ("unknown weekday " ^ (string_of_int x)))
+
+let full_string_of_tm_wday i =
+   match i with
    | 0 -> "Sunday"
    | 1 -> "Monday"
    | 2 -> "Tuesday"

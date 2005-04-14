@@ -54,6 +54,9 @@ let reminders_file = ref "~/.reminders"
 (* Default editing command strings *)
 let edit_old_command = ref "vim +%n + %f"
 let edit_new_command = ref "vim -c '$' %f"
+(* Default new reminder templates *)
+let timed_template = ref "REM %M %d %y AT %h:%m DURATION 1:00 MSG "
+let untimed_template = ref "REM %M %d %y MSG "
 (* Default thresholds for calendar colorization *)
 let busy_level1 = ref 2
 let busy_level2 = ref 4
@@ -329,6 +332,32 @@ let parse_line line_stream =
             end
          | [< >] ->
             config_failwith ("Expected \"=\" after \"set edit_new_command\"")
+         end
+      | [< 'Ident "timed_template" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String c >] ->
+               timed_template := c
+            | [< >] ->
+               config_failwith ("Expected a template string after " ^
+               "\"set timed_template = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set timed_template\"")
+         end
+      | [< 'Ident "untimed_template" >] ->
+         begin match line_stream with parser
+         | [< 'Ident "=" >] ->
+            begin match line_stream with parser
+            | [< 'String c >] ->
+               untimed_template := c
+            | [< >] ->
+               config_failwith ("Expected a template string after " ^
+               "\"set untimed_template = \"")
+            end
+         | [< >] ->
+            config_failwith ("Expected \"=\" after \"set untimed_template\"")
          end
       | [< 'Ident "busy_level1" >] ->
          begin match line_stream with parser

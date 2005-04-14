@@ -499,7 +499,7 @@ let draw_msg iface =
       Unix.localtime (timestamp_of_line iface iface.left_selection)
    in
    let day_s = 
-      Printf.sprintf "%s, %s %.2d" (string_of_tm_wday sel_tm.Unix.tm_wday)
+      Printf.sprintf "%s, %s %.2d" (full_string_of_tm_wday sel_tm.Unix.tm_wday)
          (full_string_of_tm_mon sel_tm.Unix.tm_mon) sel_tm.Unix.tm_mday
    in
    let day_time_s =
@@ -523,7 +523,7 @@ let draw_msg iface =
    wattron iface.scr.msg_win ((WA.color_pair 1) lor WA.bold);
    let s = 
       Printf.sprintf "Wyrd v%s          Currently: %s, %s %.2d at %s"
-         Version.version (string_of_tm_wday curr_tm.Unix.tm_wday)
+         Version.version (full_string_of_tm_wday curr_tm.Unix.tm_wday)
          (full_string_of_tm_mon curr_tm.Unix.tm_mon)
          curr_tm.Unix.tm_mday (twelve_hour_string curr_tm)
    in

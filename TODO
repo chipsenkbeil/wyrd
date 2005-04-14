@@ -8,6 +8,9 @@ Wyrd To-Do list
 * Implement a memoization mechanism to speed up drawing of timed 
   reminders window when scrolling.
 
+* Add additional user-defined REMline templates, which can be
+  activated via the 'bind' syntax.
+
 
 
 # arch-tag: DO_NOT_CHANGE_13b859a4-395f-4c00-a604-d384b6490bbc 

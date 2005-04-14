@@ -14,6 +14,13 @@ set edit_new_command="vim -c '$' %f"
 #set edit_old_command="nano +%n %f"
 #set edit_new_command="nano +9999999 %f"
 
+
+# templates for creating new appointments
+# %M -> month, %d -> day, %y -> year, %h -> hour, %m -> min, %w -> weekday
+set timed_template="REM %M %d %y AT %h:%m DURATION 1:00 MSG "
+set untimed_template="REM %M %d %y MSG "
+
+
 # number of reminders per day allowed for each calendar colorization level
 set busy_level1="1"   # uncolored
 set busy_level2="3"   # blue
