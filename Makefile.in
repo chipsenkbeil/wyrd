@@ -139,16 +139,16 @@ CURSES_OFLAGS = $(CURSES_INCLUDES)
 CURSES_CFLAGS = -Wall -fPIC -DPIC
 
 curses/%.cmi : curses/%.mli
-	$(OCAMLC) -pp 'cpp -P' -c $(CURSES_BFLAGS) $<
+	$(OCAMLC) -pp 'cpp -P -xassembler-with-cpp' -c $(CURSES_BFLAGS) $<
 
 curses/%.cmo : curses/%.ml
-	$(OCAMLC) -pp 'cpp -P' -c $(CURSES_BFLAGS) $<
+	$(OCAMLC) -pp 'cpp -P -xassembler-with-cpp' -c $(CURSES_BFLAGS) $<
 
 curses/%.o : curses/%.ml
-	$(OCAMLOPT) -pp 'cpp -P' -c $(CURSES_OFLAGS) $<
+	$(OCAMLOPT) -pp 'cpp -P -xassembler-with-cpp' -c $(CURSES_OFLAGS) $<
 
 curses/%.cmx : curses/%.ml
-	$(OCAMLOPT) -pp 'cpp -P' -c $(CURSES_OFLAGS) $<
+	$(OCAMLOPT) -pp 'cpp -P -xassembler-with-cpp' -c $(CURSES_OFLAGS) $<
 
 curses/%.o : curses/%.c
 	cd curses && $(OCAMLC) -ccopt "$(CURSES_CFLAGS)" -c $*.c
@@ -235,7 +235,7 @@ depend::
 #	$(MAKE) txtin_lexer.ml
 #	$(MAKE) txtin_parser.ml
 	$(OCAMLDEP) -pp camlp4o $(INCLUDES) *.ml *.mli > depend
-	$(OCAMLDEP) -pp 'cpp -P' -I ./curses curses/*.ml curses/*.mli >> depend
+	$(OCAMLDEP) -pp 'cpp -P -xassembler-with-cpp' -I ./curses curses/*.ml curses/*.mli >> depend
 
 include depend
 
