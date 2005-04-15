@@ -89,7 +89,7 @@ $(NAME).static-opt: $(CMX) $(CURSES_OOBJS) my-static-libs
 my-static-libs:
 	ar cr libmycurses.a curses/*.o
 
-VERSION=0.1.1
+VERSION=0.1.2
 
 version.ml: Makefile
 	echo "let version = \""$(VERSION)"\"" > version.ml
@@ -133,22 +133,27 @@ uninstall:
 curses-opt: $(CURSES_OOBJS)
 curses-byte: $(CURSES_BOBJS)
 
+curses/curses.ml:	curses/curses.ml.in curses/functions.c
+	cpp -P -xassembler-with-cpp -o $@ $<
+curses/functions.c:	curses/functions.c.in
+	cpp -P -xassembler-with-cpp -o $@ $<
+
 CURSES_INCLUDES = -I ./curses
 CURSES_BFLAGS = -g $(CURSES_INCLUDES)
 CURSES_OFLAGS = $(CURSES_INCLUDES)
 CURSES_CFLAGS = -Wall -fPIC -DPIC
 
 curses/%.cmi : curses/%.mli
-	$(OCAMLC) -pp 'cpp -P' -c $(CURSES_BFLAGS) $<
+	$(OCAMLC) -c $(CURSES_BFLAGS) $<
 
 curses/%.cmo : curses/%.ml
-	$(OCAMLC) -pp 'cpp -P' -c $(CURSES_BFLAGS) $<
+	$(OCAMLC) -c $(CURSES_BFLAGS) $<
 
 curses/%.o : curses/%.ml
-	$(OCAMLOPT) -pp 'cpp -P' -c $(CURSES_OFLAGS) $<
+	$(OCAMLOPT) -c $(CURSES_OFLAGS) $<
 
 curses/%.cmx : curses/%.ml
-	$(OCAMLOPT) -pp 'cpp -P' -c $(CURSES_OFLAGS) $<
+	$(OCAMLOPT) -c $(CURSES_OFLAGS) $<
 
 curses/%.o : curses/%.c
 	cd curses && $(OCAMLC) -ccopt "$(CURSES_CFLAGS)" -c $*.c
@@ -235,7 +240,7 @@ depend::
 #	$(MAKE) txtin_lexer.ml
 #	$(MAKE) txtin_parser.ml
 	$(OCAMLDEP) -pp camlp4o $(INCLUDES) *.ml *.mli > depend
-	$(OCAMLDEP) -pp 'cpp -P' -I ./curses curses/*.ml curses/*.mli >> depend
+	$(OCAMLDEP) -pp 'cpp -P -xassembler-with-cpp' -I ./curses curses/*.ml curses/*.mli >> depend
 
 include depend
 

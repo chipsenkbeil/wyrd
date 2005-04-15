@@ -1,6 +1,11 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-04-15     Released 0.1.2.
+
+2005-04-15     Upon further investigation, cpp appears to be completely broken 
+               on OS X.  Wyrd now ships with pre-preprocessed ML files.
+
 2005-04-15     Released 0.1.1.
 
 2005-04-15     Changed invocations of 'cpp' to 'cpp -P' to correct compilation
