@@ -1,0 +1,13 @@
+Wyrd ChangeLog
+--------------------------------------------------------------------------------
+
+2005-04-15     Released 0.1.1.
+
+2005-04-15     Changed invocations of 'cpp' to 'cpp -P' to correct compilation
+               errors on OS X, maybe others.
+
+2005-04-15     Released 0.1.0.
+
+
+
+# arch-tag: DO_NOT_CHANGE_0a925fdb-a0fa-4330-a560-dd31770ca22c 
