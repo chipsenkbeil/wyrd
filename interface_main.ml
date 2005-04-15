@@ -631,12 +631,22 @@ let handle_keypress key (iface : interface_state_t) reminders =
       try
          begin match Rcfile.entry_of_key key with
          |Rcfile.EntryComplete ->
-            let new_iface = {
-               iface with search_regex = Str.regexp_case_fold iface.search_input;
-                          search_input = "";
-                          is_entering_search = false
-            } in
-            handle_find_next new_iface reminders
+            begin try
+               let new_iface = {
+                  iface with search_regex = Str.regexp_case_fold iface.search_input;
+                             search_input = "";
+                             is_entering_search = false
+               } in
+               handle_find_next new_iface reminders
+            with Failure err ->
+               let new_iface = {
+                  iface with search_input = "";
+                             is_entering_search = false
+               } in
+               draw_error new_iface ("syntax error in search string: " ^ err) false;
+               assert (doupdate ());
+               (new_iface, reminders)
+            end
          |Rcfile.EntryBackspace ->
             let len = String.length iface.search_input in
             if len > 0 then 
