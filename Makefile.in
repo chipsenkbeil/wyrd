@@ -106,16 +106,20 @@ install-indep:
 #	install -m 644 -D doc/wyrd.1 $(MANDIR)/man1/wyrd.1
 
 install: install-indep
-	install -m 755 -D $(NAME).$(OCAMLBEST) $(BINDIR)/$(NAME)$(EXE)
+	install -m 755 $(NAME).$(OCAMLBEST) $(BINDIR)
+	mv $(BINDIR)/$(NAME).$(OCAMLBEST) $(BINDIR)/$(NAME)
 
 install-byte: install-indep
-	install -m 755 -D $(NAME).byte $(BINDIR)/$(NAME)$(EXE)
+	install -m 755 $(NAME).byte $(BINDIR)
+	mv $(BINDIR)/$(NAME).byte $(BINDIR)/$(NAME)
 
 install-opt: install-indep
-	install -m 755 -D $(NAME).opt $(BINDIR)/$(NAME)$(EXE)
+	install -m 755 $(NAME).opt $(BINDIR)
+	mv $(BINDIR)/$(NAME).opt $(BINDIR)/$(NAME)
 
 install-static: install-indep
-	install -m 755 -D $(NAME).static-opt $(BINDIR)/$(NAME)$(EXE)
+	install -m 755 $(NAME).static-opt $(BINDIR)
+	mv $(BINDIR)/$(NAME).static-opt $(BINDIR)/$(NAME)
 
 uninstall:
 	rm -f $(BINDIR)/$(NAME)$(EXE)
