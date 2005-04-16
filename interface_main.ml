@@ -386,7 +386,11 @@ let handle_edit (iface : interface_state_t) reminders =
       let command = Str.global_replace lineno_sub line_num command_partial in
       endwin();
       let _ = Unix.system command in 
-      assert (curs_set 0);
+      begin try
+         assert (curs_set 0)
+      with _ ->
+         ()
+      end;
       let r = Remind.create_three_month iface.top_timestamp in
       (* if the untimed list has been altered, change the focus to
        * the timed window *)
@@ -442,7 +446,11 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
    in
    endwin();
    let _ = Unix.system command in 
-   assert (curs_set 0);
+   begin try
+      assert (curs_set 0)
+   with _ ->
+      ()
+   end;
    let r = Remind.create_three_month iface.top_timestamp in
    (* if the untimed list has been altered, change the focus to
     * the timed window *)
