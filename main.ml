@@ -41,7 +41,11 @@ let initialize_screen () =
    assert (keypad std true);
    assert (halfdelay 100);
    assert (noecho ());
-   assert (curs_set 0);
+   begin try
+      assert (curs_set 0)
+   with _ ->
+      ()
+   end;
    Interface_main.create_windows std;;
 
 let iface = Interface.make (initialize_screen ());;
