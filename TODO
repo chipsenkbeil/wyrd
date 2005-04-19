@@ -11,6 +11,18 @@ Wyrd To-Do list
 * Add additional user-defined REMline templates, which can be
   activated via the 'bind' syntax.
 
+* Make color scheme configurable.
+
+* Make 12/24 hour time configurable.
+
+* Make starting day of the week configurable (Sunday/Monday).
+
+* Accept reminders file as a command line parameter.
+
+* Add additional "new reminder" commands that provide a dialog for selecting
+  which reminder file to use (possibly scanning INCLUDE lines to get this
+  info).
+
 
 
 # arch-tag: DO_NOT_CHANGE_13b859a4-395f-4c00-a604-d384b6490bbc 
