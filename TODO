@@ -23,6 +23,9 @@ Wyrd To-Do list
   which reminder file to use (possibly scanning INCLUDE lines to get this
   info).
 
+* Add commands that trigger 'rem -q -g <date> | less' and 
+  'rem -q -t -g <date> | less' or something similar.
+
 
 
 # arch-tag: DO_NOT_CHANGE_13b859a4-395f-4c00-a604-d384b6490bbc 
