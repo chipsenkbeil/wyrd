@@ -26,6 +26,9 @@ Wyrd To-Do list
 * Add commands that trigger 'rem -q -g <date> | less' and 
   'rem -q -t -g <date> | less' or something similar.
 
+* When LINES is sufficiently large, consider adding a bit more month context in
+  the calendar window at the upper right.
+
 
 
 # arch-tag: DO_NOT_CHANGE_13b859a4-395f-4c00-a604-d384b6490bbc 
