@@ -22,8 +22,30 @@ open Interface;;
 open Curses;;
 
 
-(* load run configuration file *)
+(* Load run configuration file *)
 Rcfile.process_rcfile None;;
+
+
+(* Parse command-line options *)
+let parse_anonymous_opt anon = Rcfile.reminders_file := anon in
+let usage =
+   "Usage: wyrd [OPTIONS] [FILE]\n" ^
+   "Open a front-end to remind(1) using FILE as the reminders file.\n\nOPTIONS:"
+in
+let show_version () =
+   print_endline ("Wyrd v" ^ Version.version);
+   print_endline "Copyright (C) 2005 Paul Pelzl";
+   print_endline "";
+   print_endline "Wyrd comes with ABSOLUTELY NO WARRANTY.  This is Free Software,";
+   print_endline "and you are welcome to redistribute it under certain conditions;";
+   print_endline "see the source code for details.";
+   print_endline "";
+   exit 0;
+in
+let parse_definition = [
+   ("--version", Arg.Unit show_version, " Display version information and exit")
+] in
+Arg.parse (Arg.align parse_definition) parse_anonymous_opt usage;;
 
 
 let initialize_screen () =

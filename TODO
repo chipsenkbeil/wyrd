@@ -15,8 +15,6 @@ Wyrd To-Do list
 
 * Make 12/24 hour time configurable.
 
-* Accept reminders file as a command line parameter.
-
 * Add additional "new reminder" commands that provide a dialog for selecting
   which reminder file to use (possibly scanning INCLUDE lines to get this
   info).

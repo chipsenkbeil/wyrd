@@ -58,6 +58,12 @@ USAGE
 First off, learn how to use Remind.  Wyrd makes no attempt to hide the details
 of Remind from the user.
 
+Having done that, you may launch Wyrd using
+
+   wyrd [FILE]
+
+FILE is an optional reminders file; the default is ~/.reminders.
+
 Display:
    At the top of the window is a short (incomplete) list of keybindings.  
    
