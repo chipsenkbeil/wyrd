@@ -138,9 +138,10 @@ curses-opt: $(CURSES_OOBJS)
 curses-byte: $(CURSES_BOBJS)
 
 curses/curses.ml:	curses/curses.ml.in curses/functions.c
-	cpp -P -xassembler-with-cpp -o $@ $<
+	$(MAKE) -C curses
+
 curses/functions.c:	curses/functions.c.in
-	cpp -P -xassembler-with-cpp -o $@ $<
+	$(MAKE) -C curses
 
 CURSES_INCLUDES = -I ./curses
 CURSES_BFLAGS = -g $(CURSES_INCLUDES)

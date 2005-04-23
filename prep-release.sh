@@ -5,7 +5,8 @@
 
 echo "Loading source dependencies..."
 tla build-config dist.arch
-make curses/curses.ml
+echo "Preprocessing curses bindings..."
+make -C curses
 echo "Removing {arch} directories..."
 rm -rf "{arch}"
 rm -rf "curses/{arch}"
