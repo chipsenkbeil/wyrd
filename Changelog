@@ -1,6 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-04-23     Added a configuration variable to switch the first day of the
+               week between Sunday and Monday.
+
 2005-04-16     Released 0.1.3.
 
                A more suitable error message is generated when trying to run
