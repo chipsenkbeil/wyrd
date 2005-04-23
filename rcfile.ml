@@ -62,6 +62,8 @@ let busy_level1 = ref 2
 let busy_level2 = ref 4
 let busy_level3 = ref 6
 let busy_level4 = ref 8
+(* First day of the week? *)
+let week_starts_monday = ref false
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -334,6 +336,8 @@ let parse_line line_stream =
          parse_set "busy_level3" busy_level3 int_of_string "Expected an integral string after "
       | [< 'Ident "busy_level4" >] ->
          parse_set "busy_level4" busy_level4 int_of_string "Expected an integral string after "
+      | [< 'Ident "week_starts_monday" >] ->
+         parse_set "week_starts_monday" week_starts_monday bool_of_string "Expected a boolean string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end

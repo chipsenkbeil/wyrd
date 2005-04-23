@@ -202,7 +202,13 @@ let make_cal timestamp =
    let tm = Unix.localtime timestamp in
    let month_s = string_of_int (succ tm.Unix.tm_mon)
    and year_s  = string_of_int (tm.Unix.tm_year + 1900) in
-   let command = "cal " ^ month_s ^ " " ^ year_s in
+   let command = 
+      (* support Euro calendar style *)
+      if !Rcfile.week_starts_monday then
+         "cal -m " ^ month_s ^ " " ^ year_s
+      else
+         "cal " ^ month_s ^ " " ^ year_s
+   in
    let cal_channel = Unix.open_process_in command in
    let rec add_lines day_lines =
       try

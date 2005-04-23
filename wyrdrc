@@ -29,6 +29,10 @@ set busy_level4="7"   # magenta
                       # (everything else is bold magenta)
 
 
+# first day of the week is Sunday
+set week_starts_monday="false"
+
+
 bind "j"                 scroll_down
 bind "<down>"            scroll_down
 bind "k"                 scroll_up

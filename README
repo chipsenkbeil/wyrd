@@ -164,40 +164,45 @@ Configuration Variables:
    The following configuration variables may be set using the 'set' syntax
    defined above:
 
-      reminders_file   : Controls which Remind file Wyrd will operate on.  The
-                         default is ~/.reminders .
+      reminders_file        : Controls which Remind file Wyrd will operate on.
+                              The default is ~/.reminders .
+     
+      edit_old_command      : Controls the command used to edit a pre-existing
+                              reminder.  The special characters '%f' and '%n'
+                              will be substituted with a filename to edit and a
+                              line number to navigate to within that file.
+     
+      edit_new_command      : Controls the command used to edit a new reminder.
+                              The special character '%f' will be substituted
+                              with a filename to edit.  Ideally, this command
+                              should move the cursor to the last line of the
+                              file, where the new reminder template is created.
+     
+      timed_template        : Controls the format of the REM line created when
+                              editing a new timed reminder.  The following
+                              character substitutions will be made: 
+                              '%M' -> month name, '%d' -> day of the month,
+                              '%y' -> year, '%h' -> hour, '%m' -> minute, 
+                              '%w' -> weekday name.
+     
+      untimed_template      : Controls the format of the REM line created when
+                              editing a new untimed reminder.  The substitution
+                              syntax is the same as for "timed_template".
+                                
+      busy_level1           : An integer value specifying the maximum number of
+                              reminders in a day colored white on the month
+                              calendar.
+      busy_level2           : Same as above, colored blue.
+      busy_level3           : Same as above, colored bold blue.
+      busy_level4           : Same as above, colored magenta.  Any day with
+                              more reminders than this threshold will be
+                              colored bold magenta.
+     
+                              (For maximum usefulness, busy_level1 <
+                              busy_level2 < busy_level3 < busy_level4.)
 
-      edit_old_command : Controls the command used to edit a pre-existing
-                         reminder.  The special characters '%f' and '%n' will be
-                         substituted with a filename to edit and a line number
-                         to navigate to within that file.
-
-      edit_new_command : Controls the command used to edit a new reminder.  The
-                         special character '%f' will be substituted with a
-                         filename to edit.  Ideally, this command should move
-                         the cursor to the last line of the file, where the new
-                         reminder template is created.
-
-      timed_template   : Controls the format of the REM line created when
-                         editing a new timed reminder.  The following character
-                         substitutions will be made: '%M' -> month name, 
-                         '%d' -> day of the month, '%y' -> year, '%h' -> hour, 
-                         '%m' -> minute, '%w' -> weekday name.
-
-      untimed_template : Controls the format of the REM line created when
-                         editing a new untimed reminder.  The substitution
-                         syntax is the same as for "timed_template".
-                           
-      busy_level1      : An integer value specifying the maximum number of
-                         reminders in a day colored white on the month calendar.
-      busy_level2      : Same as above, colored blue.
-      busy_level3      : Same as above, colored bold blue.
-      busy_level4      : Same as above, colored magenta.  Any day with more
-                         reminders than this threshold will be colored bold
-                         magenta.
-
-      (For maximum usefulness, busy_level1 < busy_level2 < busy_level3 <
-      busy_level4.)
+      week_starts_monday    : A boolean value ("true" or "false") that
+                              determines the first day of the week.
 
 Bindable Operations:
 
