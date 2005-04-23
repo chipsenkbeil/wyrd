@@ -239,6 +239,9 @@ let operation_of_string command_str =
    end
 
 
+
+
+
 (* Parse a line from a configuration file.  This operates on a stream
  * corresponding to a non-empty line from the file.  It will match commands
  * of the form
@@ -248,6 +251,25 @@ let operation_of_string command_str =
  * string containing a number of keypresses to simulate.
  *)
 let parse_line line_stream = 
+   (* Convenience function for 'set' keyword *)
+   let parse_set variable_str variable coersion error =
+      begin match line_stream with parser
+      | [< 'Ident "=" >] ->
+         begin match line_stream with parser
+         | [< 'String ss >] ->
+            begin try
+               variable := coersion ss
+            with _ ->
+               config_failwith (error ^ "\"set " ^ variable_str ^ " = \"")
+            end
+         | [< >] ->
+            config_failwith (error ^ "\"set " ^ variable_str ^ " = \"")
+         end
+      | [< >] ->
+         config_failwith ("Expected \"=\" after \"set " ^ variable_str ^ "\"")
+      end
+   in
+   (* Parsing begins here *)
    match line_stream with parser
    | [< 'Kwd "include" >] ->
       begin match line_stream with parser
@@ -295,142 +317,23 @@ let parse_line line_stream =
    | [< 'Kwd "set" >] ->
       begin match line_stream with parser
       | [< 'Ident "reminders_file" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String f >] ->
-               reminders_file := f
-            | [< >] ->
-               config_failwith ("Expected a filename after " ^
-               "\"set reminders_file = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set reminders_file\"")
-         end
+         parse_set "reminders_file" reminders_file (fun x -> x) "Expected a filename string after "
       | [< 'Ident "edit_old_command" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String c >] ->
-               edit_old_command := c
-            | [< >] ->
-               config_failwith ("Expected a command string after " ^
-               "\"set edit_old_command = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set edit_old_command\"")
-         end
+         parse_set "edit_old_command" edit_old_command (fun x -> x) "Expected a command string after "
       | [< 'Ident "edit_new_command" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String c >] ->
-               edit_new_command := c
-            | [< >] ->
-               config_failwith ("Expected a command string after " ^
-               "\"set edit_new_command = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set edit_new_command\"")
-         end
+         parse_set "edit_new_command" edit_new_command (fun x -> x) "Expected a command string after "
       | [< 'Ident "timed_template" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String c >] ->
-               timed_template := c
-            | [< >] ->
-               config_failwith ("Expected a template string after " ^
-               "\"set timed_template = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set timed_template\"")
-         end
+         parse_set "timed_template" timed_template (fun x -> x) "Expected a template string after "
       | [< 'Ident "untimed_template" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String c >] ->
-               untimed_template := c
-            | [< >] ->
-               config_failwith ("Expected a template string after " ^
-               "\"set untimed_template = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set untimed_template\"")
-         end
+         parse_set "untimed_template" untimed_template (fun x -> x) "Expected a template string after "
       | [< 'Ident "busy_level1" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String num >] ->
-               begin try
-                  busy_level1 := int_of_string num
-               with _ ->
-                  config_failwith ("Expected an integer string after " ^
-                  "\"set busy_level1 = \"")
-               end
-            | [< >] ->
-               config_failwith ("Expected an integer string after " ^
-               "\"set busy_level1 = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set busy_level1\"")
-         end
+         parse_set "busy_level1" busy_level1 int_of_string "Expected an integral string after "
       | [< 'Ident "busy_level2" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String num >] ->
-               begin try
-                  busy_level2 := int_of_string num
-               with _ ->
-                  config_failwith ("Expected an integer string after " ^
-                  "\"set busy_level2 = \"")
-               end
-            | [< >] ->
-               config_failwith ("Expected an integer string after " ^
-               "\"set busy_level2 = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set busy_level2\"")
-         end
+         parse_set "busy_level2" busy_level2 int_of_string "Expected an integral string after "
       | [< 'Ident "busy_level3" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String num >] ->
-               begin try
-                  busy_level3 := int_of_string num
-               with _ ->
-                  config_failwith ("Expected an integer string after " ^
-                  "\"set busy_level3 = \"")
-               end
-            | [< >] ->
-               config_failwith ("Expected an integer string after " ^
-               "\"set busy_level3 = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set busy_level3\"")
-         end
+         parse_set "busy_level3" busy_level3 int_of_string "Expected an integral string after "
       | [< 'Ident "busy_level4" >] ->
-         begin match line_stream with parser
-         | [< 'Ident "=" >] ->
-            begin match line_stream with parser
-            | [< 'String num >] ->
-               begin try
-                  busy_level4 := int_of_string num
-               with _ ->
-                  config_failwith ("Expected an integer string after " ^
-                  "\"set busy_level4 = \"")
-               end
-            | [< >] ->
-               config_failwith ("Expected an integer string after " ^
-               "\"set busy_level4 = \"")
-            end
-         | [< >] ->
-            config_failwith ("Expected \"=\" after \"set busy_level4\"")
-         end
+         parse_set "busy_level4" busy_level4 int_of_string "Expected an integral string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end
