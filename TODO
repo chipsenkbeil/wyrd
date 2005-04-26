@@ -13,9 +13,6 @@ Wyrd To-Do list
   which reminder file to use (possibly scanning INCLUDE lines to get this
   info).
 
-* Add commands that trigger 'rem -q -g <date> | less' and 
-  'rem -q -t -g <date> | less' or something similar.
-
 * When LINES is sufficiently large, consider adding a bit more month context in
   the calendar window at the upper right.
 

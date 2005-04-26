@@ -36,7 +36,7 @@ Wyrd depends on the following software packages:
    * OCaml >= 3.07
    * the ncurses library (and development headers)
    * Remind >= 3.0.23
-   * standard Unix utilities such as 'cat', 'sort', and 'cal'
+   * standard Unix utilities such as 'cat', 'sort', 'cal', and 'less'
 
 
 
@@ -113,6 +113,13 @@ Editing reminders:
    If you select a reminder (either timed or untimed) and hit <enter>, you will
    begin editing that reminder.  Wyrd will open up the appropriate reminders
    file in your editor and move the cursor to the appropriate REM line.
+
+Viewing reminders:
+
+   Aside from viewing reminders as they fall in the schedule, you can press
+   'r' to view all reminders triggered on the selected date in a less(1)
+   window.  Similar, 'R' will view all reminders triggered on or after the
+   selected date (all non-expired reminders are triggered).
 
 Searching:
 
@@ -246,6 +253,9 @@ Bindable Operations:
                          and the untimed reminder window on the right
       begin_search     : begin entering a search string
       search_next      : search for the next occurrence of the search string
+      view_remind      : view the output of 'remind' for the selected date
+      view_remind_all  : view the output of 'remind' for the selected date,
+                         triggering all non-expired reminders
       quit             : exit Wyrd
 
       entry_complete   : signal completion of search string entry

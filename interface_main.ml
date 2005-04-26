@@ -581,6 +581,45 @@ let handle_begin_search (iface : interface_state_t) reminders =
    (new_iface, reminders)
 
 
+(* View the reminders for the selected date using 'less' *)
+let handle_view_reminders (iface : interface_state_t) reminders =
+   let ts = timestamp_of_line iface iface.left_selection in
+   let tm = Unix.localtime ts in
+   let rem_date_str = (Remind.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
+                      (string_of_int tm.Unix.tm_mday) ^ " " ^
+                      (string_of_int (tm.Unix.tm_year + 1900)) in
+   let command = "remind -q -g " ^ !Rcfile.reminders_file ^ " " ^
+   rem_date_str ^ " | less -c" in
+   endwin();
+   let _ = Unix.system command in 
+   begin try
+      assert (curs_set 0)
+   with _ ->
+      ()
+   end;
+   handle_refresh iface reminders
+
+
+(* View all non-expired reminders for the selected date using 'less' *)
+let handle_view_all_reminders (iface : interface_state_t) reminders =
+   let ts = timestamp_of_line iface iface.left_selection in
+   let tm = Unix.localtime ts in
+   let rem_date_str = (Remind.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
+                      (string_of_int tm.Unix.tm_mday) ^ " " ^
+                      (string_of_int (tm.Unix.tm_year + 1900)) in
+   let command = "remind -q -g -t " ^ !Rcfile.reminders_file ^ " " ^
+   rem_date_str ^ " | less -c" in
+   endwin();
+   let _ = Unix.system command in 
+   begin try
+      assert (curs_set 0)
+   with _ ->
+      ()
+   end;
+   handle_refresh iface reminders
+
+
+
 (* Handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
    if not iface.is_entering_search then begin
@@ -626,6 +665,10 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_find_next iface reminders
          |Rcfile.BeginSearch ->
             handle_begin_search iface reminders
+         |Rcfile.ViewReminders ->
+            handle_view_reminders iface reminders
+         |Rcfile.ViewAllReminders ->
+            handle_view_all_reminders iface reminders
          |Rcfile.Quit ->
             let new_iface = {iface with run_wyrd = false} in
             (new_iface, reminders)

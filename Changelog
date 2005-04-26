@@ -6,6 +6,9 @@ Wyrd ChangeLog
                Made time representation (12/24 hour) configurable via the
                rcfile.
 
+               Implemented external viewing of triggered reminders
+               ("rem -q -g") via less(1).
+
                Added a resize handler.
 
 2005-04-23     Added a configuration variable to switch the first day of the

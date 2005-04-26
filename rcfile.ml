@@ -41,7 +41,8 @@ let config_failwith s = raise (Config_failure s)
 type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay 
                  | NextWeek | PrevWeek | NextMonth | PrevMonth
                  | Home | Zoom | Edit | NewTimed | NewUntimed | SwitchWindow 
-                 | SearchNext | BeginSearch | Quit
+                 | SearchNext | BeginSearch | Quit | ViewReminders
+                 | ViewAllReminders
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
@@ -270,6 +271,8 @@ let operation_of_string command_str =
    |"switch_window"   -> CommandOp SwitchWindow
    |"search_next"     -> CommandOp SearchNext
    |"begin_search"    -> CommandOp BeginSearch
+   |"view_remind"     -> CommandOp ViewReminders
+   |"view_remind_all" -> CommandOp ViewAllReminders
    |"entry_complete"  -> EntryOp EntryComplete
    |"entry_backspace" -> EntryOp EntryBackspace
    |"entry_cancel"    -> EntryOp EntryExit
