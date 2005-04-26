@@ -50,7 +50,7 @@ type operation_t = CommandOp of command_t | EntryOp of entry_operation_t
 type colorable_object_t = | Help | Timed_default | Timed_reminder | Untimed_reminder
                           | Timed_date | Selection_info | Description | Status 
                           | Calendar_labels | Calendar_level1 | Calendar_level2
-                          | Calendar_level3 | Left_divider | Right_divider
+                          | Calendar_level3 | Calendar_today | Left_divider | Right_divider 
 
 
 (* These hashtables store conversions between curses keys and the operations
@@ -424,6 +424,7 @@ let parse_line line_stream =
       | [< 'Ident "calendar_level1" >]  -> parse_color "calendar_level1" Calendar_level1
       | [< 'Ident "calendar_level2" >]  -> parse_color "calendar_level2" Calendar_level2
       | [< 'Ident "calendar_level3" >]  -> parse_color "calendar_level3" Calendar_level3
+      | [< 'Ident "calendar_today" >]   -> parse_color "calendar_today" Calendar_today
       | [< 'Ident "left_divider" >]     -> parse_color "left_divider" Left_divider
       | [< 'Ident "right_divider" >]    -> parse_color "right_divider" Right_divider
       end

@@ -82,6 +82,7 @@ color calendar_labels   white black
 color calendar_level1   white black
 color calendar_level2   blue black
 color calendar_level3   magenta black
+color calendar_today    black cyan
 color left_divider      cyan blue
 color right_divider     cyan blue
 

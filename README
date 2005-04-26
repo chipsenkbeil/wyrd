@@ -258,6 +258,7 @@ Colorable Objects:
       calendar_level1  : calendar days with low activity
       calendar_level2  : calendar days with medium activity
       calendar_level3  : calendar days with high activity
+      calendar_today   : the current day in the calendar window
       left_divider     : the vertical line to the left of the timed reminders window
       right_divider    : the vertical and horizontal lines to the right of the timed
                          reminders window
