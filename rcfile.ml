@@ -28,6 +28,13 @@ open Genlex
 open Curses
 
 
+module PairSet = Set.Make (
+   struct
+      type t      = int * int
+      let compare = Pervasives.compare
+   end
+)
+
 exception Config_failure of string
 let config_failwith s = raise (Config_failure s)
 
@@ -39,6 +46,11 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
 type operation_t = CommandOp of command_t | EntryOp of entry_operation_t
+
+type colorable_object_t = | Help | Timed_default | Timed_reminder | Untimed_reminder
+                          | Timed_date | Selection_info | Description | Status 
+                          | Calendar_labels | Calendar_level1 | Calendar_level2
+                          | Calendar_level3 | Left_divider | Right_divider
 
 
 (* These hashtables store conversions between curses keys and the operations
@@ -66,6 +78,27 @@ let busy_level4 = ref 8
 let week_starts_monday = ref false
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
+
+(* Temporary hash tables for sorting out the color palette *)
+let color_table         = Hashtbl.create 20
+let inverse_color_table = Hashtbl.create 20
+(* Final hash table that maps from object to color_pair index *)
+let object_palette      = Hashtbl.create 20
+
+(* Turn colors on and off *)
+let color_on win obj =
+   try
+      let color_index = Hashtbl.find object_palette obj in
+      wattron win (WA.color_pair color_index)
+   with Not_found ->
+      ()
+
+let color_off win obj =
+   try
+      let color_index = Hashtbl.find object_palette obj in
+      wattroff win (WA.color_pair color_index)
+   with Not_found ->
+      ()
 
 
 let command_of_key key =
@@ -271,6 +304,42 @@ let parse_line line_stream =
          config_failwith ("Expected \"=\" after \"set " ^ variable_str ^ "\"")
       end
    in
+   (* Convenience function for 'color' keyword *)
+   let parse_color obj_str obj =
+      let foreground = 
+         begin match line_stream with parser
+         | [< 'Ident "black" >]   -> Color.black
+         | [< 'Ident "red" >]     -> Color.red
+         | [< 'Ident "green" >]   -> Color.green
+         | [< 'Ident "yellow" >]  -> Color.yellow
+         | [< 'Ident "blue" >]    -> Color.blue
+         | [< 'Ident "magenta" >] -> Color.magenta
+         | [< 'Ident "cyan" >]    -> Color.cyan
+         | [< 'Ident "white" >]   -> Color.white
+         | [< >] ->
+            config_failwith ("Expected a foreground color after \"set " ^ obj_str)
+         end
+      in
+      let background = 
+         begin match line_stream with parser
+         | [< 'Ident "black" >]   -> Color.black
+         | [< 'Ident "red" >]     -> Color.red
+         | [< 'Ident "green" >]   -> Color.green
+         | [< 'Ident "yellow" >]  -> Color.yellow
+         | [< 'Ident "blue" >]    -> Color.blue
+         | [< 'Ident "magenta" >] -> Color.magenta
+         | [< 'Ident "cyan" >]    -> Color.cyan
+         | [< 'Ident "white" >]   -> Color.white
+         | [< >] ->
+            config_failwith ("Expected a background color after \"set " ^ obj_str)
+         end
+      in
+      (* do not register (white, black) color pair, as this is the default *)
+      if foreground <> Color.white || background <> Color.black then 
+         Hashtbl.replace color_table obj (foreground, background)
+      else
+         ()
+   in
    (* Parsing begins here *)
    match line_stream with parser
    | [< 'Kwd "include" >] ->
@@ -341,6 +410,23 @@ let parse_line line_stream =
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end
+   | [< 'Kwd "color" >] ->
+      begin match line_stream with parser
+      | [< 'Ident "help" >]             -> parse_color "help" Help
+      | [< 'Ident "timed_default" >]    -> parse_color "timed_default" Timed_default
+      | [< 'Ident "timed_reminder" >]   -> parse_color "timed_reminder" Timed_reminder
+      | [< 'Ident "untimed_reminder" >] -> parse_color "untimed_reminder" Untimed_reminder
+      | [< 'Ident "timed_date" >]       -> parse_color "timed_date" Timed_date
+      | [< 'Ident "selection_info" >]   -> parse_color "selection_info" Selection_info
+      | [< 'Ident "description" >]      -> parse_color "description" Description
+      | [< 'Ident "status" >]           -> parse_color "status" Status
+      | [< 'Ident "calendar_labels" >]  -> parse_color "calendar_labels" Calendar_labels
+      | [< 'Ident "calendar_level1" >]  -> parse_color "calendar_level1" Calendar_level1
+      | [< 'Ident "calendar_level2" >]  -> parse_color "calendar_level2" Calendar_level2
+      | [< 'Ident "calendar_level3" >]  -> parse_color "calendar_level3" Calendar_level3
+      | [< 'Ident "left_divider" >]     -> parse_color "left_divider" Left_divider
+      | [< 'Ident "right_divider" >]    -> parse_color "right_divider" Right_divider
+      end
    | [< 'Kwd "#" >] ->
       ()
    | [< >] ->
@@ -378,11 +464,53 @@ let open_rcfile rcfile_op =
       ("Could not open configuration file \"" ^ file ^ "\".")
 
 
+(* validate the color table to make sure that the number of defined colors is legal *)
+let validate_colors () =
+   (* form a Set of all color pairs, and an inverse mapping from color pair to objects *)
+   let initial_palette =
+      let process_entry key pair colors = 
+         Hashtbl.add inverse_color_table pair key;
+         PairSet.add pair colors
+      in
+      Hashtbl.fold process_entry color_table PairSet.empty
+   in
+   (* start killing off color pairs as necessary to fit within color_pairs limit *)
+   let rec reduce_colors palette =
+      if PairSet.cardinal palette > pred (color_pairs ()) then begin
+         (* find and remove the color pair with fewest objects assigned *)
+         let min_objects = ref 100000
+         and best_pair   = ref (-1, -1) in
+         let find_best pair =
+            let obj_list = Hashtbl.find_all inverse_color_table pair in
+            if List.length obj_list < !min_objects then begin
+               min_objects := List.length obj_list;
+               best_pair   := pair
+            end else
+               ()
+         in
+         PairSet.iter find_best palette;
+         (* the color pair needs to be removed from two hashtables and the palette set *)
+         let obj_list = Hashtbl.find_all inverse_color_table !best_pair in
+         List.iter (Hashtbl.remove color_table) obj_list;
+         Hashtbl.remove inverse_color_table !best_pair;
+         reduce_colors (PairSet.remove !best_pair palette)
+      end else
+         palette
+   in
+   let register_color_pair pair n =
+      assert (init_pair n (fst pair) (snd pair));
+      let f obj = Hashtbl.add object_palette obj n in
+      List.iter f (Hashtbl.find_all inverse_color_table pair);
+      succ n
+   in
+   let _ = PairSet.fold register_color_pair (reduce_colors initial_palette) 1 in ()
+   
+
 
 let rec process_rcfile rcfile_op =
    let line_lexer line = 
       make_lexer 
-         ["include"; "bind"; "unbind"; "set"; "#"] 
+         ["include"; "bind"; "unbind"; "set"; "color"; "#"] 
       (Stream.of_string line)
    in
    let empty_regexp = Str.regexp "^[\t ]*$" in
@@ -420,7 +548,7 @@ let rec process_rcfile rcfile_op =
       done
    with End_of_file ->
       begin
-         close_in config_stream;
+         close_in config_stream
       end
 
 

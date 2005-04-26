@@ -138,12 +138,13 @@ CONFIGURATION
    
 Configuration Commands:
    
-   The configuration file format supports three commands:
+   The configuration file format supports five commands:
 
       include <filename string>
       set <variable>=<value string>
       bind <key string> <operation>
       unbind <key string>
+      color <object> <foreground> <background>
 
    The 'include' command will load in another run-configuration file.  When you
    create a ~/.wyrdrc file, you may want to save some typing by including the
@@ -164,6 +165,10 @@ Configuration Commands:
    "\\C" or "\\M", respectively.
 
    The 'unbind' command will remove all bindings of the given key string.
+
+   The 'color' command will apply the specified foreground and background
+   colors to the appropriate object.  Wyrd will recognize the following colors:
+   black, red, green, yellow, blue, magenta, cyan, white.
 
 Configuration Variables:
 
@@ -235,6 +240,27 @@ Bindable Operations:
       entry_complete   : signal completion of search string entry
       entry_backspace  : delete the last character of the search string
       entry_cancel     : cancel entry of a search string
+
+Colorable Objects:
+
+   The following objects may be rendered in different colors using the 'color'
+   syntax defined above:
+
+      help             : the help bar at the top of the screen
+      timed_default    : an empty line in the timed reminders window
+      timed_reminder   : a nonempty line in the timed reminders window
+      untimed_reminder : an entry in the untimed reminders window
+      timed_date       : the vertical date strip on the left side of the screen
+      selection_info   : the line providing current date/time for the current selection
+      description      : the reminder description window
+      status           : the bottom bar providing current date and time
+      calendar_labels  : the month and weekday labels in the calendar window
+      calendar_level1  : calendar days with low activity
+      calendar_level2  : calendar days with medium activity
+      calendar_level3  : calendar days with high activity
+      left_divider     : the vertical line to the left of the timed reminders window
+      right_divider    : the vertical and horizontal lines to the right of the timed
+                         reminders window
 
 
 

@@ -68,4 +68,23 @@ bind "<enter>"           entry_complete
 bind "<backspace>"       entry_backspace
 bind "<esc>"             entry_cancel
 
+
+# set up the colors
+color help              green blue
+color timed_default     white black
+color timed_reminder    yellow blue
+color untimed_reminder  white black
+color timed_date        cyan black
+color selection_info    green blue
+color description       white black
+color status            green blue
+color calendar_labels   white black
+color calendar_level1   white black
+color calendar_level2   blue black
+color calendar_level3   magenta black
+color left_divider      cyan blue
+color right_divider     cyan blue
+
+
+
 # arch-tag: DO_NOT_CHANGE_ee9bb855-2fde-4a61-8645-8ba31b35eaab 
