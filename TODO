@@ -1,8 +1,6 @@
 Wyrd To-Do list
 ------------------------------------------------------------------------
 
-* Handle terminal resizes.
-
 * Figure out some way to handle overlapping timed reminders.
 
 * Implement a memoization mechanism to speed up drawing of timed 

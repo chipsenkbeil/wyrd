@@ -1,6 +1,8 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-04-25     Implemented a resize handler.
+
 2005-04-23     Added a configuration variable to switch the first day of the
                week between Sunday and Monday.
 

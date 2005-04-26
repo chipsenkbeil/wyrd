@@ -80,20 +80,20 @@ type interface_state_t = {
 let round_time zoom t =
    match zoom with
    |Hour -> {
-          t with Unix.tm_sec = 0;
-                 Unix.tm_min = 0
-       }
+       t with Unix.tm_sec = 0;
+              Unix.tm_min = 0
+    }
    |HalfHour -> {
        t with Unix.tm_sec = 0;
               Unix.tm_min = if t.Unix.tm_min >= 30 then 30 else 0
-      }
+    }
    |QuarterHour -> {
        t with Unix.tm_sec = 0;
               Unix.tm_min = if t.Unix.tm_min >= 45 then 45
                             else if t.Unix.tm_min >= 30 then 30
                             else if t.Unix.tm_min >= 15 then 15
                             else 0
-      }
+    }
 
 
 

@@ -66,6 +66,7 @@ let initialize_screen () =
       failwith "Your terminal emulator does not support color."
    end;
    assert (keypad std true);
+   assert (cbreak ());
    assert (halfdelay 100);
    assert (noecho ());
    begin try
