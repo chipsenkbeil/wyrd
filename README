@@ -215,6 +215,17 @@ Configuration Variables:
       week_starts_monday    : A boolean value ("true" or "false") that
                               determines the first day of the week.
 
+      schedule_12_hour      : A boolean value that determines whether the
+                              timed reminders window is drawn in 12- or 24-hour
+                              time.
+
+      selection_12_hour     : A boolean value that determines whether the
+                              selection information is drawn with 12- or 24-hour
+                              time.
+
+      status_12_hour        : A boolean value that determines whether the
+                              current time is drawn using a 12- or 24-hour clock.
+
 Bindable Operations:
 
    The following Wyrd operations may be bound to keypresses using the 'bind'

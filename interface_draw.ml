@@ -78,6 +78,25 @@ let twelve_hour_string tm =
          Printf.sprintf "%d:%.2dam" tm.Unix.tm_hour tm.Unix.tm_min
 
 
+(* Generate a 12-hour clock representation of a time record, with whitespace padding *)
+let twelve_hour_string_pad tm =
+   if tm.Unix.tm_hour >= 12 then 
+      let hour = tm.Unix.tm_hour - 12 in
+      if hour = 0 then
+         Printf.sprintf "12:%.2dpm" tm.Unix.tm_min
+      else
+         Printf.sprintf "%2d:%.2dpm" hour tm.Unix.tm_min
+   else
+      if tm.Unix.tm_hour = 0 then
+         Printf.sprintf "12:%.2dam" tm.Unix.tm_min
+      else
+         Printf.sprintf "%2d:%.2dam" tm.Unix.tm_hour tm.Unix.tm_min
+
+
+(* Generate a 24-hour clock representation of a time record *)
+let twentyfour_hour_string tm = Printf.sprintf "%.2d:%.2d" tm.Unix.tm_hour tm.Unix.tm_min
+
+                                   
 (* Draw a string in a specified window and location, using exactly 'len'
  * characters and truncating with ellipses if necessary. *)
 let trunc_mvwaddstr win line col len s =
@@ -246,6 +265,12 @@ let draw_timed iface reminders =
         Unix.tm_hour = 0
    } in
    let (_, before_midnight) = Unix.mktime temp in
+   let string_of_tm =
+      if !Rcfile.schedule_12_hour then
+         twelve_hour_string_pad
+      else
+         twentyfour_hour_string
+   in
    let rec process_reminders rem_list =
       begin match rem_list with
       |[] ->
@@ -256,17 +281,18 @@ let draw_timed iface reminders =
          in
          let get_time_str () =
             if finish > start then
-               (twelve_hour_string (Unix.localtime start)) ^ "-" ^
-               (twelve_hour_string (Unix.localtime finish)) ^ " "
+               (string_of_tm (Unix.localtime start)) ^ "-" ^
+               (string_of_tm (Unix.localtime finish)) ^ " "
             else
-               (twelve_hour_string (Unix.localtime start)) ^ " "
+               (string_of_tm (Unix.localtime start)) ^ " "
          in
          (* draw the top line of a reminder *)
          if rem_top_line >= 0 && rem_top_line < iface.scr.tw_lines then begin
             let time_str = get_time_str () in
             let ts = timestamp_of_line iface rem_top_line in
             let tm = Unix.localtime ts in
-            let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
+            (*let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in*)
+            let ts_str = string_of_tm tm in
             if rem_top_line = iface.left_selection && iface.selected_side = Left then
                wattron iface.scr.timed_win WA.reverse
             else
@@ -279,7 +305,7 @@ let draw_timed iface reminders =
             is_drawn.(rem_top_line) <- true;
             lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
             trunc_mvwaddstr iface.scr.timed_win rem_top_line 2 (iface.scr.tw_cols - 2) 
-               (ts_str ^ msg)
+               (ts_str ^ " " ^ msg)
          end else
             ();
          (* draw any remaining lines of this reminder, as determined by the duration *)
@@ -292,7 +318,8 @@ let draw_timed iface reminders =
                let time_str = get_time_str () in
                let ts = timestamp_of_line iface (rem_top_line + !count) in
                let tm = Unix.localtime ts in
-               let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
+               (* let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in *)
+               let ts_str = string_of_tm tm in
                let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
                if rem_top_line + !count = iface.left_selection && 
                   iface.selected_side = Left then
@@ -336,7 +363,8 @@ let draw_timed iface reminders =
             wattroff iface.scr.timed_win WA.reverse;
          let ts = timestamp_of_line iface i in
          let tm = Unix.localtime ts in
-         let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in
+         (*let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in*)
+         let ts_str = string_of_tm tm in
          let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
          if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
             tm.Unix.tm_min  = before_midnight.Unix.tm_min then
@@ -525,7 +553,11 @@ let draw_msg iface =
    let day_time_s =
       match iface.selected_side with
       |Left ->
-         day_s ^ " at " ^ (twelve_hour_string sel_tm)
+         day_s ^ " at " ^ 
+         if !Rcfile.selection_12_hour then
+            twelve_hour_string sel_tm
+         else
+            twentyfour_hour_string sel_tm
       |Right ->
          day_s
    in
@@ -544,11 +576,17 @@ let draw_msg iface =
    let curr_tm = Unix.localtime (Unix.time ()) in
    Rcfile.color_on iface.scr.msg_win Rcfile.Status;
    wattron iface.scr.msg_win WA.bold;
+   let curr_tm_str = 
+      if !Rcfile.status_12_hour then
+         twelve_hour_string curr_tm
+      else
+         twentyfour_hour_string curr_tm
+   in
    let s = 
       Printf.sprintf "Wyrd v%s          Currently: %s, %s %.2d at %s"
          Version.version (full_string_of_tm_wday curr_tm.Unix.tm_wday)
          (full_string_of_tm_mon curr_tm.Unix.tm_mon)
-         curr_tm.Unix.tm_mday (twelve_hour_string curr_tm)
+         curr_tm.Unix.tm_mday curr_tm_str
    in
    trunc_mvwaddstr iface.scr.msg_win (pred iface.scr.mw_lines) 0
       iface.scr.mw_cols s;

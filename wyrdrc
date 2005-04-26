@@ -32,6 +32,11 @@ set busy_level4="7"   # magenta
 # first day of the week is Sunday
 set week_starts_monday="false"
 
+# 12/24 hour time settings
+set schedule_12_hour="false"
+set selection_12_hour="true"
+set status_12_hour="true"
+
 
 bind "j"                 scroll_down
 bind "<down>"            scroll_down
