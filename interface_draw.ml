@@ -327,6 +327,7 @@ let draw_timed iface reminders =
    Rcfile.color_off iface.scr.timed_win Rcfile.Timed_reminder;
    wattroff iface.scr.timed_win (WA.bold lor WA.reverse);
    (* finish off by drawing in the blank timeslots *)
+   Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
    for i = 0 to pred iface.scr.tw_lines do
       if not is_drawn.(i) then begin
          if i = iface.left_selection && iface.selected_side = Left then
@@ -346,6 +347,7 @@ let draw_timed iface reminders =
       end else
          ()
    done;
+   Rcfile.color_off iface.scr.timed_win Rcfile.Timed_default;
    wattroff iface.scr.timed_win (WA.reverse lor WA.underline);
    assert (wnoutrefresh iface.scr.timed_win);
    {iface with timed_lineinfo = lineinfo}
@@ -366,12 +368,14 @@ let draw_calendar (iface : interface_state_t)
    let vspacer = (iface.scr.cw_lines - 8) / 2 in
    assert (wmove iface.scr.calendar_win vspacer hspacer);
    wclrtoeol iface.scr.calendar_win;
+   Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_labels;
    wattron iface.scr.calendar_win WA.bold;
    assert (waddstr iface.scr.calendar_win cal.title);
    wattroff iface.scr.calendar_win WA.bold;
    assert (wmove iface.scr.calendar_win (vspacer + 1) hspacer);
    wclrtoeol iface.scr.calendar_win;
    assert (waddstr iface.scr.calendar_win cal.weekdays);
+   Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_labels;
    (* draw the day numbers *)
    let ws = Str.regexp " " in
    let rec draw_week weeks line =
