@@ -9,8 +9,6 @@ Wyrd To-Do list
 * Add additional user-defined REMline templates, which can be
   activated via the 'bind' syntax.
 
-* Make color scheme configurable.
-
 * Make 12/24 hour time configurable.
 
 * Add additional "new reminder" commands that provide a dialog for selecting
