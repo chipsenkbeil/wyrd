@@ -1,9 +1,9 @@
 
-                             Wyrd v0.1.0 README
+                             Wyrd v0.2.0 README
 
                                  Paul Pelzl
 
-                               April 6, 2005
+                               April 26, 2005
 
 
 
@@ -85,8 +85,8 @@ Display:
 Navigation:
 
    Scroll up and down the schedule : <up>, <down> or k, j
-   Jump back or forward by a day   : <pageup>, <pagedown> or 4, 6 or <, >
-   Jump back or forward by a week  : 8, 2 or [, ]
+   Jump back or forward by a day   : <pageup>, <pagedown> or 4, 6 or <, > or H, L
+   Jump back or forward by a week  : 8, 2 or [, ] or K, J
    Jump back or forward by a month : {, }
    Jump to current date and time   : <home>
    Switch between schedule and
@@ -95,6 +95,8 @@ Navigation:
 
    Notice that if you have a numeric keypad, the 4/6/8/2 keys will let you move
    directionally in the month calendar view at the upper-right of the screen.
+   Similarly, {H, J, K, L} will cause directional calendar movement using the
+   standard mapping from vi(1).
 
 Editing reminders:
 
@@ -272,7 +274,7 @@ Colorable Objects:
       timed_reminder   : a nonempty line in the timed reminders window
       untimed_reminder : an entry in the untimed reminders window
       timed_date       : the vertical date strip on the left side of the screen
-      selection_info   : the line providing current date/time for the current selection
+      selection_info   : the line providing date/time for the current selection
       description      : the reminder description window
       status           : the bottom bar providing current date and time
       calendar_labels  : the month and weekday labels in the calendar window
