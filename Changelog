@@ -1,6 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-04-29     Fixed a rare bug that could cause timed reminders to become
+               temporarily invisible at month boundaries.
+
 2005-04-26     Released 0.2.0.
 
 2005-04-25     Made colors configurable via the rcfile.
