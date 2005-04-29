@@ -243,23 +243,23 @@ let draw_date_strip (iface : interface_state_t) =
    assert (wnoutrefresh iface.scr.timed_win)
 
 
-(* Draw the timed schedule.  The algorithm iterates across all reminders in
- * a three month period, and draws them in one by one.  An array is used
- * to keep track of which lines have not yet been drawn, so that these can
- * be filled in later.
+(* Draw a portion of the timed schedule.  The algorithm iterates across all
+ * reminders in a three month period, and draws them in one by one.  An array
+ * is used to keep track of which lines have not yet been drawn, so that these
+ * can be filled in later.
  *
  * This routine also updates iface.timed_lineinfo. *)
-let draw_timed iface reminders =
+let draw_timed_window iface reminders top lines =
    let round_down x =
       if x >= 0.0 then int_of_float x
       else pred (int_of_float x)
    in
    let is_drawn = Array.make iface.scr.tw_lines false in
-   let lineinfo = Array.make iface.scr.tw_lines None in
    let blank = String.make iface.scr.tw_cols ' ' in
    Rcfile.color_on iface.scr.timed_win Rcfile.Timed_reminder;
    wattron iface.scr.timed_win A.bold;
-   let top_tm = Unix.localtime iface.top_timestamp in
+   let top_timestamp = timestamp_of_line iface top in
+   let top_tm = Unix.localtime top_timestamp in
    let temp = {
       top_tm with
         Unix.tm_sec = 0;
@@ -289,11 +289,10 @@ let draw_timed iface reminders =
                (string_of_tm (Unix.localtime start)) ^ " "
          in
          (* draw the top line of a reminder *)
-         if rem_top_line >= 0 && rem_top_line < iface.scr.tw_lines then begin
+         if rem_top_line >= top && rem_top_line < top + lines then begin
             let time_str = get_time_str () in
             let ts = timestamp_of_line iface rem_top_line in
             let tm = Unix.localtime ts in
-            (*let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in*)
             let ts_str = string_of_tm tm in
             if rem_top_line = iface.left_selection && iface.selected_side = Left then
                wattron iface.scr.timed_win A.reverse
@@ -305,7 +304,7 @@ let draw_timed iface reminders =
             else
                wattroff iface.scr.timed_win A.underline;
             is_drawn.(rem_top_line) <- true;
-            lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
+            iface.timed_lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
             trunc_mvwaddstr iface.scr.timed_win rem_top_line 2 (iface.scr.tw_cols - 2) 
                (ts_str ^ " " ^ msg)
          end else
@@ -314,13 +313,12 @@ let draw_timed iface reminders =
          let count = ref 1 in
          while 
             ((timestamp_of_line iface (rem_top_line + !count)) < finish) &&
-            (rem_top_line + !count < iface.scr.tw_lines)
+            (rem_top_line + !count < top + lines)
          do
-            if rem_top_line + !count >= 0 then begin
+            if rem_top_line + !count >= top then begin
                let time_str = get_time_str () in
                let ts = timestamp_of_line iface (rem_top_line + !count) in
                let tm = Unix.localtime ts in
-               (* let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in *)
                let ts_str = string_of_tm tm in
                let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
                if rem_top_line + !count = iface.left_selection && 
@@ -335,7 +333,7 @@ let draw_timed iface reminders =
                   wattroff iface.scr.timed_win A.underline;
                if not is_drawn.(rem_top_line + !count) then begin
                   is_drawn.(rem_top_line + !count)  <- true;
-                  lineinfo.(rem_top_line + !count) <- 
+                  iface.timed_lineinfo.(rem_top_line + !count) <- 
                      Some (filename, line_num, time_str ^ msg);
                   assert (mvwaddstr iface.scr.timed_win (rem_top_line + !count) 2 s)
                end else
@@ -346,7 +344,7 @@ let draw_timed iface reminders =
          done;
          (* The reminders list is sorted chronologically, so once we hit a reminder
           * that falls after the end of the calendar window we can stop. *)
-         if rem_top_line < iface.scr.tw_lines then
+         if rem_top_line < top + lines then
             process_reminders tail
          else
             ()
@@ -357,15 +355,15 @@ let draw_timed iface reminders =
    wattroff iface.scr.timed_win (A.bold lor A.reverse);
    (* finish off by drawing in the blank timeslots *)
    Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
-   for i = 0 to pred iface.scr.tw_lines do
+   for i = top to pred (top + lines) do
       if not is_drawn.(i) then begin
+         iface.timed_lineinfo.(i) <- None;
          if i = iface.left_selection && iface.selected_side = Left then
             wattron iface.scr.timed_win A.reverse
          else
             wattroff iface.scr.timed_win A.reverse;
          let ts = timestamp_of_line iface i in
          let tm = Unix.localtime ts in
-         (*let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in*)
          let ts_str = string_of_tm tm in
          let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
          if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
@@ -379,107 +377,12 @@ let draw_timed iface reminders =
    done;
    Rcfile.color_off iface.scr.timed_win Rcfile.Timed_default;
    wattroff iface.scr.timed_win (A.reverse lor A.underline);
-   assert (wnoutrefresh iface.scr.timed_win);
-   {iface with timed_lineinfo = lineinfo}
-
-
-(* Draw a single line of the timed reminders window.  This is an optimization over
- * draw_timed () for the scrolling case.
- *
- * Also updates the associated iface.timed_lineinfo entry. *)
-let draw_timed_line iface reminders target_line =
-   let round_down x =
-      if x >= 0.0 then int_of_float x
-      else pred (int_of_float x)
-   in
-   let blank = String.make iface.scr.tw_cols ' ' in
-   let top_tm = Unix.localtime iface.top_timestamp in
-   let temp = {
-      top_tm with
-        Unix.tm_sec = 0;
-        Unix.tm_min = ~- (time_inc_min iface);
-        Unix.tm_hour = 0
-   } in
-   let (_, before_midnight) = Unix.mktime temp in
-   let target_timestamp = timestamp_of_line iface target_line in
-   let string_of_tm =
-      if !Rcfile.schedule_12_hour then
-         twelve_hour_string_pad
-      else
-         twentyfour_hour_string
-   in
-   (* draw a blank timeslot first, then overwrite it if necessary *)
-   Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
-   if target_line = iface.left_selection && iface.selected_side = Left then
-      wattron iface.scr.timed_win A.reverse
-   else
-      wattroff iface.scr.timed_win A.reverse;
-   let tm = Unix.localtime target_timestamp in
-   let ts_str = string_of_tm tm in
-   let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
-   if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
-      tm.Unix.tm_min  = before_midnight.Unix.tm_min then
-      wattron iface.scr.timed_win A.underline
-   else
-      wattroff iface.scr.timed_win A.underline;
-   assert (mvwaddstr iface.scr.timed_win target_line 2 s);
-   Rcfile.color_off iface.scr.timed_win Rcfile.Timed_default;
-   wattroff iface.scr.timed_win (A.reverse lor A.bold);
-   iface.timed_lineinfo.(target_line) <- None;
-   (* draw any overlapping reminders *)
-   Rcfile.color_on iface.scr.timed_win Rcfile.Timed_reminder;
-   wattron iface.scr.timed_win A.bold;
-   let rec process_reminders rem_list =
-      begin match rem_list with
-      |[] ->
-         ()
-      |(start, finish, msg, filename, line_num) :: tail ->
-         if start < target_timestamp +. (time_inc iface) &&
-            (finish > target_timestamp || 
-             (finish = target_timestamp && finish = start)) then begin
-            (* this reminder overlaps the target line... *)
-            let get_time_str () =
-               if finish > start then
-                  (string_of_tm (Unix.localtime start)) ^ "-" ^
-                  (string_of_tm (Unix.localtime finish)) ^ " "
-               else
-                  (string_of_tm (Unix.localtime start)) ^ " "
-            in
-            let time_str = get_time_str () in
-            let tm = Unix.localtime target_timestamp in
-            let ts_str = string_of_tm tm in
-            if target_line = iface.left_selection && iface.selected_side = Left then
-               wattron iface.scr.timed_win A.reverse
-            else
-               wattroff iface.scr.timed_win A.reverse;
-            if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
-               tm.Unix.tm_min  = before_midnight.Unix.tm_min then
-               wattron iface.scr.timed_win A.underline
-            else
-               wattroff iface.scr.timed_win A.underline;
-            iface.timed_lineinfo.(target_line) <- Some (filename, line_num, time_str ^ msg);
-            if start >= target_timestamp then begin
-               (* this reminder starts at the target line *)
-               trunc_mvwaddstr iface.scr.timed_win target_line 2 (iface.scr.tw_cols - 2) 
-                  (ts_str ^ " " ^ msg)
-            end else begin
-               (* the reminder starts above this line *)
-               assert (mvwaddstr iface.scr.timed_win target_line 2 s)
-            end
-         end else
-            (* The reminders list is sorted chronologically, so once we hit a reminder
-             * that falls after this line we can stop. *)
-            if start < target_timestamp +. (time_inc iface) then
-               process_reminders tail
-            else
-               ()
-      end
-   in
-   process_reminders reminders;
-   Rcfile.color_off iface.scr.timed_win Rcfile.Timed_reminder;
-   wattroff iface.scr.timed_win (A.bold lor A.reverse lor A.underline);
    assert (wnoutrefresh iface.scr.timed_win)
 
+
+(* Draw the entire timed reminders window *)
+let draw_timed iface reminders = 
+   draw_timed_window iface reminders 0 iface.scr.tw_lines
 
 
 (* render a calendar for the given reminders record *)
