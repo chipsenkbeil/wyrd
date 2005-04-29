@@ -94,14 +94,14 @@ let object_palette      = Hashtbl.create 20
 let color_on win obj =
    try
       let color_index = Hashtbl.find object_palette obj in
-      wattron win (WA.color_pair color_index)
+      wattron win (A.color_pair color_index)
    with Not_found ->
       ()
 
 let color_off win obj =
    try
       let color_index = Hashtbl.find object_palette obj in
-      wattroff win (WA.color_pair color_index)
+      wattroff win (A.color_pair color_index)
    with Not_found ->
       ()
 

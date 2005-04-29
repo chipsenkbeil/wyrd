@@ -113,7 +113,7 @@ let trunc_mvwaddstr win line col len s =
 (* Draw the one-line help window at the top of the screen *)
 let draw_help (iface : interface_state_t) =
    Rcfile.color_on iface.scr.help_win Rcfile.Help;
-   wattron iface.scr.help_win (WA.bold lor WA.underline);
+   wattron iface.scr.help_win (A.bold lor A.underline);
    let rec build_help_line operations s =
       match operations with
       |[] -> 
@@ -148,7 +148,7 @@ let draw_date_strip (iface : interface_state_t) =
    (* draw the vertical line to the right of the date string *)
    let acs = get_acs_codes () in
    Rcfile.color_on iface.scr.timed_win Rcfile.Left_divider;
-   wattron iface.scr.timed_win WA.bold;
+   wattron iface.scr.timed_win A.bold;
    mvwvline iface.scr.timed_win 0 1 acs.Acs.vline iface.scr.tw_lines;
    Rcfile.color_off iface.scr.timed_win Rcfile.Left_divider;
    (* determine the line numbers and timestamps of any date changes within the
@@ -225,21 +225,21 @@ let draw_date_strip (iface : interface_state_t) =
    (* draw the date string vertically, one character at a time *)
    for i = 0 to pred iface.scr.tw_lines do
       if date_chars.[i] = '-' then begin
-         wattron iface.scr.timed_win WA.underline;
+         wattron iface.scr.timed_win A.underline;
          Rcfile.color_on iface.scr.timed_win Rcfile.Timed_date;
          assert (mvwaddch iface.scr.timed_win i 0 acs.Acs.hline);
          Rcfile.color_off iface.scr.timed_win Rcfile.Timed_date;
          Rcfile.color_on iface.scr.timed_win Rcfile.Left_divider;
          assert (mvwaddch iface.scr.timed_win i 1 acs.Acs.rtee);
          Rcfile.color_off iface.scr.timed_win Rcfile.Left_divider;
-         wattroff iface.scr.timed_win WA.underline;
+         wattroff iface.scr.timed_win A.underline;
       end else begin
          Rcfile.color_on iface.scr.timed_win Rcfile.Timed_date;
          assert (mvwaddch iface.scr.timed_win i 0 (int_of_char date_chars.[i]));
          Rcfile.color_off iface.scr.timed_win Rcfile.Timed_date;
       end
    done;
-   wattroff iface.scr.timed_win (WA.bold lor WA.underline);
+   wattroff iface.scr.timed_win (A.bold lor A.underline);
    assert (wnoutrefresh iface.scr.timed_win)
 
 
@@ -256,7 +256,7 @@ let draw_timed iface reminders =
    let lineinfo = Array.make iface.scr.tw_lines None in
    let blank = String.make iface.scr.tw_cols ' ' in
    Rcfile.color_on iface.scr.timed_win Rcfile.Timed_reminder;
-   wattron iface.scr.timed_win WA.bold;
+   wattron iface.scr.timed_win A.bold;
    let top_tm = Unix.localtime iface.top_timestamp in
    let temp = {
       top_tm with
@@ -294,14 +294,14 @@ let draw_timed iface reminders =
             (*let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in*)
             let ts_str = string_of_tm tm in
             if rem_top_line = iface.left_selection && iface.selected_side = Left then
-               wattron iface.scr.timed_win WA.reverse
+               wattron iface.scr.timed_win A.reverse
             else
-               wattroff iface.scr.timed_win WA.reverse;
+               wattroff iface.scr.timed_win A.reverse;
             if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
                tm.Unix.tm_min  = before_midnight.Unix.tm_min then
-               wattron iface.scr.timed_win WA.underline
+               wattron iface.scr.timed_win A.underline
             else
-               wattroff iface.scr.timed_win WA.underline;
+               wattroff iface.scr.timed_win A.underline;
             is_drawn.(rem_top_line) <- true;
             lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
             trunc_mvwaddstr iface.scr.timed_win rem_top_line 2 (iface.scr.tw_cols - 2) 
@@ -323,14 +323,14 @@ let draw_timed iface reminders =
                let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
                if rem_top_line + !count = iface.left_selection && 
                   iface.selected_side = Left then
-                  wattron iface.scr.timed_win WA.reverse
+                  wattron iface.scr.timed_win A.reverse
                else
-                  wattroff iface.scr.timed_win WA.reverse;
+                  wattroff iface.scr.timed_win A.reverse;
                if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
                   tm.Unix.tm_min  = before_midnight.Unix.tm_min then
-                  wattron iface.scr.timed_win WA.underline
+                  wattron iface.scr.timed_win A.underline
                else
-                  wattroff iface.scr.timed_win WA.underline;
+                  wattroff iface.scr.timed_win A.underline;
                if not is_drawn.(rem_top_line + !count) then begin
                   is_drawn.(rem_top_line + !count)  <- true;
                   lineinfo.(rem_top_line + !count) <- 
@@ -352,15 +352,15 @@ let draw_timed iface reminders =
    in
    process_reminders reminders;
    Rcfile.color_off iface.scr.timed_win Rcfile.Timed_reminder;
-   wattroff iface.scr.timed_win (WA.bold lor WA.reverse);
+   wattroff iface.scr.timed_win (A.bold lor A.reverse);
    (* finish off by drawing in the blank timeslots *)
    Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
    for i = 0 to pred iface.scr.tw_lines do
       if not is_drawn.(i) then begin
          if i = iface.left_selection && iface.selected_side = Left then
-            wattron iface.scr.timed_win WA.reverse
+            wattron iface.scr.timed_win A.reverse
          else
-            wattroff iface.scr.timed_win WA.reverse;
+            wattroff iface.scr.timed_win A.reverse;
          let ts = timestamp_of_line iface i in
          let tm = Unix.localtime ts in
          (*let ts_str = Printf.sprintf "%.2d:%.2d " tm.Unix.tm_hour tm.Unix.tm_min in*)
@@ -368,15 +368,15 @@ let draw_timed iface reminders =
          let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
          if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
             tm.Unix.tm_min  = before_midnight.Unix.tm_min then
-            wattron iface.scr.timed_win WA.underline
+            wattron iface.scr.timed_win A.underline
          else
-            wattroff iface.scr.timed_win WA.underline;
+            wattroff iface.scr.timed_win A.underline;
          assert (mvwaddstr iface.scr.timed_win i 2 s)
       end else
          ()
    done;
    Rcfile.color_off iface.scr.timed_win Rcfile.Timed_default;
-   wattroff iface.scr.timed_win (WA.reverse lor WA.underline);
+   wattroff iface.scr.timed_win (A.reverse lor A.underline);
    assert (wnoutrefresh iface.scr.timed_win);
    {iface with timed_lineinfo = lineinfo}
 
@@ -389,7 +389,7 @@ let draw_calendar (iface : interface_state_t)
    let cal = reminders.curr_cal in
    let acs = get_acs_codes () in
    Rcfile.color_on iface.scr.calendar_win Rcfile.Right_divider;
-   wattron iface.scr.calendar_win WA.bold;
+   wattron iface.scr.calendar_win A.bold;
    mvwvline iface.scr.calendar_win 0 0 acs.Acs.vline iface.scr.cw_lines;
    Rcfile.color_off iface.scr.calendar_win Rcfile.Right_divider;
    let hspacer = (iface.scr.cw_cols - 20) / 2 in
@@ -397,9 +397,9 @@ let draw_calendar (iface : interface_state_t)
    assert (wmove iface.scr.calendar_win vspacer hspacer);
    wclrtoeol iface.scr.calendar_win;
    Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_labels;
-   wattron iface.scr.calendar_win WA.bold;
+   wattron iface.scr.calendar_win A.bold;
    assert (waddstr iface.scr.calendar_win cal.title);
-   wattroff iface.scr.calendar_win WA.bold;
+   wattroff iface.scr.calendar_win A.bold;
    assert (wmove iface.scr.calendar_win (vspacer + 1) hspacer);
    wclrtoeol iface.scr.calendar_win;
    assert (waddstr iface.scr.calendar_win cal.weekdays);
@@ -440,20 +440,20 @@ let draw_calendar (iface : interface_state_t)
                      Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_level2
                   end else if reminders.curr_counts.(day) <= !Rcfile.busy_level3 then begin
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_level2;
-                     wattron iface.scr.calendar_win WA.bold;
+                     wattron iface.scr.calendar_win A.bold;
                      assert (waddstr iface.scr.calendar_win d);
                      Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_level2;
-                     wattroff iface.scr.calendar_win WA.bold
+                     wattroff iface.scr.calendar_win A.bold
                   end else if reminders.curr_counts.(day) <= !Rcfile.busy_level4 then begin
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_level3;
                      assert (waddstr iface.scr.calendar_win d);
                      Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_level3
                   end else begin
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_level3;
-                     wattron iface.scr.calendar_win WA.bold;
+                     wattron iface.scr.calendar_win A.bold;
                      assert (waddstr iface.scr.calendar_win d);
                      Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_level3;
-                     wattroff iface.scr.calendar_win WA.bold
+                     wattroff iface.scr.calendar_win A.bold
                   end
                end;
                draw_el days
@@ -487,7 +487,7 @@ let draw_untimed (iface : interface_state_t) reminders =
    werase iface.scr.untimed_win;
    let acs = get_acs_codes () in
    Rcfile.color_on iface.scr.untimed_win Rcfile.Right_divider;
-   wattron iface.scr.untimed_win WA.bold;
+   wattron iface.scr.untimed_win A.bold;
    assert (mvwaddch iface.scr.untimed_win 0 0 acs.Acs.ltee);
    mvwhline iface.scr.untimed_win 0 1 acs.Acs.hline (pred iface.scr.uw_cols);
    mvwvline iface.scr.untimed_win 1 0 acs.Acs.vline (pred iface.scr.uw_lines);
@@ -507,9 +507,9 @@ let draw_untimed (iface : interface_state_t) reminders =
          if line < iface.scr.uw_lines then
             if n >= iface.top_untimed then begin
                if line = iface.right_selection && iface.selected_side = Right then
-                  wattron iface.scr.untimed_win WA.reverse
+                  wattron iface.scr.untimed_win A.reverse
                else
-                  wattroff iface.scr.untimed_win WA.reverse;
+                  wattroff iface.scr.untimed_win A.reverse;
                trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 3) 
                   ("* " ^ msg);
                lineinfo.(line) <- Some (filename, line_num, msg);
@@ -521,7 +521,7 @@ let draw_untimed (iface : interface_state_t) reminders =
    in
    render_lines today_reminders 0 1;
    Rcfile.color_off iface.scr.untimed_win Rcfile.Untimed_reminder;
-   wattroff iface.scr.untimed_win (WA.bold lor WA.reverse);
+   wattroff iface.scr.untimed_win (A.bold lor A.reverse);
    (* if there's not enough window space to display all untimed reminders, display
     * arrows to indicate scrolling ability *)
    if iface.top_untimed > 0 then begin
@@ -568,14 +568,14 @@ let draw_msg iface =
    (* draw the date stamp *)
    let acs = get_acs_codes () in
    Rcfile.color_on iface.scr.msg_win Rcfile.Selection_info;
-   wattron iface.scr.msg_win (WA.bold lor WA.underline);
+   wattron iface.scr.msg_win (A.bold lor A.underline);
    trunc_mvwaddstr iface.scr.msg_win 0 0 iface.scr.mw_cols day_time_s;
    Rcfile.color_off iface.scr.msg_win Rcfile.Selection_info;
-   wattroff iface.scr.msg_win (WA.bold lor WA.underline);
+   wattroff iface.scr.msg_win (A.bold lor A.underline);
    (* draw the current date *)
    let curr_tm = Unix.localtime (Unix.time ()) in
    Rcfile.color_on iface.scr.msg_win Rcfile.Status;
-   wattron iface.scr.msg_win WA.bold;
+   wattron iface.scr.msg_win A.bold;
    let curr_tm_str = 
       if !Rcfile.status_12_hour then
          twelve_hour_string curr_tm
@@ -591,7 +591,7 @@ let draw_msg iface =
    trunc_mvwaddstr iface.scr.msg_win (pred iface.scr.mw_lines) 0
       iface.scr.mw_cols s;
    Rcfile.color_off iface.scr.msg_win Rcfile.Status;
-   wattroff iface.scr.msg_win WA.bold;
+   wattroff iface.scr.msg_win A.bold;
    (* draw the full MSG string, word wrapping as necessary *)
    Rcfile.color_on iface.scr.msg_win Rcfile.Description;
    let rec render_line lines i =
@@ -630,9 +630,9 @@ let draw_error iface err draw_cursor =
    trunc_mvwaddstr iface.scr.err_win 0 0 iface.scr.ew_cols err;
    let len = String.length err in
    if draw_cursor && len <= pred iface.scr.ew_cols then begin
-      wattron iface.scr.err_win WA.blink;
+      wattron iface.scr.err_win A.blink;
       assert (mvwaddch iface.scr.err_win 0 len (int_of_char '_'));
-      wattroff iface.scr.err_win WA.blink
+      wattroff iface.scr.err_win A.blink
    end else
       ();
    assert (wnoutrefresh iface.scr.err_win)
