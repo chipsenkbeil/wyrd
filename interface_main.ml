@@ -381,8 +381,10 @@ let handle_edit (iface : interface_state_t) reminders =
          Str.global_replace filename_sub filename !Rcfile.edit_old_command
       in
       let command = Str.global_replace lineno_sub line_num command_partial in
-      endwin();
+      def_prog_mode ();
+      endwin ();
       let _ = Unix.system command in 
+      reset_prog_mode ();
       begin try
          assert (curs_set 0)
       with _ ->
@@ -441,8 +443,10 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
       Str.global_replace filename_sub !Rcfile.reminders_file 
          !Rcfile.edit_new_command
    in
-   endwin();
+   def_prog_mode ();
+   endwin ();
    let _ = Unix.system command in 
+   reset_prog_mode ();
    begin try
       assert (curs_set 0)
    with _ ->
@@ -590,8 +594,10 @@ let handle_view_reminders (iface : interface_state_t) reminders =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let command = "remind -q -g " ^ !Rcfile.reminders_file ^ " " ^
    rem_date_str ^ " | less -c" in
-   endwin();
+   def_prog_mode ();
+   endwin ();
    let _ = Unix.system command in 
+   reset_prog_mode ();
    begin try
       assert (curs_set 0)
    with _ ->
@@ -609,8 +615,10 @@ let handle_view_all_reminders (iface : interface_state_t) reminders =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let command = "remind -q -g -t " ^ !Rcfile.reminders_file ^ " " ^
    rem_date_str ^ " | less -c" in
-   endwin();
+   def_prog_mode ();
+   endwin ();
    let _ = Unix.system command in 
+   reset_prog_mode ();
    begin try
       assert (curs_set 0)
    with _ ->
