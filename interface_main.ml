@@ -183,6 +183,18 @@ let handle_selection_change iface reminders =
    (new_iface, new_reminders)
 
 
+(* Same as previous, but without calling draw_timed ().  Optimization for
+ * the scrolling case. *)
+let handle_selection_change_scroll iface reminders =
+   let new_reminders = Remind.update_reminders reminders 
+   (timestamp_of_line iface iface.left_selection) in
+   draw_date_strip iface;
+   draw_calendar iface new_reminders;
+   let new_iface = draw_untimed iface new_reminders.Remind.curr_untimed in
+   (* draw_msg new_iface; *)
+   draw_error new_iface "" false;
+   (new_iface, new_reminders)
+
 
 (* handle a "scroll down" event when the timed window is focused *)
 let handle_scrolldown_timed (iface : interface_state_t) reminders =
@@ -191,16 +203,35 @@ let handle_scrolldown_timed (iface : interface_state_t) reminders =
                  right_selection = 1
    } in
    if iface.left_selection < pred iface.scr.tw_lines then begin
-      let new_iface = {
+      let iface2 = {
          iface with left_selection = succ iface.left_selection
       } in
-      handle_selection_change new_iface reminders
+      let (new_iface, new_reminders) = 
+         handle_selection_change_scroll iface2 reminders
+      in
+      draw_timed_line new_iface new_reminders.Remind.all_timed 
+         iface.left_selection;
+      draw_timed_line new_iface new_reminders.Remind.all_timed
+         (succ iface.left_selection);
+      (new_iface, new_reminders)
    end else begin
       let second_timestamp = timestamp_of_line iface 1 in
-      let new_iface = {
+      let iface2 = {
          iface with top_timestamp = second_timestamp
       } in
-      handle_selection_change new_iface reminders
+      let (new_iface, new_reminders) = 
+         handle_selection_change_scroll iface2 reminders
+      in
+      assert (wscrl new_iface.scr.timed_win 1);
+      (* adjust lineinfo array to handle scrolling *)
+      Array.blit iface.timed_lineinfo 1 iface.timed_lineinfo 0
+         (pred (Array.length iface.timed_lineinfo));
+      draw_timed_line new_iface new_reminders.Remind.all_timed
+         (iface.scr.tw_lines - 2);
+      draw_timed_line new_iface new_reminders.Remind.all_timed
+         (iface.scr.tw_lines - 1);
+      draw_date_strip new_iface;
+      (new_iface, new_reminders)
    end
 
 
@@ -235,18 +266,34 @@ let handle_scrollup_timed (iface : interface_state_t) reminders =
                  right_selection = 1
    } in
    if iface.left_selection > 0 then begin
-      let new_iface = {
+      let iface2 = {
          iface with left_selection = pred iface.left_selection
       } in
-      handle_selection_change new_iface reminders
+      let (new_iface, new_reminders) = 
+         handle_selection_change_scroll iface2 reminders
+      in
+      draw_timed_line new_iface new_reminders.Remind.all_timed 
+         iface.left_selection;
+      draw_timed_line new_iface new_reminders.Remind.all_timed
+         (pred iface.left_selection);
+      (new_iface, new_reminders)
    end else begin
       let prev_timestamp = timestamp_of_line iface (-1) in
-      let new_iface = {
+      let iface2 = {
          iface with top_timestamp = prev_timestamp
       } in
-      handle_selection_change new_iface reminders
+      let (new_iface, new_reminders) = 
+         handle_selection_change_scroll iface2 reminders
+      in
+      assert (wscrl new_iface.scr.timed_win (-1));
+      (* adjust lineinfo array to handle scrolling *)
+      Array.blit iface.timed_lineinfo 0 iface.timed_lineinfo 1
+         (pred (Array.length iface.timed_lineinfo));
+      draw_timed_line new_iface new_reminders.Remind.all_timed 0;
+      draw_timed_line new_iface new_reminders.Remind.all_timed 1;
+      draw_date_strip new_iface;
+      (new_iface, new_reminders)
    end
-
 
 
 (* handle a "scroll up" event when the untimed window is focused *)
@@ -780,6 +827,7 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
 
 (* initialize the interface and begin the main loop *)
 let run (iface : interface_state_t) =
+   scrollok iface.scr.timed_win true;
    let reminders = Remind.create_three_month (iface.top_timestamp) in
    assert (keypad iface.scr.help_win true);
    draw_help iface;

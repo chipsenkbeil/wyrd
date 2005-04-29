@@ -3,9 +3,6 @@ Wyrd To-Do list
 
 * Figure out some way to handle overlapping timed reminders.
 
-* Implement a memoization mechanism to speed up drawing of timed 
-  reminders window when scrolling.
-
 * Add additional user-defined REMline templates, which can be
   activated via the 'bind' syntax.
 
