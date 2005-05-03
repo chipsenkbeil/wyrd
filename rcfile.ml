@@ -42,7 +42,7 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | NextWeek | PrevWeek | NextMonth | PrevMonth
                  | Home | Zoom | Edit | NewTimed | NewUntimed | SwitchWindow 
                  | SearchNext | BeginSearch | Quit | ViewReminders
-                 | ViewAllReminders
+                 | ViewAllReminders | NewGenReminder of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
@@ -68,8 +68,18 @@ let reminders_file = ref "~/.reminders"
 let edit_old_command = ref "vim +%n + %f"
 let edit_new_command = ref "vim -c '$' %f"
 (* Default new reminder templates *)
-let timed_template = ref "REM %M %d %y AT %h:%m DURATION 1:00 MSG "
+let timed_template   = ref "REM %M %d %y AT %h:%m DURATION 1:00 MSG "
 let untimed_template = ref "REM %M %d %y MSG "
+let template0        = ref None
+let template1        = ref None
+let template2        = ref None
+let template3        = ref None
+let template4        = ref None
+let template5        = ref None
+let template6        = ref None
+let template7        = ref None
+let template8        = ref None
+let template9        = ref None
 (* Default thresholds for calendar colorization *)
 let busy_level1 = ref 2
 let busy_level2 = ref 4
@@ -268,6 +278,16 @@ let operation_of_string command_str =
    |"edit"            -> CommandOp Edit
    |"new_timed"       -> CommandOp NewTimed
    |"new_untimed"     -> CommandOp NewUntimed
+   |"new_template0"   -> CommandOp (NewGenReminder 0)
+   |"new_template1"   -> CommandOp (NewGenReminder 1)
+   |"new_template2"   -> CommandOp (NewGenReminder 2)
+   |"new_template3"   -> CommandOp (NewGenReminder 3)
+   |"new_template4"   -> CommandOp (NewGenReminder 4)
+   |"new_template5"   -> CommandOp (NewGenReminder 5)
+   |"new_template6"   -> CommandOp (NewGenReminder 6)
+   |"new_template7"   -> CommandOp (NewGenReminder 7)
+   |"new_template8"   -> CommandOp (NewGenReminder 8)
+   |"new_template9"   -> CommandOp (NewGenReminder 9)
    |"switch_window"   -> CommandOp SwitchWindow
    |"search_next"     -> CommandOp SearchNext
    |"begin_search"    -> CommandOp BeginSearch
@@ -404,6 +424,26 @@ let parse_line line_stream =
          parse_set "timed_template" timed_template (fun x -> x) "Expected a template string after "
       | [< 'Ident "untimed_template" >] ->
          parse_set "untimed_template" untimed_template (fun x -> x) "Expected a template string after "
+      | [< 'Ident "template0" >] ->
+         parse_set "template0" template0 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template1" >] ->
+         parse_set "template1" template1 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template2" >] ->
+         parse_set "template2" template2 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template3" >] ->
+         parse_set "template3" template3 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template4" >] ->
+         parse_set "template4" template4 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template5" >] ->
+         parse_set "template5" template5 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template6" >] ->
+         parse_set "template6" template6 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template7" >] ->
+         parse_set "template7" template7 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template8" >] ->
+         parse_set "template8" template8 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "template9" >] ->
+         parse_set "template9" template9 (fun x -> Some x) "Expected a template string after "
       | [< 'Ident "busy_level1" >] ->
          parse_set "busy_level1" busy_level1 int_of_string "Expected an integral string after "
       | [< 'Ident "busy_level2" >] ->

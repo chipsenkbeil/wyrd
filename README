@@ -110,7 +110,10 @@ Editing reminders:
    reminder template has been created.  The template has the selected date and
    time filled in, so in many cases you will only need to fill in a MSG value.
 
-   Similarly, hitting 'u' will begin creating an untimed reminder.
+   Similarly, hitting 'u' will begin creating an untimed reminder.  'w' will
+   create a weekly timed reminder, and 'W' will create a weekly untimed reminder;
+   'm' will create a monthly timed reminder, and 'M' will create a monthly
+   untimed reminder.
 
    If you select a reminder (either timed or untimed) and hit <enter>, you will
    begin editing that reminder.  Wyrd will open up the appropriate reminders
@@ -209,14 +212,22 @@ Configuration Variables:
                               editing a new untimed reminder.  The substitution
                               syntax is the same as for "timed_template".
                                 
+      templateN             : Controls the format of a generic user-defined REM 
+                              line template; N may range from 0 to 9.  The
+                              substitution syntax is the same as for
+                              "timed_template".
+
       busy_level1           : An integer value specifying the maximum number of
-                              reminders in a day colored white on the month
-                              calendar.
-      busy_level2           : Same as above, colored blue.
-      busy_level3           : Same as above, colored bold blue.
-      busy_level4           : Same as above, colored magenta.  Any day with
-                              more reminders than this threshold will be
-                              colored bold magenta.
+                              reminders in a day colored using the color scheme
+                              for 'calendar_level1'.
+      busy_level2           : Same as above, using the 'calendar_level2' color
+                              scheme.
+      busy_level3           : Same as above, using the 'calendar_level2' color
+                              scheme rendered in bold.
+      busy_level4           : Same as above, using the 'calendar_level3' color
+                              scheme.  Any day with more reminders than this will
+                              be rendered using the 'calendar_level3' color
+                              scheme rendered in bold.
      
                               (For maximum usefulness, busy_level1 <
                               busy_level2 < busy_level3 < busy_level4.)
@@ -251,6 +262,8 @@ Bindable Operations:
       edit             : edit a preexisting reminder
       new_timed        : create a new timed reminder
       new_untimed      : create a new untimed reminder
+      new_templateN    : create a new user-defined reminder using
+                         templateN, where N may range from 0 to 9
       switch_window    : switch between the day schedule window on the left,
                          and the untimed reminder window on the right
       begin_search     : begin entering a search string

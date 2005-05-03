@@ -3,9 +3,6 @@ Wyrd To-Do list
 
 * Figure out some way to handle overlapping timed reminders.
 
-* Add additional user-defined REMline templates, which can be
-  activated via the 'bind' syntax.
-
 * Add additional "new reminder" commands that provide a dialog for selecting
   which reminder file to use (possibly scanning INCLUDE lines to get this
   info).

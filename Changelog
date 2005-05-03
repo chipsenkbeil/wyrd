@@ -1,6 +1,10 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-05-03     Added a bunch of generic user-defined reminder templates.
+               By default, some of these are configured to generate weekly and
+               monthly reminders.
+
 2005-04-29     Fixed a rare bug that could cause timed reminders to become
                temporarily invisible at month boundaries.
 

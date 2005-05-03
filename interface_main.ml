@@ -30,8 +30,10 @@ open Interface_draw
 
 
 exception Interrupt_exception
+exception Template_undefined of string
 
-type reminder_type_t = Timed | Untimed
+
+type reminder_type_t = Timed | Untimed | General of int
 
 
 (*******************************************************************)
@@ -487,43 +489,68 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
          (Str.regexp "%w", Remind.string_of_tm_wday tm.Unix.tm_wday)
       ] template
    in
-   let remline = 
-      match rem_type with
-      | Timed   -> substitute !Rcfile.timed_template
-      | Untimed -> substitute !Rcfile.untimed_template
-   in
-   let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
-   (Utility.expand_file !Rcfile.reminders_file) in
-   output_string remfile_channel remline;
-   close_out remfile_channel;
-   let filename_sub = Str.regexp "%f" in
-   let command = 
-      Str.global_replace filename_sub !Rcfile.reminders_file 
-         !Rcfile.edit_new_command
-   in
-   def_prog_mode ();
-   endwin ();
-   let _ = Unix.system command in 
-   reset_prog_mode ();
-   begin try
-      assert (curs_set 0)
-   with _ ->
-      ()
-   end;
-   let r = Remind.create_three_month iface.top_timestamp in
-   (* if the untimed list has been altered, change the focus to
-    * the timed window *)
-   let new_iface =
-      if List.length r.Remind.curr_untimed <> 
-         List.length reminders.Remind.curr_untimed then {
-         iface with selected_side = Left;
-                    top_untimed = 0;
-                    right_selection = 1
-         }
-      else
-         iface
-   in
-   handle_refresh new_iface r
+   try
+      let remline = 
+         match rem_type with
+         | Timed   -> substitute !Rcfile.timed_template
+         | Untimed -> substitute !Rcfile.untimed_template
+         | General x ->
+            let template_status =
+               match x with
+               | 0 -> (!Rcfile.template0, "template0")
+               | 1 -> (!Rcfile.template1, "template1")
+               | 2 -> (!Rcfile.template2, "template2")
+               | 3 -> (!Rcfile.template3, "template3")
+               | 4 -> (!Rcfile.template4, "template4")
+               | 5 -> (!Rcfile.template5, "template5")
+               | 6 -> (!Rcfile.template6, "template6")
+               | 7 -> (!Rcfile.template7, "template7")
+               | 8 -> (!Rcfile.template8, "template8")
+               | 9 -> (!Rcfile.template9, "template9")
+               | _ -> failwith ("unexpected template number " ^ (string_of_int x) ^
+                                " in handle_new_reminder")
+            in
+            begin match template_status with
+            | (None, template_str) -> raise (Template_undefined template_str)
+            | (Some t, _)          -> substitute t
+            end
+      in
+      let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
+      (Utility.expand_file !Rcfile.reminders_file) in
+      output_string remfile_channel remline;
+      close_out remfile_channel;
+      let filename_sub = Str.regexp "%f" in
+      let command = 
+         Str.global_replace filename_sub !Rcfile.reminders_file 
+            !Rcfile.edit_new_command
+      in
+      def_prog_mode ();
+      endwin ();
+      let _ = Unix.system command in 
+      reset_prog_mode ();
+      begin try
+         assert (curs_set 0)
+      with _ ->
+         ()
+      end;
+      let r = Remind.create_three_month iface.top_timestamp in
+      (* if the untimed list has been altered, change the focus to
+       * the timed window *)
+      let new_iface =
+         if List.length r.Remind.curr_untimed <> 
+            List.length reminders.Remind.curr_untimed then {
+            iface with selected_side = Left;
+                       top_untimed = 0;
+                       right_selection = 1
+            }
+         else
+            iface
+      in
+      handle_refresh new_iface r
+   with Template_undefined template_str ->
+      draw_error iface (template_str ^ " is undefined.") false;
+      assert (doupdate ());
+      (iface, reminders)
 
 
 (* Search forward for the next occurrence of the current search regex.  
@@ -727,6 +754,8 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_new_reminder iface reminders Timed
          |Rcfile.NewUntimed ->
             handle_new_reminder iface reminders Untimed
+         |Rcfile.NewGenReminder x ->
+            handle_new_reminder iface reminders (General x)
          |Rcfile.SearchNext ->
             handle_find_next iface reminders
          |Rcfile.BeginSearch ->

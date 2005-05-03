@@ -20,6 +20,14 @@ set edit_new_command="vim -c '$' %f"
 set timed_template="REM %M %d %y AT %h:%m DURATION 1:00 MSG "
 set untimed_template="REM %M %d %y MSG "
 
+# weekly recurrence
+set template0="REM %w AT %h:%m DURATION 1:00 MSG "
+set template1="REM %w DURATION 1:00 MSG "
+
+# monthly recurrence
+set template2="REM %d AT %h:%m DURATION 1:00 MSG "
+set template3="REM %d DURATION 1:00 MSG "
+
 
 # number of reminders per day allowed for each calendar colorization level
 set busy_level1="1"   # level1 color
@@ -69,6 +77,10 @@ bind "<return>"          edit
 bind "<enter>"           edit
 bind "t"                 new_timed
 bind "u"                 new_untimed
+bind "w"                 new_template0
+bind "W"                 new_template1
+bind "m"                 new_template2
+bind "M"                 new_template3
 bind "n"                 search_next
 bind "/"                 begin_search
 bind "r"                 view_remind
