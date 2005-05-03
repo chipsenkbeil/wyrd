@@ -5,6 +5,8 @@ Wyrd ChangeLog
                By default, some of these are configured to generate weekly and
                monthly reminders.
 
+               Added a beep and error message when pressing an unbound key.
+
 2005-04-29     Fixed a rare bug that could cause timed reminders to become
                temporarily invisible at month boundaries.
 

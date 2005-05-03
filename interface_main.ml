@@ -768,6 +768,9 @@ let handle_keypress key (iface : interface_state_t) reminders =
             let new_iface = {iface with run_wyrd = false} in
             (new_iface, reminders)
       with Not_found ->
+         let _ = beep () in
+         draw_error iface "key is not bound." false;
+         assert (doupdate ());
          (iface, reminders)
    end else begin
       (* user is entering a search string *)
@@ -835,10 +838,14 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
       assert (doupdate ());
       let key = wgetch iface.scr.help_win in
       let new_iface, new_reminders = 
-         if key = Key.resize then
-            handle_resize iface reminders
+         (* key = -1 is ncurses wgetch timeout error *)
+         if key <> ~- 1 then
+            if key = Key.resize then
+               handle_resize iface reminders
+            else
+               handle_keypress key iface reminders
          else
-            handle_keypress key iface reminders
+            (iface, reminders)
       in
       let curr_time = Unix.time () in
       (* poll remind(1) every 5 minutes and update display *)
