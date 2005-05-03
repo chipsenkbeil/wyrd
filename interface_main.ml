@@ -190,12 +190,11 @@ let handle_selection_change iface reminders =
    (new_iface, new_reminders)
 
 
-(* Same as previous, but without calling draw_timed ().  Optimization for
- * the scrolling case. *)
+(* Same as previous, but without calling draw_timed () or
+ * draw_date_strip ().  Optimization for the scrolling case. *)
 let handle_selection_change_scroll iface reminders =
    let new_reminders = Remind.update_reminders reminders 
    (timestamp_of_line iface iface.left_selection) in
-   draw_date_strip iface;
    draw_calendar iface new_reminders;
    let new_iface = draw_untimed iface new_reminders.Remind.curr_untimed in
    (* draw_msg new_iface; *)
@@ -210,16 +209,19 @@ let handle_scrolldown_timed (iface : interface_state_t) reminders =
                  right_selection = 1
    } in
    if iface.left_selection < pred iface.scr.tw_lines then begin
+      (* case 1: only the cursor moves *)
       let iface2 = {
          iface with left_selection = succ iface.left_selection
       } in
       let (new_iface, new_reminders) = 
          handle_selection_change_scroll iface2 reminders
       in
+      (* make a two-line update to erase and redraw the cursor *)
       draw_timed_window new_iface new_reminders.Remind.all_timed 
          iface.left_selection 2;
       (new_iface, new_reminders)
    end else begin
+      (* case 2: the entire timed window scrolls *)
       let second_timestamp = timestamp_of_line iface 1 in
       let iface2 = {
          iface with top_timestamp = second_timestamp
@@ -227,10 +229,13 @@ let handle_scrolldown_timed (iface : interface_state_t) reminders =
       let (new_iface, new_reminders) = 
          handle_selection_change_scroll iface2 reminders
       in
+      (* use a curses scroll operation to shift up the timed window *)
       assert (wscrl new_iface.scr.timed_win 1);
       (* adjust lineinfo array to compensate for scrolling *)
       Array.blit iface.timed_lineinfo 1 iface.timed_lineinfo 0
          (pred (Array.length iface.timed_lineinfo));
+      (* do a two-line update to erase the cursor and draw in the
+       * new line at the bottom of the screen *)
       draw_timed_window new_iface new_reminders.Remind.all_timed
          (iface.scr.tw_lines - 2) 2;
       draw_date_strip new_iface;
@@ -269,16 +274,19 @@ let handle_scrollup_timed (iface : interface_state_t) reminders =
                  right_selection = 1
    } in
    if iface.left_selection > 0 then begin
+      (* case 1: only the cursor moves *)
       let iface2 = {
          iface with left_selection = pred iface.left_selection
       } in
       let (new_iface, new_reminders) = 
          handle_selection_change_scroll iface2 reminders
       in
+      (* make a two-line update to erase and redraw the cursor *)
       draw_timed_window new_iface new_reminders.Remind.all_timed 
          (pred iface.left_selection) 2;
       (new_iface, new_reminders)
    end else begin
+      (* case 2: the entire timed window scrolls *)
       let prev_timestamp = timestamp_of_line iface (-1) in
       let iface2 = {
          iface with top_timestamp = prev_timestamp
@@ -286,10 +294,13 @@ let handle_scrollup_timed (iface : interface_state_t) reminders =
       let (new_iface, new_reminders) = 
          handle_selection_change_scroll iface2 reminders
       in
+      (* use a curses scroll operation to shift up the timed window *)
       assert (wscrl new_iface.scr.timed_win (-1));
       (* adjust lineinfo array to compensate for scrolling *)
       Array.blit iface.timed_lineinfo 0 iface.timed_lineinfo 1
          (pred (Array.length iface.timed_lineinfo));
+      (* do a two-line update to erase the cursor and draw in the
+       * new line at the bottom of the screen *)
       draw_timed_window new_iface new_reminders.Remind.all_timed 0 2;
       draw_date_strip new_iface;
       (new_iface, new_reminders)
