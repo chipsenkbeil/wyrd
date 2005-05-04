@@ -1,0 +1,719 @@
+% Wyrd documentation
+%
+% Notes:
+% This document is designed to be processed with the 'latex2man' perl
+% script.  This script has a preprocessor, which is the source of the
+% IF LATEX ... ELSE ... END IF comments.
+% "latex2man -CLATEX -L" will output pure tex source, which can be
+% handled either via latex or hevea. (Also, latex2man sucks.  If you know 
+% of a better tool that does the same job, I'd love to hear about it.)
+% Hevea has its own preprocessor, which is the source of the BEGIN LATEX
+% and HEVEA comments. (Hevea doesn't suck.)
+
+\documentclass[11pt,notitlepage]{article}
+%@% IF LATEX %@%
+\usepackage{times}
+\usepackage{fullpage}
+%@% ELSE %@%
+\usepackage{latex2man}
+\setVersion{0.3}
+%@% END-IF %@%
+
+% End preamble
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+%@% IF LATEX %@%
+\title{Wyrd v0.3 User Manual}
+\author{Paul J. Pelzl}
+\date{May 4, 2005}
+\maketitle
+
+\begin{center}
+\emph{``Because you're tired of waiting for your bloated calendar program to
+start up.''}
+\end{center}
+
+\tableofcontents
+\clearpage
+
+\section{Introduction}
+Wyrd is a text-based front-end to Remind, a sophisticated calendar and alarm
+program available from
+%BEGIN LATEX
+Roaring Penguin Software,
+Inc.\footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php}
+%END LATEX
+%HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Roaring Penguin Software, Inc.</a> \end{rawhtml}
+Wyrd serves two purposes:
+\begin{enumerate}
+   \item It displays reminders in a day-calendar view suitable for visualizing
+      your calendar at a glance.
+   \item It makes creating and editing reminders fast and easy.  However, Wyrd
+      does not hide Remind's textfile programmability, for this is what makes
+      Remind a truly powerful calendaring system.
+\end{enumerate}
+
+Wyrd also requires only a fraction of the resources of most calendar programs
+available today.
+
+
+\section{Installation}
+This section describes how to install Wyrd by compiling from source.  Volunteers have
+pre-packaged Wyrd for several popular operating systems, so you may be able to save
+yourself some time by installing from those packages.  Please check the 
+%BEGIN LATEX
+Wyrd website\footnote{http://www.eecs.umich.edu/\~{}pelzlpj/wyrd}
+%END LATEX
+%HEVEA \begin{rawhtml} <a href="http://www.eecs.umich.edu/~pelzlpj/wyrd/">Wyrd website</a> \end{rawhtml} 
+for up-to-date package information.
+
+Before installing Wyrd, your system must have the following software installed:
+\begin{itemize}
+   \item
+%BEGIN LATEX
+      OCaml\footnote{http://caml.inria.fr} $\ge$ 3.08
+%END LATEX
+%HEVEA \begin{rawhtml} <a href="http://caml.inria.fr/">OCaml</a> >= 3.08 \end{rawhtml} 
+   \item 
+%BEGIN LATEX
+      the ncurses library\footnote{http://www.gnu.org/software/ncurses/ncurses.html}
+%END LATEX
+%HEVEA \begin{rawhtml} <a href="http://www.gnu.org/software/ncurses/ncurses.html">ncurses library</a> \end{rawhtml} 
+      (and development headers)
+   \item 
+%BEGIN LATEX
+Remind \footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php} $\ge$ 3.0.23
+%END LATEX
+%HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Remind</a> >= 3.0.23 \end{rawhtml}
+   \item standard Unix utilities such as \texttt{cat}, \texttt{sort}, \texttt{cal}, and
+      \texttt{less} 
+\end{itemize}
+Wyrd may be compiled by executing the following at the root of the source tree:
+\begin{verbatim}
+./configure
+make
+\end{verbatim}
+After compiling, become root and execute
+\begin{verbatim}
+make install
+\end{verbatim}
+to complete the installation process.
+
+%@% ELSE %@%
+   %@% IF WYRDRC %@%
+\begin{Name}{5}{wyrdrc}{Paul J. Pelzl}{configuration file for the Wyrd calendar application}{wyrdrc manpage}
+   \texttt{wyrdrc} is the configuration textfile for the \Cmd{wyrd}{1} console calendar application.
+\end{Name}
+   %@% ELSE %@%
+\begin{Name}{1}{wyrd}{Paul J. Pelzl}{a console calendar application}{Wyrd 0.3 Manpage}
+   \Prog{wyrd} is a text-based front-end to \Cmd{remind}{1}, a sophisticated
+   calendar and alarm program.
+\end{Name}
+
+\section{Synopsis}
+\Prog{wyrd} \oArg{OPTIONS} \oArg{FILE}
+\section{Description}
+Open the calendar and display reminders defined in FILE (and any included
+reminder files).  The default reminder file is \Tilde /.reminders.
+\section{Options}
+\begin{description}
+   \item[\Opt{--version}] Display version information and exit.
+   \item[\Opt{--help}] Display usage information.
+\end{description}
+   %@% END-IF %@%
+%@% END-IF %@%
+
+%@% IF !WYRDRC %@%
+\section{Quick Start}
+%@% IF !LATEX %@%
+CAUTION: while this manpage should be suitable as a quick reference, it may
+be subject to miscellaneous shortcomings in typesetting.  The definitive 
+documentation is the user manual provided with Wyrd in PDF or HTML format.
+%@% END-IF %@%
+
+This section describes how to use Wyrd in its default configuration.  After
+familiarizing yourself with the basic operations as outlined in this section,
+you may wish to consult 
+%@% IF LATEX %@%
+Section \ref{advanced} 
+%@% ELSE %@%
+the \Cmd{wyrdrc}{5} manpage
+%@% END-IF %@%
+to see how Wyrd can be configured to better fit your needs.
+
+\subsection{Overview}
+Before attemping to use Wyrd, learn how to use Remind.  Wyrd makes no attempt
+to hide the details of Remind programming from the user.
+
+%@% IF LATEX %@%
+You can launch Wyrd using the default reminder file by executing
+\texttt{wyrd}.  If desired, a different reminder file may be selected by
+executing \texttt{wyrd <filename>}.
+%@% END-IF %@%
+
+At the top of the window is a short (incomplete) list of keybindings.
+
+The left window displays a scrollable day schedule view, with reminders
+highlighted in blue.  If the DURATION specifier is used for a reminder, the
+highlighted area is rendered with an appropriate size.
+
+The upper right window displays a month calendar, with the color of each day
+representing the number of reminders it contains.  The colors range across
+shades of white to blue to magenta as the number of reminders increases.  The
+selected date is highlighted in cyan.
+
+The lower right window displays a list of the untimed reminders falling on
+the selected date.
+
+The bottom window displays the full text of the MSG for the reminder that is
+currently selected.
+
+\subsection{Navigation}
+%@% IF LATEX %@%
+\begin{center}
+   \begin{tabular}[t]{|l|l|}
+%@% ELSE %@%
+\begin{Table}{2}
+%@% END-IF %@%
+      \hline
+      Action & Keypress \\
+      scroll up and down the schedule & \texttt{<up>}, \texttt{<down>} or \texttt{k}, \texttt{j} \\
+      jump back or forward by a day & \texttt{<pageup>}, \texttt{<pagedown>} or \texttt{4}, \texttt{6} or \texttt{<}, \texttt{>} or \texttt{H}, \texttt{L} \\
+      jump back or forward by a week & \texttt{8}, \texttt{2} or \texttt{[}, \texttt{]} or \texttt{K}, \texttt{J} \\
+      jump back or forward by a month & \texttt{\{}, \texttt{\}} \\
+      jump to current date and time & \texttt{<home>} \\
+      switch between schedule and untimed reminders window & \texttt{<left>}, \texttt{<right>} or \texttt{h}, \texttt{l} \\
+      zoom in on the schedule & \texttt{z} \\
+      \hline
+%@% IF LATEX %@%
+   \end{tabular}
+\end{center}
+%@% ELSE %@%
+\end{Table}
+%@% END-IF %@%
+
+Notice that if you have a numeric keypad, the \{\texttt{4, 6, 8, 2}\} keys will
+let you move directionally in the month calendar view at the upper-right of the
+screen.  Similarly, \{\texttt{H, J, K, L}\} will cause directional calendar
+movement using the standard mapping from 
+%@% IF LATEX %@%
+\texttt{vi(1)}.
+%@% ELSE %@%
+\Cmd{vi}{1}.
+
+\subsection{Editing Reminders}
+Note: By default, Wyrd is configured to use the Vim editor for modifying your
+reminder files.  To use a different editor, see
+%@% IF LATEX %@%
+Section \ref{advanced}.
+%@% ELSE %@%
+the \Cmd{wyrdrc}{5} manpage.
+%@% END-IF %@%
+
+If you select a timeslot in the schedule view, then hit \texttt{'t'}, you will begin
+creating a new timed reminder.  Wyrd will open up your reminder file in your
+favorite editor and move the cursor to the end of the file, where a new
+reminder template has been created.  The template has the selected date and
+time filled in, so in many cases you will only need to fill in a MSG value.
+
+Similarly, hitting \texttt{'u'} will begin creating an untimed reminder.
+\texttt{'w'} will create a weekly timed reminder, and \texttt{'W'} will create a
+weekly untimed reminder; \texttt{'m'} will create a monthly timed reminder, and
+\texttt{'M'} will create a monthly untimed reminder.
+
+\texttt{'T'} and \texttt{'U'} also create timed and untimed reminders
+(respectively), but first will provide a selection dialog for you to choose
+which reminder file you want to add this reminder to.  The set of reminder files
+is determined by scanning the \texttt{INCLUDE} lines in your default reminder
+file.
+
+If you select a reminder (either timed or untimed) and hit \texttt{<return>}, you
+will begin editing that reminder.  Wyrd will open up the appropriate reminders
+file in your editor and move the cursor to the appropriate \texttt{REM} line.
+
+\subsection{Viewing Reminders}
+
+Aside from viewing reminders as they fall in the schedule, you can press
+\texttt{'r'} to view all reminders triggered on the selected date in a
+%@% IF LATEX %@%
+\texttt{less(1)}
+%@% ELSE %@%
+\Cmd{less}{1}
+%@% END-IF %@%
+window.  Similarly, \texttt{'R'} will view all reminders triggered
+on or after the selected date (all non-expired reminders are triggered).
+
+\subsection{Searching for Reminders}
+
+Wyrd allows you to search for reminders with \texttt{MSG} values that match a search
+string.  Press \texttt{'/'} to start entering a (case insensitive) regular
+expression.  After the expression has been entered, press \texttt{<return>} and
+Wyrd will locate the next reminder that matches the regexp.  Press \texttt{'n'} to
+repeat the same search.  Entry of a search string may be cancelled with
+\texttt{'<esc>'}.
+
+The regular expression syntax is Emacs-compatible.
+
+Note: Sorry, there is no "search backward" function.  The search function
+requires the use of \texttt{"remind -n"}, which operates only forward in time.
+
+%@% END-IF %@%
+% (!WYRDRC)
+
+%@% IF LATEX || WYRDRC %@%
+%@% IF LATEX %@%
+\section{Advanced Configuration}
+\label{advanced}
+%@% ELSE %@%
+\section{Introduction}
+CAUTION: while this manpage should be suitable as a quick reference, it may
+be subject to miscellaneous shortcomings in typesetting.  The definitive 
+documentation is the user manual provided with Wyrd in PDF format.
+
+%@% END-IF %@%
+Wyrd reads a run-configuration textfile (generally \texttt{/etc/wyrdrc} or
+\texttt{/usr/local/etc/wyrdrc}) to determine key bindings, color schemes,
+and many other settings.  You can
+create a personalized configuration file in \texttt{\$HOME/.wyrdrc}, and select
+settings that match your usage patterns.  The recommended procedure is to ``include''
+the \texttt{wyrdrc} file provided with Wyrd
+%@% IF LATEX %@%
+(see Section \ref{include}), 
+%@% ELSE %@%
+(see INCLUDING OTHER RCFILES),
+%@% END-IF %@%
+and add or remove settings as desired.
+
+%@% IF LATEX %@%
+\subsection{\texttt{wyrdrc} Syntax}
+%@% ELSE %@%
+\section{\texttt{wyrdrc} Syntax}
+%@% END-IF %@%
+You may notice that the \texttt{wyrdrc} syntax is similar to the syntax used in
+the configuration file for the Mutt email client (muttrc).
+
+Within the \texttt{wyrdrc} file, strings should be enclosed in double quotes (\texttt{"}).
+A double quote character inside a string may be represented by 
+%@% IF LATEX %@%
+\texttt{$\backslash$"} .
+%@% ELSE %@%
+\Bs " .
+%@% END-IF %@%
+The backslash character must be represented by doubling it 
+%@% IF LATEX %@%
+(\texttt{$\backslash\backslash$}).
+%@% ELSE %@%
+(\Bs\Bs).
+%@% END-IF %@%
+
+%@% IF LATEX %@%
+\subsubsection{Including Other Rcfiles}
+\label{include}
+Syntax: \texttt{include \emph{filename\_string}} \\ \\
+%@% ELSE %@%
+\subsection{Including Other Rcfiles}
+Syntax: include \emph{filename\_string} \\ \\
+%@% END-IF %@%
+This syntax can be used to include one run-configuration file within another.
+This command could be used to load the default \texttt{wyrdrc} file (probably
+found in \texttt{/etc/wyrdrc} or \texttt{/usr/local/etc/wyrdrc}) within your
+personalized rcfile, 
+%@% IF LATEX %@%
+\texttt{\~{}/.wyrdrc}.
+%@% ELSE %@%
+\Tilde /.wyrdrc .
+%@% END-IF %@%
+The filename string should be enclosed in quotes.
+
+%@% IF LATEX %@%
+\subsubsection{Setting Configuration Variables}
+\label{setvar}
+Syntax: \texttt{set \emph{variable}=\emph{value\_string}} \\ \\
+%@% ELSE %@%
+\subsection{Setting Configuration Variables}
+Syntax: set \emph{variable}=\emph{value\_string} \\ \\
+%@% END-IF %@%
+A number of configuration variables can be set using this syntax; check
+%@% IF LATEX %@%
+Section \ref{variables}
+%@% ELSE %@%
+the CONFIGURATION VARIABLES description
+%@% END-IF %@%
+to see a list.  The variables are unquoted, but the values should be quoted strings.
+
+%@% IF LATEX %@%
+\subsubsection{Creating Key Bindings}
+\label{bindings}
+Syntax: \texttt{bind \emph{key\_identifier operation}} \\ \\
+%@% ELSE %@%
+\subsection{Creating Key Bindings}
+Syntax: bind \emph{key\_identifier operation} \\ \\
+%@% END-IF %@%
+This command will bind a keypress to execute a calendar operation.  
+The various operations, which should not be enclosed in quotes,
+may be found in 
+%@% IF LATEX %@%
+Section \ref{operationslist}. 
+%@% ELSE %@%
+the section on CALENDAR OPERATIONS.
+%@% END-IF %@%
+Key identifiers may be specified by strings that represent a single keypress,
+for example \texttt{"m"} (quotes included).  The key may be prefixed with 
+%@% IF LATEX %@%
+\texttt{"$\backslash\backslash$C"} or \texttt{"$\backslash\backslash$M"} 
+%@% ELSE %@%
+"\Bs\Bs C" or "\Bs\Bs M"
+%@% END-IF %@%
+to represent Control or Meta (Alt) modifiers, respectively; note that the
+backslash must be doubled.  A number of special keys lack single-character
+representations, so the following strings may be used to represent them:
+\begin{itemize}
+   \item \texttt{"<esc>"}
+   \item \texttt{"<tab>"}
+   \item \texttt{"<enter>"}
+   \item \texttt{"<return>"}
+   \item \texttt{"<insert>"}
+   \item \texttt{"<home>"}
+   \item \texttt{"<end>"}
+   \item \texttt{"<pageup>"}
+   \item \texttt{"<pagedown>"}
+   \item \texttt{"<space>"}
+   \item \texttt{"<left>"}
+   \item \texttt{"<right>"}
+   \item \texttt{"<up>"}
+   \item \texttt{"<down>"}
+   \item \texttt{"<f1>"} to \texttt{"<f12>"}
+\end{itemize}
+Due to differences between various terminal emulators, this key identifier syntax may
+not be adequate to describe every keypress.  As a workaround, Wyrd will also accept key
+identifiers in octal notation.  As an example, you could use 
+%@% IF LATEX %@%
+\texttt{$\backslash$024} 
+%@% ELSE %@%
+\Bs 024
+%@% END-IF %@%
+(do \emph{not} enclose it in quotes) to represent Ctrl-T.
+
+Multiple keys may be bound to the same operation, if desired.
+
+
+%@% IF LATEX %@%
+\subsubsection{Removing Key Bindings}
+\label{unbindings}
+Syntax: \texttt{unbind \emph{key\_identifier}} \\ \\
+%@% ELSE %@%
+\subsection{Removing Key Bindings}
+Syntax: unbind \emph{key\_identifier} \\ \\
+%@% END-IF %@%
+This command will remove all bindings associated with the key identifier.  The
+key identifiers should be defined using the syntax described in the previous
+section.
+
+
+%@% IF LATEX %@%
+\subsubsection{Setting the Color Scheme}
+\label{colors}
+Syntax: \texttt{color \emph{object} \emph{foreground} \emph{background}} \\ \\
+%@% ELSE %@%
+\subsection{Setting the Color Scheme}
+Syntax: color \emph{object} \emph{foreground} \emph{background} \\ \\
+%@% END-IF %@%
+This command will apply the specified foreground and background colors to the
+appropriate object.  A list of colorable objects is provided in
+%@% IF LATEX %@%
+Section \ref{colorable objects}.
+%@% ELSE %@%
+the section on COLORABLE OBJECTS.
+%@% END-IF %@%
+Wyrd will recognize the following color keywords: \texttt{black, red, green, yellow,
+blue, magenta, cyan, white}.
+
+
+%@% IF LATEX %@%
+\subsection{Configuration Variables}
+\label{variables}
+The following configuration variables may be set as described in Section \ref{setvar}:
+%@% ELSE %@%
+\section{Configuration Variables}
+The following configuration variables may be set as described in the SETTING 
+CONFIGURATION VARIABLES section.
+%@% END-IF %@%
+\begin{itemize}
+   \item \texttt{reminders\_file} \\
+      Controls which Remind file Wyrd will operate on.  The default is
+      %@% IF LATEX %@%
+      \~{}/.reminders .
+      %@% ELSE %@%
+      \Tilde /.reminders .
+      %@% END-IF %@%
+   \item \texttt{edit\_old\_command} \\
+      Controls the command used to edit a pre-existing reminder.  The special
+      characters \texttt{'\%f'} and \texttt{'\%n'} will be substituted with a
+      filename to edit and a line number to navigate to within that file.
+   \item \texttt{edit\_new\_command} \\
+      Controls the command used to edit a new reminder.  The special character
+      \texttt{'\%f'} will be substituted with a filename to edit.  Ideally, this
+      command should move the cursor to the last line of the file, where the new
+      reminder template is created.
+   \item \texttt{timed\_template} \\
+      Controls the format of the \texttt{REM} line created when editing a new
+      timed reminder.  The following character substitutions will be made:
+      \texttt{'\%M'} - month name, \texttt{'\%d'} - day of the month,
+      \texttt{'\%y'} - year, \texttt{'\%h'} - hour, \texttt{'\%m'} - minute,
+      \texttt{'\%w'} - weekday name.
+   \item \texttt{untimed\_template} \\
+      Controls the format of the \texttt{REM} line created when editing a new
+      untimed reminder.  The substitution syntax is the same as for
+      \texttt{timed\_template}.
+   %@% IF LATEX %@%
+   \item \texttt{template\emph{N}} \\
+   %@% ELSE %@%
+   \item template\emph{N} \\
+   %@% END-IF %@%
+      Controls the format of a generic user-defined \texttt{REM} line template;
+      \emph{N} may range from 0 to 9.  The substitution syntax is the same as
+      for \texttt{timed\_template}.
+   \item \texttt{busy\_level1} \\
+      An integer value specifying the maximum number of reminders in a day
+      colored using the color scheme for \texttt{calendar\_level1}.
+   \item \texttt{busy\_level2} \\
+      Same as above, using the \texttt{calendar\_level2} color scheme.
+   \item \texttt{busy\_level3} \\
+      Same as above, using the \texttt{calendar\_level2} color scheme rendered
+      in bold.
+   \item \texttt{busy\_level4} \\
+      Same as above, using the \texttt{calendar\_level3} color scheme.  Any day
+      with more reminders than this will be rendered using the
+      \texttt{calendar\_level3} color scheme rendered in bold.
+   \item \texttt{week\_starts\_monday} \\
+      A boolean value (\texttt{"true"} or \texttt{"false"}) that determines the
+      first day of the week.
+   \item \texttt{schedule\_12\_hour} \\
+      A boolean value that determines whether the timed reminders window is
+      drawn using 12- or 24-hour time.
+   \item \texttt{selection\_12\_hour} \\
+      A boolean value that determines whether the selection information is drawn
+      with 12- or 24-hour time.
+   \item \texttt{status\_12\_hour} \\
+      A boolean value that determines whether the current time is drawn using a
+      12- or 24-hour clock.
+   \item \texttt{description\_12\_hour} \\
+      A boolean value that determines whether reminder start and end times are
+      drawn using 12- or 24-hour time in the description window.
+\end{itemize}
+For maximum usefulness, \texttt{busy\_level1} < \texttt{busy\_level2} < 
+\texttt{busy\_level3} < \texttt{busy\_level4}.
+
+
+%@% IF LATEX %@%
+\subsection{Calendar Operations}
+\label{operationslist}
+%@% ELSE %@%
+\section{Calendar Operations}
+%@% END-IF %@%
+Every Wyrd operation can be made available to the interface using the syntax
+described in 
+%@% IF LATEX %@%
+Section \ref{bindings}.
+%@% ELSE %@%
+the section on CREATING KEY BINDINGS.
+%@% END-IF %@%
+The following is a list of every available operation.
+
+\begin{itemize}
+   \item \texttt{scroll\_up} \\
+      move the cursor up one element
+   \item \texttt{scroll\_down} \\
+      move the cursor down one element
+   \item \texttt{next\_day} \\
+      jump ahead one day
+   \item \texttt{previous\_day} \\
+      jump backward one day
+   \item \texttt{next\_week} \\
+      jump ahead one week
+   \item \texttt{previous\_week} \\
+      jump backward one week
+   \item \texttt{next\_month} \\
+      jump ahead one month
+   \item \texttt{previous\_month} \\
+      jump backward one month
+   \item \texttt{home} \\
+      jump to the current date and time
+   \item \texttt{zoom} \\
+      zoom in on the day schedule view (this operation is cyclic)
+   \item \texttt{edit} \\
+      edit the selected reminder
+   \item \texttt{new\_timed} \\
+      create a new timed reminder
+   \item \texttt{new\_timed\_dialog} \\
+      same as previous, with a reminder file selection dialog
+   \item \texttt{new\_untimed} \\
+      create a new untimed reminder
+   \item \texttt{new\_untimed\_dialog} \\
+      same as previous, with a reminder file selection dialog
+   %@% IF LATEX %@%
+   \item \texttt{new\_template\emph{N}} \\
+      create a new user-defined reminder using \texttt{template\emph{N}}, where
+   %@% ELSE %@%
+   \item new\_template\emph{N} \\
+      create a new user-defined reminder using template\emph{N}, where
+   %@% END-IF %@%
+      \emph{N} may range from 0 to 9
+   %@% IF LATEX %@%
+   \item \texttt{new\_template\emph{N}\_dialog} \\
+   %@% ELSE %@%
+   \item new\_template\emph{N}\_dialog \\
+   %@% END-IF %@%
+      same as previous, with a reminder file selection dialog
+   \item \texttt{switch\_window} \\
+      switch between the day schedule window on the left, and the untimed
+      reminder window on the right
+   \item \texttt{begin\_search} \\
+      begin entering a search string
+   \item \texttt{search\_next} \\
+      search for the next occurrence of the search string
+   \item \texttt{view\_remind} \\
+      view the output of \texttt{remind} for the selected date
+   \item \texttt{view\_remind\_all} \\
+      view the output of \texttt{remind} for the selected date, triggering all
+      non-expired reminders
+   \item \texttt{quit} \\
+      exit Wyrd
+   \item \texttt{entry\_complete} \\
+      signal completion of search string entry
+   \item \texttt{entry\_backspace} \\
+      delete the last character of the search string
+   \item \texttt{entry\_cancel} \\
+      cancel entry of a search string
+\end{itemize}
+
+
+%@% IF LATEX %@%
+\subsection{Colorable Objects}
+\label{colorable objects}
+%@% ELSE %@%
+\section{Colorable Objects}
+%@% END-IF %@%
+Each of Wyrd's on-screen elements may be colored by the color scheme of your
+choice, using the syntax defined in
+%@% IF LATEX %@%
+Section \ref{colors}.
+%@% ELSE %@%
+the section on SETTING THE COLOR SCHEME.
+%@% END-IF %@%
+The following is a list of all colorable objects.
+\begin{itemize}
+   \item \texttt{help} \\
+      the help bar at the top of the screen
+   \item \texttt{timed\_default} \\
+      an empty timeslot in the day-schedule window
+   \item \texttt{timed\_reminder} \\
+      a nonempty timeslot in the day-schedule window
+   \item \texttt{untimed\_reminder} \\
+      an entry in the untimed reminders window
+   \item \texttt{timed\_date} \\
+      the vertical date strip at the left side of the screen
+   \item \texttt{selection\_info} \\
+      the line providing date/time for the current selection
+   \item \texttt{description} \\
+      the reminder description window
+   \item \texttt{status} \\
+      the bottom bar providing current date and time
+   \item \texttt{calendar\_labels} \\
+      the month and weekday labels in the calendar window
+   \item \texttt{calendar\_level1} \\
+      calendar days with low activity
+   \item \texttt{calendar\_level2} \\
+      calendar days with medium activity
+   \item \texttt{calendar\_level3} \\
+      calendar days with high activity
+   \item \texttt{calendar\_today} \\
+      the current day in the calendar window
+   \item \texttt{left\_divider} \\
+      the vertical line to the left of the timed reminders window
+   \item \texttt{right\_divider} \\
+      the vertical and horizontal lines to the right of the timed reminders
+      window
+\end{itemize}
+
+
+% end WYRDRC
+%@% END-IF %@%
+
+%@% IF !WYRDRC %@%
+\section{Licensing}
+Wyrd is Free Software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License (GPL), Version 2, as published by the
+Free Software Foundation.  You should have received a copy of the GPL along
+with this program, in the file \texttt{'COPYING'}.
+
+
+\section{Acknowledgments}
+Thanks, of course, to David Skoll for writing such a powerful reminder system.
+Thanks also to Nicolas George, who wro the OCaml curses bindings used within
+Wyrd.
+%@% END-IF %@%
+
+\section{Contact info}
+Wyrd author: Paul Pelzl \texttt{<pelzlpj@eecs.umich.edu>} \\
+%@% IF LATEX %@%
+Wyrd website: \texttt{http://www.eecs.umich.edu/\~{}pelzlpj/wyrd} \\
+%@% ELSE %@%
+Wyrd website: \URL{http://www.eecs.umich.edu/\Tilde pelzlpj/wyrd} \\
+%@% END-IF %@%
+
+%@% IF LATEX %@%
+\noindent
+Feel free to contact me if you have bugs, feature requests, patches, etc.  I 
+would also welcome volunteers interested in packaging Wyrd for various platforms.
+
+Wyrd is developed with the aid of the excellent 
+%@% IF LATEX %@%
+%BEGIN LATEX
+GNU Arch RCS\footnote{http://www.gnu.org/software/gnu-arch/}.
+%END LATEX  
+%HEVEA \begin{rawhtml} <a href="http://www.gnu.org/software/gnu-arch/">GNU Arch RCS</a>. \end{rawhtml}
+%@% ELSE %@%
+GNU Arch RCS [1].
+%@% END-IF %@%
+Interested developers are advised to track Wyrd development via my public
+archive: \\
+%@% IF LATEX %@%
+\hspace*{2cm}\texttt{pelzlpj@eecs.umich.edu--2005 $\backslash$ \\
+\hspace*{4cm} http://www-personal.engin.umich.edu/\~{}pelzlpj/tla/2005} \\
+%@% ELSE %@%
+pelzlpj@eecs.umich.edu--2005 http://www-personal.engin.umich.edu/\Tilde pelzlpj/tla/2005 \\
+%@% END-IF %@%
+Primary development may be found on branch \texttt{wyrd--main} .
+
+Wyrd uses tla's ``configs'' support.  After getting a copy of the source, run \\
+\texttt{"tla build-config dist.arch"} in the project tree root to grab the 
+extra packages that Wyrd depends on.
+%@% END-IF %@%
+
+\section{Miscellaneous}
+``Wyrd is a concept in ancient Anglo-saxon and Nordic cultures roughly
+corresponding to fate.''  \emph{-- Wikipedia}
+
+
+%@% IF !LATEX && !WYRDRC %@%
+\section{See Also}
+\Cmd{wyrdrc}{5}, \Cmd{remind}{1}
+%@% END-IF %@%
+
+%@% IF !LATEX %@%
+   %@% IF WYRDRC %@%
+\section{See Also}
+\Cmd{wyrd}{1}, \Cmd{remind}{1}
+
+\section{Author}
+This manpage is written by Paul J. Pelzl <pelzlpj@eecs.umich.edu>.
+   %@% END-IF %@%
+\LatexManEnd
+%@% END-IF %@%
+
+\end{document}
+
+
+% arch-tag: DO_NOT_CHANGE_db7ed8b2-8ea4-4e32-b0f6-50482487cb00 
