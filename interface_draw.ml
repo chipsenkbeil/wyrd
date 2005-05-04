@@ -273,6 +273,12 @@ let draw_timed_window iface reminders top lines =
       else
          twentyfour_hour_string
    in
+   let desc_string_of_tm =
+      if !Rcfile.description_12_hour then
+         twelve_hour_string
+      else
+         twentyfour_hour_string
+   in
    let rec process_reminders rem_list =
       begin match rem_list with
       |[] ->
@@ -283,10 +289,10 @@ let draw_timed_window iface reminders top lines =
          in
          let get_time_str () =
             if finish > start then
-               (string_of_tm (Unix.localtime start)) ^ "-" ^
-               (string_of_tm (Unix.localtime finish)) ^ " "
+               (desc_string_of_tm (Unix.localtime start)) ^ "-" ^
+               (desc_string_of_tm (Unix.localtime finish)) ^ " "
             else
-               (string_of_tm (Unix.localtime start)) ^ " "
+               (desc_string_of_tm (Unix.localtime start)) ^ " "
          in
          (* draw the top line of a reminder *)
          if rem_top_line >= top && rem_top_line < top + lines then begin

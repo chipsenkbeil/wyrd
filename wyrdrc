@@ -44,6 +44,7 @@ set week_starts_monday="false"
 set schedule_12_hour="false"
 set selection_12_hour="true"
 set status_12_hour="true"
+set description_12_hour="true"
 
 
 # key bindings

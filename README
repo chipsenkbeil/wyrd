@@ -246,6 +246,11 @@ Configuration Variables:
       status_12_hour        : A boolean value that determines whether the
                               current time is drawn using a 12- or 24-hour clock.
 
+      description_12_hour   : A boolean value that determines whether reminder
+                              start and end times are drawn using 12- or 24-hour
+                              time in the description window.
+
+                              
 Bindable Operations:
 
    The following Wyrd operations may be bound to keypresses using the 'bind'

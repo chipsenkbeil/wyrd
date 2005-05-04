@@ -7,6 +7,11 @@ Wyrd ChangeLog
 
                Added a beep and error message when pressing an unbound key.
 
+               Start and end times in the description window had been rendered
+               according to the value of schedule_12_hour; now they are
+               rendered according to the value of new variable
+               description_12_hour .
+
 2005-04-29     Fixed a rare bug that could cause timed reminders to become
                temporarily invisible at month boundaries.
 
