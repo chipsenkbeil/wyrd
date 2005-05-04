@@ -721,7 +721,7 @@ let handle_selection_dialog_scrolldown (elements : string list)
       let lines, cols = get_size () in
       let new_selection = succ selection in
       let new_top =
-         if new_selection - top > pred lines then 
+         if new_selection - top >= pred lines then 
             succ top 
          else 
             top
@@ -752,7 +752,6 @@ let do_selection_dialog (iface : interface_state_t) (title : string)
        (elements : string list) =
    let init_selection = 0
    and init_top       = 0 in
-   erase ();
    let rec selection_loop (selection, top) =
       draw_selection_dialog iface title elements selection top;
       let key = wgetch iface.scr.help_win in

@@ -650,6 +650,7 @@ let draw_error iface err draw_cursor =
 (* Draw a selection dialog. *)
 let draw_selection_dialog (iface : interface_state_t) (title : string)
       (elements : string list) (selection : int) (top : int) =
+   erase ();
    (* draw the title *)
    Rcfile.color_on iface.scr.stdscr Rcfile.Help;
    attron A.bold;
@@ -663,20 +664,32 @@ let draw_selection_dialog (iface : interface_state_t) (title : string)
       | [] ->
          ()
       | el :: tail ->
-         if count >= top then begin
+         if count >= top && line < iface.scr.lines then begin
             if count = selection then begin
                attron A.reverse;
-               trunc_mvwaddstr iface.scr.stdscr line 2 (iface.scr.cols - 2) el;
+               trunc_mvwaddstr iface.scr.stdscr line 2 (iface.scr.cols - 4) el;
                attroff A.reverse;
             end else
-               trunc_mvwaddstr iface.scr.stdscr line 2 (iface.scr.cols - 2) el;
+               trunc_mvwaddstr iface.scr.stdscr line 2 (iface.scr.cols - 4) el;
             draw_element tail (succ line) (succ count) 
          end else
             draw_element tail line (succ count) 
    in
    draw_element elements 1 0;
+   (* if there's not enough window space to display all reminder files, display
+    * arrows to indicate scrolling ability *)
+   if top > 0 then begin
+      assert (mvaddch 1 (iface.scr.cols - 2) (int_of_char '^'));
+      assert (mvaddch 2 (iface.scr.cols - 2) (int_of_char '^'))
+   end else
+      ();
+   if List.length elements > pred iface.scr.lines + top then begin
+      assert (mvaddch (pred iface.scr.lines) (iface.scr.cols - 2) (int_of_char 'v'));
+      assert (mvaddch (iface.scr.lines - 2) (iface.scr.cols - 2) (int_of_char 'v'))
+   end else
+      ();
    Rcfile.color_off iface.scr.stdscr Rcfile.Untimed_reminder;
-   assert (refresh ())   
+   assert (refresh ())
 
 
 (* arch-tag: DO_NOT_CHANGE_9ff0fd0c-6eb1-410f-8fcf-6dfcf94b346a *)
