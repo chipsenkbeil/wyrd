@@ -3,10 +3,6 @@ Wyrd To-Do list
 
 * Figure out some way to handle overlapping timed reminders.
 
-* Add additional "new reminder" commands that provide a dialog for selecting
-  which reminder file to use (possibly scanning INCLUDE lines to get this
-  info).
-
 * When LINES is sufficiently large, consider adding a bit more month context in
   the calendar window at the upper right.
 

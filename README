@@ -105,7 +105,7 @@ Editing reminders:
    below.
 
    If you select a timeslot in the schedule view, then hit 't', you will begin
-   creating a new timed reminder.  Wyrd will open up your reminders file in your
+   creating a new timed reminder.  Wyrd will open up your reminder file in your
    favorite editor and move the cursor to the end of the file, where a new
    reminder template has been created.  The template has the selected date and
    time filled in, so in many cases you will only need to fill in a MSG value.
@@ -114,6 +114,11 @@ Editing reminders:
    create a weekly timed reminder, and 'W' will create a weekly untimed reminder;
    'm' will create a monthly timed reminder, and 'M' will create a monthly
    untimed reminder.
+
+   'T' and 'U' also create timed and untimed reminders (respectively), but first
+   will provide a selection dialog for you to choose which reminder file you
+   want to add this reminder to.  The set of reminder files is determined by
+   scanning the INCLUDE lines in your default reminder file.
 
    If you select a reminder (either timed or untimed) and hit <enter>, you will
    begin editing that reminder.  Wyrd will open up the appropriate reminders
@@ -256,31 +261,34 @@ Bindable Operations:
    The following Wyrd operations may be bound to keypresses using the 'bind'
    syntax defined above:
 
-      scroll_up        : move cursor up one increment
-      scroll_down      : move cursor down one increment
-      next_day         : jump ahead one day
-      previous_day     : jump backward one day
-      next_week        : jump ahead one week
-      previous_week    : jump backward one week
-      home             : jump to the current date and time
-      zoom             : zoom in on the day schedule view
-      edit             : edit a preexisting reminder
-      new_timed        : create a new timed reminder
-      new_untimed      : create a new untimed reminder
-      new_templateN    : create a new user-defined reminder using
-                         templateN, where N may range from 0 to 9
-      switch_window    : switch between the day schedule window on the left,
-                         and the untimed reminder window on the right
-      begin_search     : begin entering a search string
-      search_next      : search for the next occurrence of the search string
-      view_remind      : view the output of 'remind' for the selected date
-      view_remind_all  : view the output of 'remind' for the selected date,
-                         triggering all non-expired reminders
-      quit             : exit Wyrd
+      scroll_up            : move cursor up one increment
+      scroll_down          : move cursor down one increment
+      next_day             : jump ahead one day
+      previous_day         : jump backward one day
+      next_week            : jump ahead one week
+      previous_week        : jump backward one week
+      home                 : jump to the current date and time
+      zoom                 : zoom in on the day schedule view
+      edit                 : edit a preexisting reminder
+      new_timed            : create a new timed reminder
+      new_timed_dialog     : same as above, with a reminder file selection dialog
+      new_untimed          : create a new untimed reminder
+      new_untimed_dialog   : same as above, with a reminder file selection dialog
+      new_templateN        : create a new user-defined reminder using
+                             templateN, where N may range from 0 to 9
+      new_templateN_dialog : same as above, with a reminder file selection dialog
+      switch_window        : switch between the day schedule window on the left,
+                             and the untimed reminder window on the right
+      begin_search         : begin entering a search string
+      search_next          : search for the next occurrence of the search string
+      view_remind          : view the output of 'remind' for the selected date
+      view_remind_all      : view the output of 'remind' for the selected date,
+                             triggering all non-expired reminders
+      quit                 : exit Wyrd
 
-      entry_complete   : signal completion of search string entry
-      entry_backspace  : delete the last character of the search string
-      entry_cancel     : cancel entry of a search string
+      entry_complete       : signal completion of search string entry
+      entry_backspace      : delete the last character of the search string
+      entry_cancel         : cancel entry of a search string
 
 Colorable Objects:
 
