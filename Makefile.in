@@ -102,8 +102,11 @@ version.ml: Makefile
 install-indep: 
 	mkdir -p $(BINDIR)
 	mkdir -p $(DESTDIR)/$(sysconfdir)
+	mkdir -p $(MANDIR)/man1
+	mkdir -p $(MANDIR)/man5
 	install -m 644 wyrdrc $(DESTDIR)/$(sysconfdir)
-#	install -m 644 -D doc/wyrd.1 $(MANDIR)/man1/wyrd.1
+	install -m 644 doc/wyrd.1 $(MANDIR)/man1/wyrd.1
+	install -m 644 doc/wyrdrc.5 $(MANDIR)/man5/wyrdrc.5
 
 install: install-indep
 	install -m 755 $(NAME).$(OCAMLBEST) $(BINDIR)
@@ -124,7 +127,8 @@ install-static: install-indep
 uninstall:
 	rm -f $(BINDIR)/$(NAME)$(EXE)
 	rm -f $(DESTDIR)/$(sysconfdir)/wyrdrc
-#	rm -f $(MANDIR)/man1/wyrd.1
+	rm -f $(MANDIR)/man1/wyrd.1
+	rm -f $(MANDIR)/man5/wyrdrc.5
 
 
 # generic rules
