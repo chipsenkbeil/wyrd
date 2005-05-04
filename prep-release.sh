@@ -12,9 +12,9 @@ rm -rf "{arch}"
 rm -rf "curses/{arch}"
 echo "Generating ./configure ..."
 autoconf && rm -rf autom4te.cache
-#echo "Creating documentation..."
-#cd doc && make &> /dev/null
-#echo "Done."
+echo "Creating documentation..."
+cd doc && make &> /dev/null
+echo "Done."
 
 
 
