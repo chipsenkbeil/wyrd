@@ -10,6 +10,7 @@ Wyrd To-Do list
 * When LINES is sufficiently large, consider adding a bit more month context in
   the calendar window at the upper right.
 
+* Reorganize the docs and put together some manpages.
 
 
 # arch-tag: DO_NOT_CHANGE_13b859a4-395f-4c00-a604-d384b6490bbc 
