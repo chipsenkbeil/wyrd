@@ -130,6 +130,7 @@ reminder files).  The default reminder file is \Tilde /.reminders.
 CAUTION: while this manpage should be suitable as a quick reference, it may
 be subject to miscellaneous shortcomings in typesetting.  The definitive 
 documentation is the user manual provided with Wyrd in PDF or HTML format.
+%@% ELSE %@%
 %@% END-IF %@%
 
 This section describes how to use Wyrd in its default configuration.  After
@@ -150,6 +151,7 @@ to hide the details of Remind programming from the user.
 You can launch Wyrd using the default reminder file by executing
 \texttt{wyrd}.  If desired, a different reminder file may be selected by
 executing \texttt{wyrd <filename>}.
+%@% ELSE %@%
 %@% END-IF %@%
 
 At the top of the window is a short (incomplete) list of keybindings.
@@ -201,6 +203,7 @@ movement using the standard mapping from
 \texttt{vi(1)}.
 %@% ELSE %@%
 \Cmd{vi}{1}.
+%@% END-IF %@%
 
 \subsection{Editing Reminders}
 Note: By default, Wyrd is configured to use the Vim editor for modifying your
