@@ -523,7 +523,7 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
       close_out remfile_channel;
       let filename_sub = Str.regexp "%f" in
       let command = 
-         Str.global_replace filename_sub !Rcfile.reminders_file 
+         Str.global_replace filename_sub remfile
             !Rcfile.edit_new_command
       in
       def_prog_mode ();
@@ -813,15 +813,27 @@ let handle_keypress key (iface : interface_state_t) reminders =
          |Rcfile.NewTimedDialog ->
             let remfile = 
                do_selection_dialog iface "Choose a reminders file"
-               ["file1"; "file2"; "file3"]
+               (Remind.get_included_remfiles ())
             in
             handle_new_reminder iface reminders Timed remfile
          |Rcfile.NewUntimed ->
             handle_new_reminder iface reminders Untimed
             (Utility.expand_file !Rcfile.reminders_file)
+         |Rcfile.NewUntimedDialog ->
+            let remfile = 
+               do_selection_dialog iface "Choose a reminders file"
+               (Remind.get_included_remfiles ())
+            in
+            handle_new_reminder iface reminders Untimed remfile
          |Rcfile.NewGenReminder x ->
             handle_new_reminder iface reminders (General x)
             (Utility.expand_file !Rcfile.reminders_file)
+         |Rcfile.NewGenReminderDialog x ->
+            let remfile = 
+               do_selection_dialog iface "Choose a reminders file"
+               (Remind.get_included_remfiles ())
+            in
+            handle_new_reminder iface reminders (General x) remfile
          |Rcfile.SearchNext ->
             handle_find_next iface reminders
          |Rcfile.BeginSearch ->

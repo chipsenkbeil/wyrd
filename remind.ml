@@ -456,6 +456,24 @@ let find_next msg_regex timestamp =
    check_messages ()
 
 
-   
+(* get a list of all INCLUDEd reminder files *)
+let get_included_remfiles () =   
+   let main_remfile = Utility.expand_file !Rcfile.reminders_file in
+   let remfile_channel = open_in main_remfile in
+   let include_regex = Str.regexp_case_fold "^[ \t]*include[ \t]+\\([^ \t]+\\)" in
+   let rec build_filelist files =
+      try
+         let line = input_line remfile_channel in
+         if Str.string_match include_regex line 0 then
+            let new_file = Str.matched_group 1 line in
+            build_filelist (new_file :: files)
+         else
+            build_filelist files
+      with End_of_file ->
+         close_in remfile_channel;
+         List.rev files
+   in
+   build_filelist [main_remfile]
+
 
 (* arch-tag: DO_NOT_CHANGE_6bb48a1c-2b0c-4254-ba3a-ee9b48007169 *)
