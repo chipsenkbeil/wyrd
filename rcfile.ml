@@ -40,9 +40,11 @@ let config_failwith s = raise (Config_failure s)
 
 type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay 
                  | NextWeek | PrevWeek | NextMonth | PrevMonth
-                 | Home | Zoom | Edit | NewTimed | NewUntimed | SwitchWindow 
+                 | Home | Zoom | Edit | NewTimed | NewUntimed 
+                 | NewTimedDialog | NewUntimedDialog | SwitchWindow 
                  | SearchNext | BeginSearch | Quit | ViewReminders
                  | ViewAllReminders | NewGenReminder of int
+                 | NewGenReminderDialog of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
@@ -266,39 +268,51 @@ let unregister_binding key_string =
 (* translate a command string to the command type it represents *)
 let operation_of_string command_str =
    begin match command_str with
-   |"scroll_up"       -> CommandOp ScrollUp
-   |"scroll_down"     -> CommandOp ScrollDown
-   |"next_day"        -> CommandOp NextDay
-   |"previous_day"    -> CommandOp PrevDay
-   |"next_week"       -> CommandOp NextWeek
-   |"previous_week"   -> CommandOp PrevWeek
-   |"next_month"      -> CommandOp NextMonth
-   |"previous_month"  -> CommandOp PrevMonth
-   |"home"            -> CommandOp Home
-   |"zoom"            -> CommandOp Zoom
-   |"edit"            -> CommandOp Edit
-   |"new_timed"       -> CommandOp NewTimed
-   |"new_untimed"     -> CommandOp NewUntimed
-   |"new_template0"   -> CommandOp (NewGenReminder 0)
-   |"new_template1"   -> CommandOp (NewGenReminder 1)
-   |"new_template2"   -> CommandOp (NewGenReminder 2)
-   |"new_template3"   -> CommandOp (NewGenReminder 3)
-   |"new_template4"   -> CommandOp (NewGenReminder 4)
-   |"new_template5"   -> CommandOp (NewGenReminder 5)
-   |"new_template6"   -> CommandOp (NewGenReminder 6)
-   |"new_template7"   -> CommandOp (NewGenReminder 7)
-   |"new_template8"   -> CommandOp (NewGenReminder 8)
-   |"new_template9"   -> CommandOp (NewGenReminder 9)
-   |"switch_window"   -> CommandOp SwitchWindow
-   |"search_next"     -> CommandOp SearchNext
-   |"begin_search"    -> CommandOp BeginSearch
-   |"view_remind"     -> CommandOp ViewReminders
-   |"view_remind_all" -> CommandOp ViewAllReminders
-   |"entry_complete"  -> EntryOp EntryComplete
-   |"entry_backspace" -> EntryOp EntryBackspace
-   |"entry_cancel"    -> EntryOp EntryExit
-   |"quit"            -> CommandOp Quit
-   |_                 -> config_failwith ("Unknown command name \"" ^ command_str ^ "\"")
+   |"scroll_up"            -> CommandOp ScrollUp
+   |"scroll_down"          -> CommandOp ScrollDown
+   |"next_day"             -> CommandOp NextDay
+   |"previous_day"         -> CommandOp PrevDay
+   |"next_week"            -> CommandOp NextWeek
+   |"previous_week"        -> CommandOp PrevWeek
+   |"next_month"           -> CommandOp NextMonth
+   |"previous_month"       -> CommandOp PrevMonth
+   |"home"                 -> CommandOp Home
+   |"zoom"                 -> CommandOp Zoom
+   |"edit"                 -> CommandOp Edit
+   |"new_timed"            -> CommandOp NewTimed
+   |"new_timed_dialog"     -> CommandOp NewTimedDialog
+   |"new_untimed"          -> CommandOp NewUntimed
+   |"new_untimed_dialog"   -> CommandOp NewUntimedDialog
+   |"new_template0"        -> CommandOp (NewGenReminder 0)
+   |"new_template0_dialog" -> CommandOp (NewGenReminderDialog 0)
+   |"new_template1"        -> CommandOp (NewGenReminder 1)
+   |"new_template1_dialog" -> CommandOp (NewGenReminderDialog 1)
+   |"new_template2"        -> CommandOp (NewGenReminder 2)
+   |"new_template2_dialog" -> CommandOp (NewGenReminderDialog 2)
+   |"new_template3"        -> CommandOp (NewGenReminder 3)
+   |"new_template3_dialog" -> CommandOp (NewGenReminderDialog 3)
+   |"new_template4"        -> CommandOp (NewGenReminder 4)
+   |"new_template4_dialog" -> CommandOp (NewGenReminderDialog 4)
+   |"new_template5"        -> CommandOp (NewGenReminder 5)
+   |"new_template5_dialog" -> CommandOp (NewGenReminderDialog 5)
+   |"new_template6"        -> CommandOp (NewGenReminder 6)
+   |"new_template6_dialog" -> CommandOp (NewGenReminderDialog 6)
+   |"new_template7"        -> CommandOp (NewGenReminder 7)
+   |"new_template7_dialog" -> CommandOp (NewGenReminderDialog 7)
+   |"new_template8"        -> CommandOp (NewGenReminder 8)
+   |"new_template8_dialog" -> CommandOp (NewGenReminderDialog 8)
+   |"new_template9"        -> CommandOp (NewGenReminder 9)
+   |"new_template9_dialog" -> CommandOp (NewGenReminderDialog 9)
+   |"switch_window"        -> CommandOp SwitchWindow
+   |"search_next"          -> CommandOp SearchNext
+   |"begin_search"         -> CommandOp BeginSearch
+   |"view_remind"          -> CommandOp ViewReminders
+   |"view_remind_all"      -> CommandOp ViewAllReminders
+   |"entry_complete"       -> EntryOp EntryComplete
+   |"entry_backspace"      -> EntryOp EntryBackspace
+   |"entry_cancel"         -> EntryOp EntryExit
+   |"quit"                 -> CommandOp Quit
+   |_                      -> config_failwith ("Unknown command name \"" ^ command_str ^ "\"")
    end
 
 

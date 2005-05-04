@@ -468,7 +468,8 @@ let handle_edit (iface : interface_state_t) reminders =
 
 
 (* handle creation of a new timed or untimed reminder *)
-let handle_new_reminder (iface : interface_state_t) reminders rem_type =
+let handle_new_reminder (iface : interface_state_t) reminders rem_type 
+       remfile =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
    let substitute template =
@@ -515,8 +516,9 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type =
             | (Some t, _)          -> substitute t
             end
       in
-      let remfile_channel = open_out_gen [Open_append; Open_creat; Open_text] 416 
-      (Utility.expand_file !Rcfile.reminders_file) in
+      let remfile_channel = 
+         open_out_gen [Open_append; Open_creat; Open_text] 416 remfile
+      in
       output_string remfile_channel remline;
       close_out remfile_channel;
       let filename_sub = Str.regexp "%f" in
@@ -712,6 +714,61 @@ let handle_view_all_reminders (iface : interface_state_t) reminders =
    handle_refresh iface reminders
 
 
+(* Handle scrolling down during selection dialog loop *)
+let handle_selection_dialog_scrolldown (elements : string list) 
+       (selection : int) (top : int) =
+   if selection < pred (List.length elements) then
+      let lines, cols = get_size () in
+      let new_selection = succ selection in
+      let new_top =
+         if new_selection - top > pred lines then 
+            succ top 
+         else 
+            top
+      in
+      (new_selection, new_top)
+   else
+      (selection, top)
+
+
+(* Handle scrolling up during selection dialog loop *)
+let handle_selection_dialog_scrollup (elements : string list) 
+       (selection : int) (top : int) =
+   if selection > 0 then
+      let new_selection = pred selection in
+      let new_top =
+         if new_selection < top then 
+            pred top 
+         else 
+            top
+      in
+      (new_selection, new_top)
+   else
+      (selection, top)
+
+
+(* Begin a selection dialog loop *)
+let do_selection_dialog (iface : interface_state_t) (title : string) 
+       (elements : string list) =
+   let init_selection = 0
+   and init_top       = 0 in
+   erase ();
+   let rec selection_loop (selection, top) =
+      draw_selection_dialog iface title elements selection top;
+      let key = wgetch iface.scr.help_win in
+      match Rcfile.command_of_key key with
+      |Rcfile.ScrollDown ->
+         selection_loop (handle_selection_dialog_scrolldown elements selection top)
+      |Rcfile.ScrollUp ->
+         selection_loop (handle_selection_dialog_scrollup elements selection top)
+      |Rcfile.Edit ->
+         List.nth elements selection
+      |_ ->
+         selection_loop (selection, top)
+   in
+   selection_loop (init_selection, init_top)
+
+
 
 (* Handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
@@ -752,10 +809,19 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_edit iface reminders
          |Rcfile.NewTimed ->
             handle_new_reminder iface reminders Timed
+            (Utility.expand_file !Rcfile.reminders_file)
+         |Rcfile.NewTimedDialog ->
+            let remfile = 
+               do_selection_dialog iface "Choose a reminders file"
+               ["file1"; "file2"; "file3"]
+            in
+            handle_new_reminder iface reminders Timed remfile
          |Rcfile.NewUntimed ->
             handle_new_reminder iface reminders Untimed
+            (Utility.expand_file !Rcfile.reminders_file)
          |Rcfile.NewGenReminder x ->
             handle_new_reminder iface reminders (General x)
+            (Utility.expand_file !Rcfile.reminders_file)
          |Rcfile.SearchNext ->
             handle_find_next iface reminders
          |Rcfile.BeginSearch ->

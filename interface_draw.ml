@@ -647,5 +647,36 @@ let draw_error iface err draw_cursor =
    assert (wnoutrefresh iface.scr.err_win)
 
 
+(* Draw a selection dialog. *)
+let draw_selection_dialog (iface : interface_state_t) (title : string)
+      (elements : string list) (selection : int) (top : int) =
+   (* draw the title *)
+   Rcfile.color_on iface.scr.stdscr Rcfile.Help;
+   attron A.bold;
+   trunc_mvwaddstr iface.scr.stdscr 0 0 iface.scr.cols title;
+   Rcfile.color_off iface.scr.stdscr Rcfile.Help;
+   attroff A.bold;
+   (* draw the list elements *)
+   Rcfile.color_on iface.scr.stdscr Rcfile.Untimed_reminder;
+   let rec draw_element el_list line count =
+      match el_list with
+      | [] ->
+         ()
+      | el :: tail ->
+         if count >= top then begin
+            if count = selection then begin
+               attron A.reverse;
+               trunc_mvwaddstr iface.scr.stdscr line 2 (iface.scr.cols - 2) el;
+               attroff A.reverse;
+            end else
+               trunc_mvwaddstr iface.scr.stdscr line 2 (iface.scr.cols - 2) el;
+            draw_element tail (succ line) (succ count) 
+         end else
+            draw_element tail line (succ count) 
+   in
+   draw_element elements 1 0;
+   Rcfile.color_off iface.scr.stdscr Rcfile.Untimed_reminder;
+   assert (refresh ())   
+
 
 (* arch-tag: DO_NOT_CHANGE_9ff0fd0c-6eb1-410f-8fcf-6dfcf94b346a *)

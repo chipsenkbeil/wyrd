@@ -77,6 +77,7 @@ bind "z"                 zoom
 bind "<return>"          edit
 bind "<enter>"           edit
 bind "t"                 new_timed
+bind "T"                 new_timed_dialog
 bind "u"                 new_untimed
 bind "w"                 new_template0
 bind "W"                 new_template1
