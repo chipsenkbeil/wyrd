@@ -1,7 +1,10 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-05-04     Added "new_*_dialog" commands for creating new reminders.  These
+2005-05-04     Converted the documentation to LaTeX format, with PDF, HTML,
+               and manpage targets.
+
+               Added "new_*_dialog" commands for creating new reminders.  These
                commands will generate a selection dialog for choosing which
                reminder file to add the new reminder to.
 
