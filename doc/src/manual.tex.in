@@ -157,8 +157,8 @@ executing \texttt{wyrd <filename>}.
 At the top of the window is a short (incomplete) list of keybindings.
 
 The left window displays a scrollable day schedule view, with reminders
-highlighted in blue.  If the DURATION specifier is used for a reminder, the
-highlighted area is rendered with an appropriate size.
+highlighted in blue.  If the \texttt{DURATION} specifier is used for a
+reminder, the highlighted area is rendered with an appropriate size.
 
 The upper right window displays a month calendar, with the color of each day
 representing the number of reminders it contains.  The colors range across
@@ -168,8 +168,8 @@ selected date is highlighted in cyan.
 The lower right window displays a list of the untimed reminders falling on
 the selected date.
 
-The bottom window displays the full text of the MSG for the reminder that is
-currently selected.
+The bottom window displays the full text of the \texttt{MSG} for the reminder
+that is currently selected.
 
 \subsection{Navigation}
 %@% IF LATEX %@%
@@ -180,6 +180,7 @@ currently selected.
 %@% END-IF %@%
       \hline
       Action & Keypress \\
+      \hline 
       scroll up and down the schedule & \texttt{<up>}, \texttt{<down>} or \texttt{k}, \texttt{j} \\
       jump back or forward by a day & \texttt{<pageup>}, \texttt{<pagedown>} or \texttt{4}, \texttt{6} or \texttt{<}, \texttt{>} or \texttt{H}, \texttt{L} \\
       jump back or forward by a week & \texttt{8}, \texttt{2} or \texttt{[}, \texttt{]} or \texttt{K}, \texttt{J} \\
@@ -218,7 +219,7 @@ If you select a timeslot in the schedule view, then hit \texttt{'t'}, you will b
 creating a new timed reminder.  Wyrd will open up your reminder file in your
 favorite editor and move the cursor to the end of the file, where a new
 reminder template has been created.  The template has the selected date and
-time filled in, so in many cases you will only need to fill in a MSG value.
+time filled in, so in many cases you will only need to fill in a \texttt{MSG} value.
 
 Similarly, hitting \texttt{'u'} will begin creating an untimed reminder.
 \texttt{'w'} will create a weekly timed reminder, and \texttt{'W'} will create a
@@ -254,7 +255,7 @@ string.  Press \texttt{'/'} to start entering a (case insensitive) regular
 expression.  After the expression has been entered, press \texttt{<return>} and
 Wyrd will locate the next reminder that matches the regexp.  Press \texttt{'n'} to
 repeat the same search.  Entry of a search string may be cancelled with
-\texttt{'<esc>'}.
+\texttt{<esc>}.
 
 The regular expression syntax is Emacs-compatible.
 
@@ -505,8 +506,8 @@ CONFIGURATION VARIABLES section.
       A boolean value that determines whether reminder start and end times are
       drawn using 12- or 24-hour time in the description window.
 \end{itemize}
-For maximum usefulness, \texttt{busy\_level1} < \texttt{busy\_level2} < 
-\texttt{busy\_level3} < \texttt{busy\_level4}.
+For maximum usefulness, \texttt{busy\_level1} $<$ \texttt{busy\_level2} $<$ 
+\texttt{busy\_level3} $<$ \texttt{busy\_level4}.
 
 
 %@% IF LATEX %@%
