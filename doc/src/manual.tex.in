@@ -68,7 +68,9 @@ Wyrd website\footnote{http://www.eecs.umich.edu/\~{}pelzlpj/wyrd}
 %HEVEA \begin{rawhtml} <a href="http://www.eecs.umich.edu/~pelzlpj/wyrd/">Wyrd website</a> \end{rawhtml} 
 for up-to-date package information.
 
-Before installing Wyrd, your system must have the following software installed:
+Wyrd is designed to be portable to most Unix-like operating systems, including
+GNU/Linux, *BSD, and Mac OS X.  Before installing Wyrd, your system must have the
+following software installed:
 \begin{itemize}
    \item
 %BEGIN LATEX

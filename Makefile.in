@@ -89,7 +89,7 @@ $(NAME).static-opt: $(CMX) $(CURSES_OOBJS) my-static-libs
 my-static-libs:
 	ar cr libmycurses.a curses/*.o
 
-VERSION=0.2.0
+VERSION=0.3.0
 
 version.ml: Makefile
 	echo "let version = \""$(VERSION)"\"" > version.ml

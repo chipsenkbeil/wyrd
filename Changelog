@@ -1,7 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-05-04     Converted the documentation to LaTeX format, with PDF, HTML,
+2005-05-04     Released 0.3.0.
+
+               Converted the documentation to LaTeX format, with PDF, HTML,
                and manpage targets.
 
                Added "new_*_dialog" commands for creating new reminders.  These
