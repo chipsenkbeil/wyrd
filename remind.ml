@@ -194,19 +194,22 @@ let month_reminders timestamp =
                   let bottom_index = 
                      try
                         let real_bottom_index =
-                           let shift = (f_rem_ts +. duration -. month_start_ts) /. 3600.0 in
+                           let shift = (f_rem_ts +. (duration *. 60.0) -. month_start_ts) /. 3600.0 in
                            (* catch the edge effects when reminders end on hour boundaries *)
                            if shift = float_of_int (int_of_float shift) then
-                              top_index + (int_of_float shift) - 1
+                              pred (int_of_float shift)
                            else
-                              top_index + (int_of_float shift)
+                              int_of_float shift
                         in
+                        (* the bottom index could flow off of this month, in which case
+                         * we truncate and hope everything works out *)
                         if real_bottom_index > pred (Array.length indentations) then
                            pred (Array.length indentations)
                         else
                            real_bottom_index
                      with _ -> top_index
                   in
+                  (* locate the smallest free indentation level *)
                   let rec find_indent level =
                      if level < Array.length indentations.(0) then begin
                         let collision = ref false in
