@@ -183,11 +183,10 @@ let handle_resize (iface : interface_state_t) reminders =
 let handle_selection_change iface reminders =
    let new_reminders = Remind.update_reminders reminders 
    (timestamp_of_line iface iface.left_selection) in
-   draw_timed iface new_reminders.Remind.all_timed;
-   draw_date_strip iface;
-   draw_calendar iface new_reminders;
    let new_iface = draw_untimed iface new_reminders.Remind.curr_untimed in
-   (* draw_msg new_iface; *)
+   draw_timed new_iface new_reminders.Remind.all_timed;
+   draw_date_strip new_iface;
+   draw_calendar new_iface new_reminders;
    draw_error new_iface "" false;
    (new_iface, new_reminders)
 
@@ -199,7 +198,6 @@ let handle_selection_change_scroll iface reminders =
    (timestamp_of_line iface iface.left_selection) in
    draw_calendar iface new_reminders;
    let new_iface = draw_untimed iface new_reminders.Remind.curr_untimed in
-   (* draw_msg new_iface; *)
    draw_error new_iface "" false;
    (new_iface, new_reminders)
 
@@ -417,9 +415,10 @@ let handle_home (iface : interface_state_t) reminders =
    let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
    let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
    let new_iface = {
-      iface with top_timestamp  = rounded_time;
-                 selected_side  = Left;
-                 left_selection = 1
+      iface with top_timestamp   = rounded_time;
+                 selected_side   = Left;
+                 left_selection  = 1;
+                 right_selection = 1
    } in
    handle_selection_change new_iface reminders
 

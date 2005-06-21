@@ -1,9 +1,6 @@
 Wyrd To-Do list
 ------------------------------------------------------------------------
 
-* Correct missing cursor when jumping between days with different number
-  of untimed reminders.
-
 * Reconsider the default keymapping, which suffers from inconsistency.
 
 * Figure out some way to handle overlapping timed reminders.

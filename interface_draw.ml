@@ -508,6 +508,19 @@ let draw_untimed (iface : interface_state_t) reminders =
       rem_ts >= day_start_ts && rem_ts < day_end_ts
    in
    let today_reminders = List.filter is_current reminders in
+   (* make sure the cursor doesn't unexpectedly disappear *)
+   let iface =
+      if iface.selected_side = Right && 
+      iface.right_selection > List.length today_reminders then
+         if List.length today_reminders = 0 then {
+            iface with right_selection = 1;
+                       selected_side   = Left
+         } else {
+            iface with right_selection = List.length today_reminders
+         }
+      else
+         iface
+   in
    let rec render_lines rem_list n line =
       match rem_list with
       |[] ->
