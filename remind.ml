@@ -41,10 +41,10 @@ type cal_t = {
  * rem(1) and cal(1). *)
 type three_month_rem_t = {
    curr_timestamp : float;
-   prev_timed     : (float * float * string * string * string) list;
-   curr_timed     : (float * float * string * string * string) list;
-   next_timed     : (float * float * string * string * string) list;
-   all_timed      : (float * float * string * string * string) list;
+   prev_timed     : (float * float * string * string * string * int) list;
+   curr_timed     : (float * float * string * string * string * int) list;
+   next_timed     : (float * float * string * string * string * int) list;
+   all_timed      : (float * float * string * string * string * int) list;
    prev_untimed   : (float * string * string * string) list;
    curr_untimed   : (float * string * string * string) list;
    next_untimed   : (float * string * string * string) list;
@@ -110,7 +110,17 @@ let full_string_of_tm_wday i =
 
 
 (* Obtain two lists of reminders for the month of the timestamp argument.
- * The first list is for timed reminders, the second is for untimed. *)
+ * The first list is for timed reminders, the second is for untimed. 
+ * The timed reminders list also provides the indentation levels that
+ * draw_timed should use to render each reminder. 
+ *
+ * The indentation levels are determined by maintaining an array that indicates
+ * which levels have been used for each hourly timeslot.  As each reminder is
+ * processed, we look into the array to find the smallest indentation level
+ * available.  Complexity is approximately
+ * (number of reminders) * (average reminder duration).  Since indentation is
+ * determined a month at a time, there may be some minor discrepancies at
+ * month borders. *)
 let month_reminders timestamp =
    let comment_regex = Str.regexp "^#.*fileinfo \\([^ ]+\\) \\(.*\\)$" in
    let rem_regex = Str.regexp "\\([^ ]+\\) [^ ]+ [^ ]+ \\([^ ]+\\) \\([^ ]+\\) \\(.*\\)$" in
@@ -120,6 +130,21 @@ let month_reminders timestamp =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let remind_channel = Unix.open_process_in ("remind -s -l -g -b2 " ^ !Rcfile.reminders_file ^
    " " ^ rem_date_str) in
+   let indentations = Array.make_matrix (24 * 31) 4 false in
+   let (month_start_ts, _) =
+      let temp = {
+         Unix.tm_sec   = 0;
+         Unix.tm_min   = 0;
+         Unix.tm_hour  = 0;
+         Unix.tm_mday  = 1;
+         Unix.tm_mon   = tm.Unix.tm_mon;
+         Unix.tm_year  = tm.Unix.tm_year;
+         Unix.tm_wday  = 0;
+         Unix.tm_yday  = 0;
+         Unix.tm_isdst = false
+      } in
+      Unix.mktime temp
+   in
    let rec build_lists timed untimed =
       try
          let line = input_line remind_channel in
@@ -151,15 +176,61 @@ let month_reminders timestamp =
                if min_s = "*" then
                   let (f_rem_ts, _) = Unix.mktime temp in
                   build_lists timed ((f_rem_ts, msg, filename, line_num_s) :: untimed)
-               else
+               else begin
                   let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
                   let (f_rem_ts, _) = Unix.mktime temp_with_min in
                   let duration =
                      if duration_s = "*" then 0.0
                      else float_of_string duration_s
                   in
+                  (* compute the indentation level *)
+                  (* top_index and bottom_index provide the range of row indices into
+                   * array indentations that are covered by this reminder *)
+                  let top_index = 
+                     try
+                        int_of_float ((f_rem_ts -. month_start_ts) /. 3600.0)
+                     with _ -> 0
+                  in
+                  let bottom_index = 
+                     try
+                        let real_bottom_index =
+                           let shift = (f_rem_ts +. duration -. month_start_ts) /. 3600.0 in
+                           (* catch the edge effects when reminders end on hour boundaries *)
+                           if shift = float_of_int (int_of_float shift) then
+                              top_index + (int_of_float shift) - 1
+                           else
+                              top_index + (int_of_float shift)
+                        in
+                        if real_bottom_index > pred (Array.length indentations) then
+                           pred (Array.length indentations)
+                        else
+                           real_bottom_index
+                     with _ -> top_index
+                  in
+                  let rec find_indent level =
+                     if level < Array.length indentations.(0) then begin
+                        let collision = ref false in
+                        for i = top_index to bottom_index do
+                           if indentations.(i).(level) then
+                              collision := true
+                           else
+                              ()
+                        done;
+                        if !collision then
+                           find_indent (succ level)
+                        else begin
+                           for i = top_index to bottom_index do
+                              indentations.(i).(level) <- true
+                           done;
+                           level
+                        end
+                     end else
+                        (* give up and default to maximum indentation *)
+                        pred (Array.length indentations.(0))
+                  in
                   build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg, 
-                                filename, line_num_s) :: timed) untimed
+                                filename, line_num_s, find_indent 0) :: timed) untimed
+               end
             end else
                (* if there was no rem_regex match, continue with next line *)
                build_lists timed untimed
@@ -170,10 +241,10 @@ let month_reminders timestamp =
       | End_of_file ->
            let _ = Unix.close_process_in remind_channel in
            (List.rev timed, List.rev untimed)
-      | _ ->
+(*      | _ ->
            (* if there's an error in regexp matching or string coersion,
             * just drop that reminder and go to the next line *)
-           build_lists timed untimed
+           build_lists timed untimed *)
    in
    build_lists [] []
 
@@ -182,7 +253,7 @@ let month_reminders timestamp =
  * the month *)
 let count_reminders timed untimed =
    let rem_counts = Array.make 31 0 in
-   let count_timed (start, _, _, _, _) =
+   let count_timed (start, _, _, _, _, _) =
       let tm = Unix.localtime start in
       let day = pred tm.Unix.tm_mday in
       rem_counts.(day) <- succ rem_counts.(day)
@@ -229,8 +300,8 @@ let make_cal timestamp =
 
 (* comparison functions for sorting reminders chronologically *)
 let cmp_timed rem_a rem_b =
-   let (ts_a, _, _, _, _) = rem_a
-   and (ts_b, _, _, _, _) = rem_b in
+   let (ts_a, _, _, _, _, _) = rem_a
+   and (ts_b, _, _, _, _, _) = rem_b in
    compare ts_a ts_b
 
 let cmp_untimed rem_a rem_b =

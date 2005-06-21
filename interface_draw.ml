@@ -283,7 +283,7 @@ let draw_timed_window iface reminders top lines =
       begin match rem_list with
       |[] ->
          ()
-      |(start, finish, msg, filename, line_num) :: tail ->
+      |(start, finish, msg, filename, line_num, indent) :: tail ->
          let rem_top_line =
             round_down ((start -. iface.top_timestamp) /. (time_inc iface))
          in
