@@ -41,10 +41,10 @@ type cal_t = {
  * rem(1) and cal(1). *)
 type three_month_rem_t = {
    curr_timestamp : float;
-   prev_timed     : (float * float * string * string * string * int) list;
-   curr_timed     : (float * float * string * string * string * int) list;
-   next_timed     : (float * float * string * string * string * int) list;
-   all_timed      : (float * float * string * string * string * int) list;
+   prev_timed     : (float * float * string * string * string) list array;
+   curr_timed     : (float * float * string * string * string) list array;
+   next_timed     : (float * float * string * string * string) list array;
+   all_timed      : (float * float * string * string * string) list array;
    prev_untimed   : (float * string * string * string) list;
    curr_untimed   : (float * string * string * string) list;
    next_untimed   : (float * string * string * string) list;
@@ -128,9 +128,10 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("remind -s -l -g -b2 " ^ !Rcfile.reminders_file ^
-   " " ^ rem_date_str) in
-   let indentations = Array.make_matrix (24 * 31) 4 false in
+   let remind_channel = Unix.open_process_in ("remind -s -l -g -b2 " ^ 
+   !Rcfile.reminders_file ^ " " ^ rem_date_str) in
+   let num_indentations = 4 in
+   let indentations = Array.make_matrix (24 * 31) num_indentations false in
    let (month_start_ts, _) =
       let temp = {
          Unix.tm_sec   = 0;
@@ -145,7 +146,8 @@ let month_reminders timestamp =
       } in
       Unix.mktime temp
    in
-   let rec build_lists timed untimed =
+   let timed = Array.make num_indentations [] in
+   let rec build_lists untimed =
       try
          let line = input_line remind_channel in
          if Str.string_match comment_regex line 0 then begin
@@ -175,7 +177,7 @@ let month_reminders timestamp =
                } in
                if min_s = "*" then
                   let (f_rem_ts, _) = Unix.mktime temp in
-                  build_lists timed ((f_rem_ts, msg, filename, line_num_s) :: untimed)
+                  build_lists ((f_rem_ts, msg, filename, line_num_s) :: untimed)
                else begin
                   let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
                   let (f_rem_ts, _) = Unix.mktime temp_with_min in
@@ -231,32 +233,37 @@ let month_reminders timestamp =
                         (* give up and default to maximum indentation *)
                         pred (Array.length indentations.(0))
                   in
-                  build_lists ((f_rem_ts, f_rem_ts +. (duration *. 60.), msg, 
-                                filename, line_num_s, find_indent 0) :: timed) untimed
+                  let indent = find_indent 0 in
+                  timed.(indent) <- (f_rem_ts, f_rem_ts +. (duration *. 60.), msg, 
+                                    filename, line_num_s) :: timed.(indent);
+                  build_lists untimed
                end
             end else
                (* if there was no rem_regex match, continue with next line *)
-               build_lists timed untimed
+               build_lists untimed
          end else
             (* if there was no comment_regex match, continue with next line *)
-            build_lists timed untimed
+            build_lists untimed
       with
       | End_of_file ->
            let _ = Unix.close_process_in remind_channel in
-           (List.rev timed, List.rev untimed)
-(*      | _ ->
+           for i = 0 to pred (Array.length timed) do
+              timed.(i) <- List.rev timed.(i)
+           done;
+           (timed, List.rev untimed)
+      | _ ->
            (* if there's an error in regexp matching or string coersion,
             * just drop that reminder and go to the next line *)
-           build_lists timed untimed *)
+           build_lists untimed
    in
-   build_lists [] []
+   build_lists []
 
 
 (* generate a count of how many reminders fall on any given day of
  * the month *)
 let count_reminders timed untimed =
    let rem_counts = Array.make 31 0 in
-   let count_timed (start, _, _, _, _, _) =
+   let count_timed (start, _, _, _, _) =
       let tm = Unix.localtime start in
       let day = pred tm.Unix.tm_mday in
       rem_counts.(day) <- succ rem_counts.(day)
@@ -266,7 +273,7 @@ let count_reminders timed untimed =
       let day = pred tm.Unix.tm_mday in
       rem_counts.(day) <- succ rem_counts.(day)
    in
-   List.iter count_timed timed;
+   Array.iter (List.iter count_timed) timed;
    List.iter count_untimed untimed;
    rem_counts
 
@@ -303,14 +310,24 @@ let make_cal timestamp =
 
 (* comparison functions for sorting reminders chronologically *)
 let cmp_timed rem_a rem_b =
-   let (ts_a, _, _, _, _, _) = rem_a
-   and (ts_b, _, _, _, _, _) = rem_b in
+   let (ts_a, _, _, _, _) = rem_a
+   and (ts_b, _, _, _, _) = rem_b in
    compare ts_a ts_b
 
 let cmp_untimed rem_a rem_b =
    let (ts_a, _, _, _) = rem_a
    and (ts_b, _, _, _) = rem_b in
    compare ts_a ts_b
+
+
+(* take an array of timed reminder lists and merge them into
+ * a single list sorted by starting timestamp *)
+let merge_timed timed =
+   let all_rem = ref [] in
+   for i = 0 to pred (Array.length timed) do
+      all_rem := List.rev_append timed.(i) !all_rem
+   done;
+   List.fast_sort cmp_timed !all_rem
 
 
 (* same thing as List.append (or @), but tail-recursive *)
@@ -341,7 +358,14 @@ let create_three_month timestamp =
       prev_timed     = pt;
       curr_timed     = ct;
       next_timed     = nt;
-      all_timed      = safe_append pt (safe_append ct nt);
+      all_timed      = 
+         begin
+            let at = Array.make (Array.length pt) [] in
+            for i = 0 to pred (Array.length at) do
+               at.(i) <- safe_append pt.(i) (safe_append ct.(i) nt.(i))
+            done;
+            at
+         end;
       prev_untimed   = pu;
       curr_untimed   = cu;
       next_untimed   = nu;
@@ -368,7 +392,15 @@ let next_month reminders =
       prev_timed     = reminders.curr_timed;
       curr_timed     = reminders.next_timed;
       next_timed     = t;
-      all_timed      = safe_append reminders.curr_timed (safe_append reminders.next_timed t);
+      all_timed      =
+         begin
+            let at = Array.make (Array.length t) [] in
+            for i = 0 to pred (Array.length t) do
+               at.(i) <- safe_append reminders.curr_timed.(i) 
+                         (safe_append reminders.next_timed.(i) t.(i))
+            done;
+            at
+         end;
       prev_untimed   = reminders.curr_untimed;
       curr_untimed   = reminders.next_untimed;
       next_untimed   = u;
@@ -394,7 +426,15 @@ let prev_month reminders =
       prev_timed     = t;
       curr_timed     = reminders.prev_timed;
       next_timed     = reminders.curr_timed;
-      all_timed      = safe_append t (safe_append reminders.prev_timed reminders.curr_timed);
+      all_timed      = 
+         begin
+            let at = Array.make (Array.length t) [] in
+            for i = 0 to pred (Array.length t) do
+               at.(i) <- safe_append t.(i) 
+                         (safe_append reminders.prev_timed.(i) reminders.curr_timed.(i))
+            done;
+            at
+         end;
       prev_untimed   = u;
       curr_untimed   = reminders.prev_untimed;
       next_untimed   = reminders.curr_untimed;
