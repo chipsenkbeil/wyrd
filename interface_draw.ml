@@ -104,8 +104,12 @@ let trunc_mvwaddstr win line col len s =
       if String.length s <= len then
          let pad = String.make (len - (String.length s)) ' ' in
          s ^ pad
-      else
+      else if len >= 3 then
          (Str.string_before s (len - 3)) ^ "..."
+      else if len >= 0 then
+         Str.string_before s len
+      else
+         ""
    in
    assert (mvwaddstr win line col fixed_s)
 
@@ -260,6 +264,7 @@ let draw_timed_window iface reminders top lines =
       Rcfile.Timed_reminder3;
       Rcfile.Timed_reminder4
    |] in
+   let acs = get_acs_codes () in
    let blank = String.make iface.scr.tw_cols ' ' in
    let top_timestamp = timestamp_of_line iface top in
    let top_tm = Unix.localtime top_timestamp in
@@ -336,8 +341,9 @@ let draw_timed_window iface reminders top lines =
             else
                wattroff iface.scr.timed_win A.underline;
             iface.timed_lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
-            trunc_mvwaddstr iface.scr.timed_win rem_top_line (2 + (10 * indent)) (iface.scr.tw_cols - 2 - (10 * indent)) 
-               (ts_str ^ " " ^ msg)
+            trunc_mvwaddstr iface.scr.timed_win rem_top_line (8 + (10 * indent)) 
+               (iface.scr.tw_cols - 8 - (10 * indent)) ("  " ^ msg);
+            assert (mvwaddch iface.scr.timed_win rem_top_line (8 + (10 * indent)) acs.Acs.vline)
          end else
             ();
          (* draw any remaining lines of this reminder, as determined by the duration *)
@@ -351,7 +357,6 @@ let draw_timed_window iface reminders top lines =
                let ts = timestamp_of_line iface (rem_top_line + !count) in
                let tm = Unix.localtime ts in
                let ts_str = string_of_tm tm in
-               let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
                if rem_top_line + !count = iface.left_selection && 
                   iface.selected_side = Left then
                   wattron iface.scr.timed_win A.reverse
@@ -364,8 +369,10 @@ let draw_timed_window iface reminders top lines =
                   wattroff iface.scr.timed_win A.underline;
                iface.timed_lineinfo.(rem_top_line + !count) <- 
                   Some (filename, line_num, time_str ^ msg);
-               trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) (2 + (10 * indent)) 
-                  (iface.scr.tw_cols - 2 - (10 * indent)) s
+               trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) (8 + (10 * indent)) 
+                  (iface.scr.tw_cols - 8 - (10 * indent)) " ";
+               assert (mvwaddch iface.scr.timed_win (rem_top_line + !count) 
+                  (8 + (10 * indent)) acs.Acs.vline)
             end else
                ();
             count := succ !count
