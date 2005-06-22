@@ -258,6 +258,10 @@ let draw_timed_window iface reminders top lines =
       if x >= 0.0 then int_of_float x
       else pred (int_of_float x)
    in
+   let adjust_s len s =
+      let padded = s ^ (String.make len ' ') in
+      Str.string_before padded len
+   in
    let indent_colors = [| 
       Rcfile.Timed_reminder1;
       Rcfile.Timed_reminder2;
@@ -290,7 +294,7 @@ let draw_timed_window iface reminders top lines =
    (* draw in the blank timeslots *)
    Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
    for i = top to pred (top + lines) do
-      iface.timed_lineinfo.(i) <- None;
+      iface.timed_lineinfo.(i) <- [];
       if i = iface.left_selection && iface.selected_side = Left then
          wattron iface.scr.timed_win A.reverse
       else
@@ -341,7 +345,8 @@ let draw_timed_window iface reminders top lines =
                wattron iface.scr.timed_win A.underline
             else
                wattroff iface.scr.timed_win A.underline;
-            iface.timed_lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
+            iface.timed_lineinfo.(rem_top_line) <- 
+               (filename, line_num, time_str, msg) :: iface.timed_lineinfo.(rem_top_line);
             trunc_mvwaddstr iface.scr.timed_win rem_top_line (clock_pad + (9 * indent)) 
                (iface.scr.tw_cols - clock_pad - (9 * indent)) ("  " ^ msg);
             assert (mvwaddch iface.scr.timed_win rem_top_line 
@@ -370,7 +375,8 @@ let draw_timed_window iface reminders top lines =
                else
                   wattroff iface.scr.timed_win A.underline;
                iface.timed_lineinfo.(rem_top_line + !count) <- 
-                  Some (filename, line_num, time_str ^ msg);
+                  (filename, line_num, time_str, msg) :: 
+                  iface.timed_lineinfo.(rem_top_line + !count);
                trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) 
                   (clock_pad + (9 * indent)) (iface.scr.tw_cols - clock_pad - (9 * indent)) " ";
                assert (mvwaddch iface.scr.timed_win (rem_top_line + !count) 
@@ -627,31 +633,49 @@ let draw_msg iface =
    wattroff iface.scr.msg_win A.bold;
    (* draw the full MSG string, word wrapping as necessary *)
    Rcfile.color_on iface.scr.msg_win Rcfile.Description;
-   let rec render_line lines i =
-      match lines with
+   let rec render_desc times descriptions i =
+      let rec render_line lines line_num =
+         match lines with
+         |[] ->
+            line_num
+         |line :: tail ->
+            if line_num < pred iface.scr.mw_lines then begin
+               assert (mvwaddstr iface.scr.msg_win line_num 20 line);
+               render_line tail (succ line_num)
+            end else
+               line_num
+      in
+      match descriptions with
       |[] ->
          ()
-      |line :: tail ->
+      |desc :: tail ->
          if i < pred iface.scr.mw_lines then begin
-            assert (mvwaddstr iface.scr.msg_win i 5 line);
-            render_line tail (succ i)
+            assert (mvwaddstr iface.scr.msg_win i 5 (List.hd times));
+            let line_num = render_line desc i in
+            render_desc (List.tl times) tail line_num
          end else
             ()
    in
-   let message =
+   let (times, descriptions) =
       match iface.selected_side with
       |Left ->
          begin match iface.timed_lineinfo.(iface.left_selection) with
-         |None             -> ["(no reminder selected)"]
-         |Some (_, _, msg) -> word_wrap msg (iface.scr.mw_cols - 5)
+         |[] -> 
+            ([""], [["(no reminder selected)"]])
+         |rem_list -> 
+              let get_times (_, _, time_str, msg) = time_str in
+              let get_lines (_, _, time_str, msg) = 
+                 word_wrap msg (iface.scr.mw_cols - 20)
+              in
+              (List.rev_map get_times rem_list, List.rev_map get_lines rem_list)
          end
       |Right ->
          begin match iface.untimed_lineinfo.(iface.right_selection) with
-         |None             -> ["(no reminder selected)"]
-         |Some (_, _, msg) -> word_wrap msg (iface.scr.mw_cols - 5)
+         |None             -> ([""], [["(no reminder selected)"]])
+         |Some (_, _, msg) -> ([""], [word_wrap msg (iface.scr.mw_cols - 20)])
          end
    in
-   render_line message 1;
+   render_desc times descriptions 1;
    Rcfile.color_off iface.scr.msg_win Rcfile.Description;
    assert (wnoutrefresh iface.scr.msg_win)
 

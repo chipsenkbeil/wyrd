@@ -66,8 +66,8 @@ type interface_state_t = {
    left_selection    : int;                 (* controls which element of the left window is selected *)
    right_selection   : int;                 (* controls which element of the right window is selected *)
    zoom_level        : zoom_t;              (* controls the resolution of the timed window *)
-   timed_lineinfo    : (string * string * string) option array; (* keeps track of the filename, line number, and message 
-                                                                 * associated with each line of the timed reminders window *)
+   timed_lineinfo    : (string * string * string * string) list array;   (* keeps track of the filename, line number, and message 
+                                                                          * associated with each line of the timed reminders window *)
    untimed_lineinfo  : (string * string * string) option array; (* same as above, for untimed window *)
    len_untimed       : int;                 (* number of entries in the untimed reminders list *)
    search_regex      : Str.regexp;          (* most recent search string *)
@@ -110,7 +110,7 @@ let make (std : screen_t) =
       left_selection     = 1;
       right_selection    = 1;
       zoom_level         = Hour;
-      timed_lineinfo     = Array.make std.tw_lines None;
+      timed_lineinfo     = Array.make std.tw_lines [];
       untimed_lineinfo   = Array.make std.uw_lines None;
       len_untimed        = 0;
       search_regex       = Str.regexp "";

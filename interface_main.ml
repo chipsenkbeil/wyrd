@@ -168,7 +168,7 @@ let handle_resize (iface : interface_state_t) reminders =
                  top_untimed = 0;
                  left_selection = 1;
                  right_selection = 1;
-                 timed_lineinfo = Array.make new_scr.tw_lines None
+                 timed_lineinfo = Array.make new_scr.tw_lines []
    } in
    begin try
       assert (curs_set 0)
@@ -421,49 +421,6 @@ let handle_home (iface : interface_state_t) reminders =
                  right_selection = 1
    } in
    handle_selection_change new_iface reminders
-
-
-(* handle editing the selected reminder *)
-let handle_edit (iface : interface_state_t) reminders =
-   let fl =
-      match iface.selected_side with
-      |Left  -> iface.timed_lineinfo.(iface.left_selection)
-      |Right -> iface.untimed_lineinfo.(iface.right_selection)
-   in
-   begin match fl with
-   |None ->
-      (iface, reminders)
-   |Some (filename, line_num, msg) -> 
-      let filename_sub = Str.regexp "%f" in
-      let lineno_sub   = Str.regexp "%n" in
-      let command_partial = 
-         Str.global_replace filename_sub filename !Rcfile.edit_old_command
-      in
-      let command = Str.global_replace lineno_sub line_num command_partial in
-      def_prog_mode ();
-      endwin ();
-      let _ = Unix.system command in 
-      reset_prog_mode ();
-      begin try
-         assert (curs_set 0)
-      with _ ->
-         ()
-      end;
-      let r = Remind.create_three_month iface.top_timestamp in
-      (* if the untimed list has been altered, change the focus to
-       * the timed window *)
-      let new_iface =
-         if List.length r.Remind.curr_untimed <> 
-            List.length reminders.Remind.curr_untimed then {
-            iface with selected_side = Left;
-                       top_untimed = 0;
-                       right_selection = 1
-            }
-         else
-            iface
-      in
-      handle_refresh new_iface r
-   end
 
 
 (* handle creation of a new timed or untimed reminder *)
@@ -755,18 +712,89 @@ let do_selection_dialog (iface : interface_state_t) (title : string)
    let rec selection_loop (selection, top) =
       draw_selection_dialog iface title elements selection top;
       let key = wgetch iface.scr.help_win in
-      match Rcfile.command_of_key key with
-      |Rcfile.ScrollDown ->
-         selection_loop (handle_selection_dialog_scrolldown elements selection top)
-      |Rcfile.ScrollUp ->
-         selection_loop (handle_selection_dialog_scrollup elements selection top)
-      |Rcfile.Edit ->
-         List.nth elements selection
-      |_ ->
+      (* trap the wgetch timeout *)
+      if key <> ~-1 then
+         try
+            match Rcfile.command_of_key key with
+            |Rcfile.ScrollDown ->
+               selection_loop (handle_selection_dialog_scrolldown elements selection top)
+            |Rcfile.ScrollUp ->
+               selection_loop (handle_selection_dialog_scrollup elements selection top)
+            |Rcfile.Edit ->
+               List.nth elements selection
+            |_ ->
+               let _ = beep () in
+               selection_loop (selection, top)
+         with Not_found ->
+            let _ = beep () in
+            selection_loop (selection, top)
+      else
          selection_loop (selection, top)
    in
    selection_loop (init_selection, init_top)
 
+
+(* handle editing the selected reminder *)
+let handle_edit (iface : interface_state_t) reminders =
+   let adjust_s len s =
+      let pad = s ^ (String.make len ' ') in
+      Str.string_before pad len
+   in
+   let fl =
+      match iface.selected_side with
+      |Left  -> 
+         begin match iface.timed_lineinfo.(iface.left_selection) with
+         | [] -> 
+            None
+         | (f, l, t, m) :: [] -> 
+            Some (f, l, m)
+         | rem_list -> 
+              let get_msg (_, _, time, msg) = (adjust_s 16 time) ^ msg in
+              let msg_list = List.rev_map get_msg rem_list in
+              let selected_msg =
+                 do_selection_dialog iface "Choose a reminder to edit" msg_list
+              in
+              let test_msg_match (_, _, time, msg) = 
+                 ((adjust_s 16 time) ^ msg) = selected_msg in
+              let (f, l, t, m) = (List.find test_msg_match rem_list) in
+              Some (f, l, m)
+         end
+      |Right -> iface.untimed_lineinfo.(iface.right_selection)
+   in
+   begin match fl with
+   |None ->
+      (iface, reminders)
+   |Some (filename, line_num, msg) -> 
+      let filename_sub = Str.regexp "%f" in
+      let lineno_sub   = Str.regexp "%n" in
+      let command_partial = 
+         Str.global_replace filename_sub filename !Rcfile.edit_old_command
+      in
+      let command = Str.global_replace lineno_sub line_num command_partial in
+      def_prog_mode ();
+      endwin ();
+      let _ = Unix.system command in 
+      reset_prog_mode ();
+      begin try
+         assert (curs_set 0)
+      with _ ->
+         ()
+      end;
+      let r = Remind.create_three_month iface.top_timestamp in
+      (* if the untimed list has been altered, change the focus to
+       * the timed window *)
+      let new_iface =
+         if List.length r.Remind.curr_untimed <> 
+            List.length reminders.Remind.curr_untimed then {
+            iface with selected_side = Left;
+                       top_untimed = 0;
+                       right_selection = 1
+            }
+         else
+            iface
+      in
+      handle_refresh new_iface r
+   end
 
 
 (* Handle keyboard input and update the display appropriately *)
