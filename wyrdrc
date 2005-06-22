@@ -90,6 +90,7 @@ bind "n"                 search_next
 bind "/"                 begin_search
 bind "r"                 view_remind
 bind "R"                 view_remind_all
+bind "\\Cl"              refresh
 bind "Q"                 quit
 
 bind "<return>"          entry_complete

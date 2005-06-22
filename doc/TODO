@@ -1,10 +1,6 @@
 Wyrd To-Do list
 ------------------------------------------------------------------------
 
-* add a refresh function
-
-* Reconsider the default keymapping, which suffers from inconsistency.
-
 * When LINES is sufficiently large, consider adding a bit more month context in
   the calendar window at the upper right.
 

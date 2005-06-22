@@ -896,6 +896,20 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_view_reminders iface reminders
          |Rcfile.ViewAllReminders ->
             handle_view_all_reminders iface reminders
+         |Rcfile.Refresh ->
+            (* NOTE: I'm not sure why the endwin call is necessary here,
+             * but I'm having problems getting a true full-screen refresh
+             * without it. *)
+            def_prog_mode ();
+            endwin ();
+            reset_prog_mode ();
+            begin try
+               assert (curs_set 0)
+            with _ ->
+               ()
+            end;
+            let i = draw_msg iface in
+            handle_refresh i reminders
          |Rcfile.Quit ->
             let new_iface = {iface with run_wyrd = false} in
             (new_iface, reminders)

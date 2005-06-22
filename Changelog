@@ -1,8 +1,13 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-06-22     Added a screen refresh function.
+
 2005-06-21     Implemented overlapping timed reminders and associated routines 
                for handling multiple reminders in a single timeslot.
+               Colorable object 'timed_reminder' has been deprecated in
+               favor of 'timed_reminder1' through 'timed_reminder4', so
+               that overlapping reminders can be given different colors.
 
 2005-06-20     Corrected the disappearing cursor bug associated with jumping
                between days with differing numbers of untimed reminders.

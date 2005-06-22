@@ -43,7 +43,7 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | Home | Zoom | Edit | NewTimed | NewUntimed 
                  | NewTimedDialog | NewUntimedDialog | SwitchWindow 
                  | SearchNext | BeginSearch | Quit | ViewReminders
-                 | ScrollDescUp | ScrollDescDown
+                 | ScrollDescUp | ScrollDescDown | Refresh
                  | ViewAllReminders | NewGenReminder of int
                  | NewGenReminderDialog of int
 
@@ -313,6 +313,7 @@ let operation_of_string command_str =
    |"begin_search"            -> CommandOp BeginSearch
    |"view_remind"             -> CommandOp ViewReminders
    |"view_remind_all"         -> CommandOp ViewAllReminders
+   |"refresh"                 -> CommandOp Refresh 
    |"entry_complete"          -> EntryOp EntryComplete
    |"entry_backspace"         -> EntryOp EntryBackspace
    |"entry_cancel"            -> EntryOp EntryExit

@@ -270,6 +270,11 @@ The regular expression syntax is Emacs-compatible.
 Note: Sorry, there is no "search backward" function.  The search function
 requires the use of \texttt{"remind -n"}, which operates only forward in time.
 
+\subsection{Other Commands}
+
+You can exit Wyrd by pressing \texttt{'Q'}.  If the screen is corrupted for some
+reason, hit \texttt{'Ctrl-L'} to refresh the display.
+
 %@% END-IF %@%
 % (!WYRDRC)
 
@@ -594,6 +599,8 @@ The following is a list of every available operation.
    \item \texttt{view\_remind\_all} \\
       view the output of \texttt{remind} for the selected date, triggering all
       non-expired reminders
+   \item \texttt{refresh} \\
+      refresh the display
    \item \texttt{quit} \\
       exit Wyrd
    \item \texttt{entry\_complete} \\
