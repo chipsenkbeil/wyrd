@@ -49,7 +49,7 @@ let create_windows screen =
    let height, width  = get_size () in
    let cal_height     = 10
    and cal_width      = 40 in
-   let msg_height     = 5 in
+   let msg_height     = 6 in
    let err_height     = 1 in
    let timed_height   = height - 1 - msg_height - err_height
    and timed_width    = width - cal_width
@@ -154,7 +154,6 @@ let handle_refresh (iface : interface_state_t) reminders =
    draw_date_strip iface;
    draw_calendar iface reminders;
    let new_iface = draw_untimed iface reminders.Remind.curr_untimed in
-   (* draw_msg new_iface; *)
    draw_error new_iface "" false;
    (new_iface, reminders)
    
@@ -206,6 +205,7 @@ let handle_selection_change_scroll iface reminders =
 let handle_scrolldown_timed (iface : interface_state_t) reminders =
    let iface = {
       iface with top_untimed = 0;
+                 top_desc = 0;
                  right_selection = 1
    } in
    if iface.left_selection < pred iface.scr.tw_lines then begin
@@ -271,6 +271,7 @@ let handle_scrolldown_untimed (iface : interface_state_t) reminders =
 let handle_scrollup_timed (iface : interface_state_t) reminders =
    let iface = {
       iface with top_untimed = 0;
+                 top_desc = 0;
                  right_selection = 1
    } in
    if iface.left_selection > 0 then begin
@@ -331,7 +332,8 @@ let handle_jump (iface : interface_state_t) reminders jump_func =
    } in
    let (next_ts, _) = Unix.mktime next_tm in
    let new_iface = {
-      iface with top_timestamp = next_ts
+      iface with top_timestamp = next_ts;
+                 top_desc = 0
    } in
    handle_selection_change new_iface reminders
 
@@ -377,18 +379,21 @@ let handle_zoom (iface : interface_state_t) reminders =
          let new_top = curr_ts -. (60.0 *. 30.0 *. 
                        (float_of_int iface.left_selection)) in {
             iface with top_timestamp = new_top;
+                       top_desc      = 0;
                        zoom_level    = HalfHour
          }
       |HalfHour ->
          let new_top = curr_ts -. (60.0 *. 15.0 *. 
                        (float_of_int iface.left_selection)) in {
             iface with top_timestamp = new_top;
+                       top_desc      = 0;
                        zoom_level    = QuarterHour
          }
       |QuarterHour ->
          let new_top = hour_ts -. (60.0 *. 60.0 *. 
                        (float_of_int iface.left_selection)) in {
             iface with top_timestamp = new_top;
+                       top_desc      = 0;
                        zoom_level    = Hour
          }
    in
@@ -416,6 +421,7 @@ let handle_home (iface : interface_state_t) reminders =
    let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
    let new_iface = {
       iface with top_timestamp   = rounded_time;
+                 top_desc        = 0;
                  selected_side   = Left;
                  left_selection  = 1;
                  right_selection = 1
@@ -499,6 +505,7 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
             List.length reminders.Remind.curr_untimed then {
             iface with selected_side = Left;
                        top_untimed = 0;
+                       top_desc = 0;
                        right_selection = 1
             }
          else
@@ -567,12 +574,14 @@ let handle_find_next (iface : interface_state_t) reminders =
                      if n >= iface.scr.uw_lines then {
                         iface with top_timestamp   = rounded_time;
                                    top_untimed     = n - iface.scr.uw_lines + 1;
+                                   top_desc        = 0;
                                    left_selection  = 0;
                                    right_selection = pred iface.scr.uw_lines;
                                    selected_side   = Right
                      } else {
                         iface with top_timestamp   = rounded_time;
                                    top_untimed     = 0;
+                                   top_desc        = 0;
                                    left_selection  = 0;
                                    right_selection = n;
                                    selected_side   = Right
@@ -601,6 +610,7 @@ let handle_find_next (iface : interface_state_t) reminders =
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface = {
                      iface with top_timestamp   = rounded_time;
+                                top_desc        = 0;
                                 left_selection  = 0;
                                 right_selection = 1;
                                 selected_side   = Left
@@ -797,7 +807,20 @@ let handle_edit (iface : interface_state_t) reminders =
    end
 
 
-(* Handle keyboard input and update the display appropriately *)
+(* handle scrolling the description window up *)
+let handle_scroll_desc_up iface reminders =
+   let new_iface = {iface with top_desc = succ iface.top_desc} in
+   handle_refresh new_iface reminders
+
+
+(* handle scrolling the description window down *)
+let handle_scroll_desc_down iface reminders =
+   let top = max 0 (pred iface.top_desc) in
+   let new_iface = {iface with top_desc = top} in
+   handle_refresh new_iface reminders
+
+
+(* handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
    if not iface.is_entering_search then begin
       try
@@ -834,6 +857,10 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_home iface reminders
          |Rcfile.Edit ->
             handle_edit iface reminders
+         |Rcfile.ScrollDescUp ->
+            handle_scroll_desc_up iface reminders
+         |Rcfile.ScrollDescDown ->
+            handle_scroll_desc_down iface reminders
          |Rcfile.NewTimed ->
             handle_new_reminder iface reminders Timed
             (Utility.expand_file !Rcfile.reminders_file)
@@ -939,7 +966,7 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
    if iface.run_wyrd then begin
       (* refresh the msg window (which contains a clock)
        * every wgetch timeout cycle *)
-      draw_msg iface;
+      let iface = draw_msg iface in
       assert (doupdate ());
       let key = wgetch iface.scr.help_win in
       let new_iface, new_reminders = 
@@ -987,7 +1014,7 @@ let run (iface : interface_state_t) =
    draw_timed iface reminders.Remind.all_timed;
    draw_calendar iface reminders;
    let new_iface = draw_untimed iface reminders.Remind.curr_untimed in
-   draw_msg new_iface;
+   let new_iface = draw_msg new_iface in
    draw_error new_iface "" false;
    assert (doupdate ());
    do_main_loop new_iface reminders (Unix.time ())

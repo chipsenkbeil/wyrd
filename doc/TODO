@@ -5,8 +5,6 @@ Wyrd To-Do list
 
 * Reconsider the default keymapping, which suffers from inconsistency.
 
-* Figure out some way to handle overlapping timed reminders.
-
 * When LINES is sufficiently large, consider adding a bit more month context in
   the calendar window at the upper right.
 

@@ -659,18 +659,18 @@ let draw_msg iface =
          |rem_list -> 
               let get_times (_, _, time_str, msg) = time_str in
               let get_lines (_, _, time_str, msg) = 
-                 word_wrap msg (iface.scr.mw_cols - 20)
+                 word_wrap msg (iface.scr.mw_cols - 24)
               in
               (List.rev_map get_times rem_list, List.rev_map get_lines rem_list)
          end
       |Right ->
          begin match iface.untimed_lineinfo.(iface.right_selection) with
          |None             -> ([""], [["(no reminder selected)"]])
-         |Some (_, _, msg) -> ([""], [word_wrap msg (iface.scr.mw_cols - 20)])
+         |Some (_, _, msg) -> ([""], [word_wrap msg (iface.scr.mw_cols - 24)])
          end
    in
    let desc_lines = render_desc times descriptions [] in
-   (* draw the rendered lines to the screen *)
+   (* draw the pre-rendered lines to the screen *)
    Rcfile.color_on iface.scr.msg_win Rcfile.Description;
    let rec draw_desc_lines lines start line_num =
       match lines with
@@ -685,9 +685,26 @@ let draw_msg iface =
          end else
             ()
    in
-   draw_desc_lines desc_lines 0 1;
+   let adjusted_top =
+      let max_top = max ((List.length desc_lines) - iface.scr.mw_lines + 2) 0 in
+      min iface.top_desc max_top
+   in
+   draw_desc_lines desc_lines adjusted_top 1;
+   if adjusted_top > 0 then begin
+      assert (mvwaddch iface.scr.msg_win 1 (iface.scr.mw_cols - 1) (int_of_char '^'));
+      assert (mvwaddch iface.scr.msg_win 2 (iface.scr.mw_cols - 1) (int_of_char '^'))
+   end else
+      ();
+   if adjusted_top < List.length desc_lines - iface.scr.mw_lines + 2 then begin
+      assert (mvwaddch iface.scr.msg_win (iface.scr.mw_lines - 2) 
+         (iface.scr.mw_cols - 1) (int_of_char 'v'));
+      assert (mvwaddch iface.scr.msg_win (iface.scr.mw_lines - 3) 
+         (iface.scr.mw_cols - 1) (int_of_char 'v'))
+   end else
+      ();
    Rcfile.color_off iface.scr.msg_win Rcfile.Description;
-   assert (wnoutrefresh iface.scr.msg_win)
+   assert (wnoutrefresh iface.scr.msg_win);
+   {iface with top_desc = adjusted_top}
 
 
 (* Draw a message in the error window.  If draw_cursor = true, then

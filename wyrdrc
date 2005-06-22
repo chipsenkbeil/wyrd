@@ -76,6 +76,8 @@ bind "<home>"            home
 bind "z"                 zoom
 bind "<return>"          edit
 bind "<enter>"           edit
+bind "d"                 scroll_description_up
+bind "D"                 scroll_description_down
 bind "t"                 new_timed
 bind "T"                 new_timed_dialog
 bind "u"                 new_untimed

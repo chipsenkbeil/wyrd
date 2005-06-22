@@ -62,6 +62,7 @@ type interface_state_t = {
    run_wyrd          : bool;                (* exit when run_wyrd becomes false *)
    top_timestamp     : float;               (* controls what portion of the schedule is viewable *)
    top_untimed       : int;                 (* controls what portion of untimed reminders are viewable *)
+   top_desc          : int;                 (* controls what portion of the reminder descriptions are viewable *)
    selected_side     : side_t;              (* controls which window has the focus *)
    left_selection    : int;                 (* controls which element of the left window is selected *)
    right_selection   : int;                 (* controls which element of the right window is selected *)
@@ -106,6 +107,7 @@ let make (std : screen_t) =
       run_wyrd           = true;
       top_timestamp      = rounded_time;
       top_untimed        = 0;
+      top_desc           = 0;
       selected_side      = Left;
       left_selection     = 1;
       right_selection    = 1;

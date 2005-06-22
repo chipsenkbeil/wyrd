@@ -1,6 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-06-21     Implemented overlapping timed reminders and associated routines 
+               for handling multiple reminders in a single timeslot.
+
 2005-06-20     Corrected the disappearing cursor bug associated with jumping
                between days with differing numbers of untimed reminders.
 
