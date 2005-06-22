@@ -50,10 +50,12 @@ type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
 type operation_t = CommandOp of command_t | EntryOp of entry_operation_t
 
-type colorable_object_t = | Help | Timed_default | Timed_reminder | Untimed_reminder
+type colorable_object_t = | Help | Timed_default | Untimed_reminder
                           | Timed_date | Selection_info | Description | Status 
                           | Calendar_labels | Calendar_level1 | Calendar_level2
                           | Calendar_level3 | Calendar_today | Left_divider | Right_divider 
+                          | Timed_reminder1 | Timed_reminder2 | Timed_reminder3
+                          | Timed_reminder4
 
 
 (* These hashtables store conversions between curses keys and the operations
@@ -484,7 +486,8 @@ let parse_line line_stream =
       begin match line_stream with parser
       | [< 'Ident "help" >]             -> parse_color "help" Help
       | [< 'Ident "timed_default" >]    -> parse_color "timed_default" Timed_default
-      | [< 'Ident "timed_reminder" >]   -> parse_color "timed_reminder" Timed_reminder
+      | [< 'Ident "timed_reminder" >]   -> config_failwith 
+             ("\"timed_reminder\" has been deprecated.  Please use \"timed_reminder1\".")
       | [< 'Ident "untimed_reminder" >] -> parse_color "untimed_reminder" Untimed_reminder
       | [< 'Ident "timed_date" >]       -> parse_color "timed_date" Timed_date
       | [< 'Ident "selection_info" >]   -> parse_color "selection_info" Selection_info
@@ -497,6 +500,10 @@ let parse_line line_stream =
       | [< 'Ident "calendar_today" >]   -> parse_color "calendar_today" Calendar_today
       | [< 'Ident "left_divider" >]     -> parse_color "left_divider" Left_divider
       | [< 'Ident "right_divider" >]    -> parse_color "right_divider" Right_divider
+      | [< 'Ident "timed_reminder1" >]  -> parse_color "timed_reminder1" Timed_reminder1
+      | [< 'Ident "timed_reminder2" >]  -> parse_color "timed_reminder2" Timed_reminder2
+      | [< 'Ident "timed_reminder3" >]  -> parse_color "timed_reminder3" Timed_reminder3
+      | [< 'Ident "timed_reminder4" >]  -> parse_color "timed_reminder4" Timed_reminder4
       end
    | [< 'Kwd "#" >] ->
       ()

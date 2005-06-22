@@ -254,6 +254,12 @@ let draw_timed_window iface reminders top lines =
       if x >= 0.0 then int_of_float x
       else pred (int_of_float x)
    in
+   let indent_colors = [| 
+      Rcfile.Timed_reminder1;
+      Rcfile.Timed_reminder2;
+      Rcfile.Timed_reminder3;
+      Rcfile.Timed_reminder4
+   |] in
    let blank = String.make iface.scr.tw_cols ' ' in
    let top_timestamp = timestamp_of_line iface top in
    let top_tm = Unix.localtime top_timestamp in
@@ -297,9 +303,9 @@ let draw_timed_window iface reminders top lines =
    done;
    Rcfile.color_off iface.scr.timed_win Rcfile.Timed_default;
    wattroff iface.scr.timed_win (A.reverse lor A.underline);
-   Rcfile.color_on iface.scr.timed_win Rcfile.Timed_reminder;
-   wattron iface.scr.timed_win A.bold;
    let rec process_reminders rem_list indent =
+      Rcfile.color_on iface.scr.timed_win indent_colors.(indent);
+      wattron iface.scr.timed_win A.bold;
       begin match rem_list with
       |[] ->
          ()
@@ -370,14 +376,14 @@ let draw_timed_window iface reminders top lines =
             process_reminders tail indent
          else
             ()
-      end
+      end;
+      Rcfile.color_off iface.scr.timed_win indent_colors.(indent)
    in
    (* reminders are rendered in order of indentation level, so the reminders with
     * higher indentation overlap those with lower indentation *)
    for indent = 0 to pred (Array.length reminders) do
       process_reminders reminders.(indent) indent
    done;
-   Rcfile.color_off iface.scr.timed_win Rcfile.Timed_reminder;
    wattroff iface.scr.timed_win (A.bold lor A.reverse);
    assert (wnoutrefresh iface.scr.timed_win)
 

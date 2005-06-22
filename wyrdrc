@@ -99,7 +99,10 @@ bind "<esc>"             entry_cancel
 # set up the colors
 color help              green blue
 color timed_default     white black
-color timed_reminder    yellow blue
+color timed_reminder1   yellow blue
+color timed_reminder2   white red
+color timed_reminder3   white green
+color timed_reminder4   yellow magenta
 color untimed_reminder  white black
 color timed_date        cyan black
 color selection_info    green blue
