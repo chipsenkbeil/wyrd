@@ -326,6 +326,7 @@ let draw_timed_window iface reminders top lines =
                (desc_string_of_tm (Unix.localtime start)) ^ " "
          in
          (* draw the top line of a reminder *)
+         let clock_pad = if !Rcfile.schedule_12_hour then 10 else 8 in
          if rem_top_line >= top && rem_top_line < top + lines then begin
             let time_str = get_time_str () in
             let ts = timestamp_of_line iface rem_top_line in
@@ -341,9 +342,10 @@ let draw_timed_window iface reminders top lines =
             else
                wattroff iface.scr.timed_win A.underline;
             iface.timed_lineinfo.(rem_top_line) <- Some (filename, line_num, time_str ^ msg);
-            trunc_mvwaddstr iface.scr.timed_win rem_top_line (8 + (10 * indent)) 
-               (iface.scr.tw_cols - 8 - (10 * indent)) ("  " ^ msg);
-            assert (mvwaddch iface.scr.timed_win rem_top_line (8 + (10 * indent)) acs.Acs.vline)
+            trunc_mvwaddstr iface.scr.timed_win rem_top_line (clock_pad + (9 * indent)) 
+               (iface.scr.tw_cols - clock_pad - (9 * indent)) ("  " ^ msg);
+            assert (mvwaddch iface.scr.timed_win rem_top_line 
+               (clock_pad + (9 * indent)) acs.Acs.vline)
          end else
             ();
          (* draw any remaining lines of this reminder, as determined by the duration *)
@@ -369,10 +371,10 @@ let draw_timed_window iface reminders top lines =
                   wattroff iface.scr.timed_win A.underline;
                iface.timed_lineinfo.(rem_top_line + !count) <- 
                   Some (filename, line_num, time_str ^ msg);
-               trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) (8 + (10 * indent)) 
-                  (iface.scr.tw_cols - 8 - (10 * indent)) " ";
+               trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) 
+                  (clock_pad + (9 * indent)) (iface.scr.tw_cols - clock_pad - (9 * indent)) " ";
                assert (mvwaddch iface.scr.timed_win (rem_top_line + !count) 
-                  (8 + (10 * indent)) acs.Acs.vline)
+                  (clock_pad + (9 * indent)) acs.Acs.vline)
             end else
                ();
             count := succ !count
