@@ -632,29 +632,23 @@ let draw_msg iface =
    Rcfile.color_off iface.scr.msg_win Rcfile.Status;
    wattroff iface.scr.msg_win A.bold;
    (* draw the full MSG string, word wrapping as necessary *)
-   Rcfile.color_on iface.scr.msg_win Rcfile.Description;
-   let rec render_desc times descriptions i =
-      let rec render_line lines line_num =
+   let pad = String.make 16 ' ' in
+   let rec render_desc times descriptions output =
+      let rec render_line lines temp_output =
          match lines with
          |[] ->
-            line_num
-         |line :: tail ->
-            if line_num < pred iface.scr.mw_lines then begin
-               assert (mvwaddstr iface.scr.msg_win line_num 20 line);
-               render_line tail (succ line_num)
-            end else
-               line_num
+            temp_output
+         |line :: lines_tail ->
+            render_line lines_tail ((pad ^ line) :: temp_output)
       in
       match descriptions with
       |[] ->
-         ()
-      |desc :: tail ->
-         if i < pred iface.scr.mw_lines then begin
-            assert (mvwaddstr iface.scr.msg_win i 5 (List.hd times));
-            let line_num = render_line desc i in
-            render_desc (List.tl times) tail line_num
-         end else
-            ()
+         List.rev output
+      |desc :: desc_tail ->
+         let time_str = Str.string_before ((List.hd times) ^ pad) 16 in
+         let first_line = time_str ^ (List.hd desc) in
+         render_desc (List.tl times) desc_tail 
+            ((render_line (List.tl desc) []) @ first_line :: output)
    in
    let (times, descriptions) =
       match iface.selected_side with
@@ -675,7 +669,23 @@ let draw_msg iface =
          |Some (_, _, msg) -> ([""], [word_wrap msg (iface.scr.mw_cols - 20)])
          end
    in
-   render_desc times descriptions 1;
+   let desc_lines = render_desc times descriptions [] in
+   (* draw the rendered lines to the screen *)
+   Rcfile.color_on iface.scr.msg_win Rcfile.Description;
+   let rec draw_desc_lines lines start line_num =
+      match lines with
+      |[] ->
+         ()
+      |line :: tail ->
+         if start > 0 then
+            draw_desc_lines tail (pred start) line_num
+         else if line_num < pred iface.scr.mw_lines then begin
+            assert (mvwaddstr iface.scr.msg_win line_num 5 line);
+            draw_desc_lines tail start (succ line_num)
+         end else
+            ()
+   in
+   draw_desc_lines desc_lines 0 1;
    Rcfile.color_off iface.scr.msg_win Rcfile.Description;
    assert (wnoutrefresh iface.scr.msg_win)
 
