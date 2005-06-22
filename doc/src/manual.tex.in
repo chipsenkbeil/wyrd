@@ -16,7 +16,7 @@
 \usepackage{fullpage}
 %@% ELSE %@%
 \usepackage{latex2man}
-\setVersion{0.3}
+\setVersion{1.0}
 %@% END-IF %@%
 
 % End preamble
@@ -24,7 +24,7 @@
 
 \begin{document}
 %@% IF LATEX %@%
-\title{Wyrd v0.3 User Manual}
+\title{Wyrd v1.0 User Manual}
 \author{Paul J. Pelzl}
 \date{May 4, 2005}
 \maketitle
@@ -108,7 +108,7 @@ to complete the installation process.
    \texttt{wyrdrc} is the configuration textfile for the \Cmd{wyrd}{1} console calendar application.
 \end{Name}
    %@% ELSE %@%
-\begin{Name}{1}{wyrd}{Paul J. Pelzl}{a console calendar application}{Wyrd 0.3 Manpage}
+\begin{Name}{1}{wyrd}{Paul J. Pelzl}{a console calendar application}{Wyrd 1.0 Manpage}
    \Prog{wyrd} is a text-based front-end to \Cmd{remind}{1}, a sophisticated
    calendar and alarm program.
 \end{Name}
