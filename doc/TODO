@@ -1,6 +1,8 @@
 Wyrd To-Do list
 ------------------------------------------------------------------------
 
+* add a refresh function
+
 * Reconsider the default keymapping, which suffers from inconsistency.
 
 * Figure out some way to handle overlapping timed reminders.
