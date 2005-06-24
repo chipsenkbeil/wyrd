@@ -85,9 +85,14 @@ following software installed:
       (and development headers)
    \item 
 %BEGIN LATEX
-Remind \footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php} $\ge$ 3.0.23
+      Remind \footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php} $\ge$ 3.0.23
 %END LATEX
 %HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Remind</a> >= 3.0.23 \end{rawhtml}
+   \item 
+%BEGIN LATEX
+      GNU make\footnote{http://www.gnu.org/software/make/}
+%END LATEX
+%HEVEA \begin{rawhtml} <a href="http://www.gnu.org/software/make/">GNU make</a> \end{rawhtml}
    \item standard Unix utilities such as \texttt{cat}, \texttt{sort}, \texttt{cal}, and
       \texttt{less} 
 \end{itemize}
@@ -100,7 +105,8 @@ After compiling, become root and execute
 \begin{verbatim}
 make install
 \end{verbatim}
-to complete the installation process.
+to complete the installation process.  The \texttt{make} command here should correspond to GNU make; on some
+systems (particularly *BSD), you may need to use \texttt{gmake}.
 
 %@% ELSE %@%
    %@% IF WYRDRC %@%
