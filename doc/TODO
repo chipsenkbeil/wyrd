@@ -1,6 +1,19 @@
 Wyrd To-Do list
 ------------------------------------------------------------------------
 
+* Add commands to jump to the next/previous reminder in time.
+
+* Add a TAG handler that hides reminders from counting towards the
+  calendar coloration.  (Are there any other TAG options that could
+  be useful?).
+
+* Consider incremental searching.
+
+* Think about centering the timed reminder view vertically so that the
+  selected timeslot is in the middle.  (Make it optional.)
+
+* Consider an Orpie-like abbreviation syntax for inputting commands.
+
 * When LINES is sufficiently large, consider adding a bit more month context in
   the calendar window at the upper right.
 
