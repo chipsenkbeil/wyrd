@@ -1,6 +1,9 @@
 Wyrd To-Do list
 ------------------------------------------------------------------------
 
+* When entering a search string, check that characters are printable
+  before trying to print them.
+
 * Add commands to jump to the next/previous reminder in time.
 
 * Add a TAG handler that hides reminders from counting towards the
