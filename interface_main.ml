@@ -572,12 +572,11 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
       end;
       let r = Remind.create_three_month iface.top_timestamp in
       (* if the untimed list has been altered, change the focus to
-       * the timed window *)
+       * the first element of the list *)
       let new_iface =
          if List.length r.Remind.curr_untimed <> 
             List.length reminders.Remind.curr_untimed then {
-            iface with selected_side = Left;
-                       top_untimed = 0;
+            iface with top_untimed = 0;
                        top_desc = 0;
                        right_selection = 1
             }
@@ -875,7 +874,12 @@ let handle_edit (iface : interface_state_t) reminders =
    in
    begin match fl with
    |None ->
-      (iface, reminders)
+      if iface.selected_side = Left then
+         handle_new_reminder iface reminders Timed
+         (Utility.expand_file !Rcfile.reminders_file)
+      else
+         handle_new_reminder iface reminders Untimed
+         (Utility.expand_file !Rcfile.reminders_file)
    |Some (filename, line_num, msg) -> 
       let filename_sub = Str.regexp "%f" in
       let lineno_sub   = Str.regexp "%n" in
@@ -893,13 +897,13 @@ let handle_edit (iface : interface_state_t) reminders =
          ()
       end;
       let r = Remind.create_three_month iface.top_timestamp in
-      (* if the untimed list has been altered, change the focus to
-       * the timed window *)
+      (* if the untimed list has been altered, change the focus
+       * to the first element *)
       let new_iface =
          if List.length r.Remind.curr_untimed <> 
             List.length reminders.Remind.curr_untimed then {
-            iface with selected_side = Left;
-                       top_untimed = 0;
+            iface with top_untimed = 0;
+                       top_desc = 0;
                        right_selection = 1
             }
          else

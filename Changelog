@@ -3,6 +3,10 @@ Wyrd ChangeLog
 
 2005-09-13     The untimed reminders window now accepts focus even when
                there are no untimed reminders.
+
+               Executing the 'edit' command on a blank timeslot now creates a
+               new timed reminder.  Hitting 'edit' on a blank untimed reminders
+               list creates a new untimed reminder.
                
                Added support for 'nodisplay' and 'noweight' TAG parameters,
                which can be used to suppress display of reminders or give
