@@ -1,6 +1,15 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-09-13     Added the 'center_cursor' option, which can be used to fix the 
+               cursor in the center of the timed reminders window while 
+               scrolling.
+
+2005-09-12     Fixed an assertion failure caused by entering an unprintable
+               character in a search string.
+
+2005-06-23     Released 1.0.0.
+
 2005-06-22     Added a screen refresh function.
 
 2005-06-21     Implemented overlapping timed reminders and associated routines 

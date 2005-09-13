@@ -46,7 +46,8 @@ set selection_12_hour="true"
 set status_12_hour="true"
 set description_12_hour="true"
 
-# scroll the schedule to keep the cursor in the center
+# whether or not to keep the cursor centered when scrolling through timed
+# reminders
 set center_cursor="false"
 
 # key bindings

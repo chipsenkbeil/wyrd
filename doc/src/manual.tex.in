@@ -24,9 +24,9 @@
 
 \begin{document}
 %@% IF LATEX %@%
-\title{Wyrd v1.0 User Manual}
+\title{Wyrd v1.1 User Manual}
 \author{Paul J. Pelzl}
-\date{June 22, 2005}
+\date{September 14, 2005}
 \maketitle
 
 \begin{center}
@@ -524,6 +524,12 @@ CONFIGURATION VARIABLES section.
    \item \texttt{description\_12\_hour} \\
       A boolean value that determines whether reminder start and end times are
       drawn using 12- or 24-hour time in the description window.
+   \item \texttt{center\_cursor} \\
+      A boolean value that determines how the screen and cursor move during 
+      scrolling operations.  When set to \texttt{"true"}, the cursor is fixed 
+      in the center of the timed reminders window, and the schedule scrolls around
+      it.  When set to \texttt{"false"} (the default), the cursor will move up
+      and down the schedule during scrolling operations.
 \end{itemize}
 For maximum usefulness, \texttt{busy\_level1} $<$ \texttt{busy\_level2} $<$ 
 \texttt{busy\_level3} $<$ \texttt{busy\_level4}.
