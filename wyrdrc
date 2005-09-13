@@ -98,6 +98,8 @@ bind "n"                 search_next
 bind "/"                 begin_search
 bind "r"                 view_remind
 bind "R"                 view_remind_all
+bind "c"                 view_week
+bind "C"                 view_month
 bind "\\Cl"              refresh
 bind "Q"                 quit
 

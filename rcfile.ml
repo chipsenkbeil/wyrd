@@ -44,8 +44,8 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | NewTimedDialog | NewUntimedDialog | SwitchWindow 
                  | SearchNext | BeginSearch | Quit | ViewReminders
                  | ScrollDescUp | ScrollDescDown | Refresh
-                 | ViewAllReminders | NewGenReminder of int
-                 | NewGenReminderDialog of int
+                 | ViewAllReminders | ViewWeek | ViewMonth
+                 |NewGenReminder of int | NewGenReminderDialog of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
@@ -317,6 +317,8 @@ let operation_of_string command_str =
    |"begin_search"            -> CommandOp BeginSearch
    |"view_remind"             -> CommandOp ViewReminders
    |"view_remind_all"         -> CommandOp ViewAllReminders
+   |"view_week"               -> CommandOp ViewWeek
+   |"view_month"              -> CommandOp ViewMonth
    |"refresh"                 -> CommandOp Refresh 
    |"entry_complete"          -> EntryOp EntryComplete
    |"entry_backspace"         -> EntryOp EntryBackspace

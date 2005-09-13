@@ -1,9 +1,13 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-09-13     Implemented the 'edit_any' and associated 'edit_any_template',
-               which can be used to edit a reminder file without selecting
-               any particular reminder.
+2005-09-13     Implemented the 'view_week' and 'view_month' commands, which
+               view Remind's formatted weekly or monthly calendars for the
+               selected date.
+
+               Implemented the 'edit_any' command and associated
+               'edit_any_template', which can be used to edit a reminder file
+               without selecting any particular reminder.
                
                The untimed reminders window now accepts focus even when
                there are no untimed reminders.

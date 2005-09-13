@@ -740,14 +740,22 @@ let handle_begin_search (iface : interface_state_t) reminders =
    (new_iface, reminders)
 
 
-(* View the reminders for the selected date using 'less' *)
-let handle_view_reminders (iface : interface_state_t) reminders =
+(* View the reminders for the selected date using 'less'.
+ * If 'trigger_all' is true, then all nonexpired reminders are
+ * triggered. *)
+let handle_view_reminders (iface : interface_state_t) reminders trigger_all =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
    let rem_date_str = (Remind.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let command = "remind -q -g " ^ !Rcfile.reminders_file ^ " " ^
+   let partial_command =
+      if trigger_all then
+         "remind -q -g -t "
+      else
+         "remind -q -g "
+   in
+   let command = partial_command ^ !Rcfile.reminders_file ^ " " ^
    rem_date_str ^ " | less -c" in
    def_prog_mode ();
    endwin ();
@@ -761,14 +769,24 @@ let handle_view_reminders (iface : interface_state_t) reminders =
    handle_refresh iface reminders
 
 
-(* View all non-expired reminders for the selected date using 'less' *)
-let handle_view_all_reminders (iface : interface_state_t) reminders =
+
+(* View Remind's formatted calendar output for the selected date.  If
+ * 'week_only' is true, then create a week calendar, otherwise a month
+ * calendar. *)
+let handle_view_calendar (iface : interface_state_t) reminders week_only =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
    let rem_date_str = (Remind.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let command = "remind -q -g -t " ^ !Rcfile.reminders_file ^ " " ^
+   let partial_command = 
+      if week_only then
+         Printf.sprintf "remind -c+1 -w%d " iface.scr.cols
+      else
+         Printf.sprintf "remind -c -w%d " iface.scr.cols
+   in
+   let weekday_option = if !Rcfile.week_starts_monday then "-m " else "" in
+   let command = partial_command ^ weekday_option ^ !Rcfile.reminders_file ^ " " ^
    rem_date_str ^ " | less -c" in
    def_prog_mode ();
    endwin ();
@@ -780,6 +798,7 @@ let handle_view_all_reminders (iface : interface_state_t) reminders =
       ()
    end;
    handle_refresh iface reminders
+
 
 
 (* Handle scrolling down during selection dialog loop *)
@@ -1038,9 +1057,13 @@ let handle_keypress key (iface : interface_state_t) reminders =
          |Rcfile.BeginSearch ->
             handle_begin_search iface reminders
          |Rcfile.ViewReminders ->
-            handle_view_reminders iface reminders
+            handle_view_reminders iface reminders false
          |Rcfile.ViewAllReminders ->
-            handle_view_all_reminders iface reminders
+            handle_view_reminders iface reminders true
+         |Rcfile.ViewWeek ->
+            handle_view_calendar iface reminders true
+         |Rcfile.ViewMonth ->
+            handle_view_calendar iface reminders false
          |Rcfile.Refresh ->
             (* NOTE: I'm not sure why the endwin call is necessary here,
              * but I'm having problems getting a true full-screen refresh
