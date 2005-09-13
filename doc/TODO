@@ -9,9 +9,6 @@ Wyrd To-Do list
 
 * Consider incremental searching.
 
-* Think about centering the timed reminder view vertically so that the
-  selected timeslot is in the middle.  (Make it optional.)
-
 * Consider an Orpie-like abbreviation syntax for inputting commands.
 
 * When LINES is sufficiently large, consider adding a bit more month context in

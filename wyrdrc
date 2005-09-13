@@ -22,11 +22,11 @@ set untimed_template="REM %M %d %y MSG "
 
 # weekly recurrence
 set template0="REM %w AT %h:%m DURATION 1:00 MSG "
-set template1="REM %w DURATION 1:00 MSG "
+set template1="REM %w MSG "
 
 # monthly recurrence
 set template2="REM %d AT %h:%m DURATION 1:00 MSG "
-set template3="REM %d DURATION 1:00 MSG "
+set template3="REM %d MSG "
 
 
 # number of reminders per day allowed for each calendar colorization level

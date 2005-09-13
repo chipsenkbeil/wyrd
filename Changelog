@@ -1,7 +1,10 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-09-13     Added the 'center_cursor' option, which can be used to fix the 
+2005-09-13     Removed nonsensical DURATION specifiers from default weekly and 
+               monthly untimed reminder templates.
+               
+               Added the 'center_cursor' option, which can be used to fix the 
                cursor in the center of the timed reminders window while 
                scrolling.
 
