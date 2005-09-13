@@ -961,12 +961,16 @@ let handle_keypress key (iface : interface_state_t) reminders =
          end
       with Not_found ->
          begin try
-            let c = char_of_int key in
-            let new_iface = {
-               iface with search_input = iface.search_input ^ (String.make 1 c)
-            } in
-            draw_error new_iface ("search expression: " ^ new_iface.search_input) true;
-            (new_iface, reminders)
+            (* only printable characters are accepted for search strings *)
+            if key >= 32 && key <= 126 then begin
+               let c = char_of_int key in
+               let new_iface = {
+                  iface with search_input = iface.search_input ^ (String.make 1 c)
+               } in
+               draw_error new_iface ("search expression: " ^ new_iface.search_input) true;
+               (new_iface, reminders)
+            end else
+               failwith "cannot search for unprintable characters"
          with Failure _ ->
             let _ = beep () in
             (iface, reminders)
