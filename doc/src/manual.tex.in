@@ -281,6 +281,19 @@ requires the use of \texttt{"remind -n"}, which operates only forward in time.
 You can exit Wyrd by pressing \texttt{'Q'}.  If the screen is corrupted for some
 reason, hit \texttt{'Ctrl-L'} to refresh the display.
 
+\subsection{Miscellaneous}
+
+Remind's \texttt{TAG} specifier may be used to cause Wyrd to give special treatment
+to certain reminders.  If a reminder line includes the clause \texttt{"TAG noweight"},
+then Wyrd will not give that reminder any weight when determining the ``busy level''
+colorations applied to the month calendar.  If a reminder line includes the clause
+\texttt{"TAG nodisplay"}, then Wyrd will neither display that reminder nor give it any
+weight when determining the month calendar colorations.  The tag parameters are
+case insensitive.
+
+WARNING: These tag parameters are not guaranteed to interact well with other
+Remind front-ends such as tkremind.
+
 %@% END-IF %@%
 % (!WYRDRC)
 

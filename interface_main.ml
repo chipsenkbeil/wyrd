@@ -625,10 +625,10 @@ let handle_find_next (iface : interface_state_t) reminders =
       let (day_start_ts, _) = Unix.mktime temp1 in
       let (day_end_ts, _)   = Unix.mktime temp2 in
       (* filter functions to determine reminders falling on the occurrence day *)
-      let is_current_untimed (rem_ts, msg, _, _) =
+      let is_current_untimed (rem_ts, msg, _, _, _) =
          rem_ts >= day_start_ts && rem_ts < day_end_ts
       in
-      let is_current_timed (rem_ts, msg, _, _, _) =
+      let is_current_timed (rem_ts, msg, _, _, _, _) =
          rem_ts >= day_start_ts && rem_ts < day_end_ts
       in
       (* test the untimed reminders list for entries that match the regex *)
@@ -639,7 +639,7 @@ let handle_find_next (iface : interface_state_t) reminders =
             draw_error iface "search expression not found." false;
             assert (doupdate ());
             (iface, reminders)
-         |(ts, msg, _, _) :: tail ->
+         |(ts, msg, _, _, _) :: tail ->
             begin try
                if ts > selected_ts then
                   let _ = Str.search_forward iface.search_regex msg 0 in
@@ -697,7 +697,7 @@ let handle_find_next (iface : interface_state_t) reminders =
                List.filter is_current_untimed new_reminders.Remind.curr_untimed
             in
             check_untimed today_untimed 1
-         |(ts, _, msg, _, _) :: tail ->
+         |(ts, _, msg, _, _, _) :: tail ->
             begin try
                if ts > selected_ts then
                   let _ = Str.search_forward iface.search_regex msg 0 in

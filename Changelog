@@ -1,7 +1,12 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-09-13     Removed nonsensical DURATION specifiers from default weekly and 
+2005-09-13     Added support for 'nodisplay' and 'noweight' TAG parameters,
+               which can be used to suppress display of reminders or give
+               them no weight when determining the "busy level" colorations
+               on the month calendar.
+
+               Removed nonsensical DURATION specifiers from default weekly and 
                monthly untimed reminder templates.
                
                Added the 'center_cursor' option, which can be used to fix the 

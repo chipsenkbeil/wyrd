@@ -318,7 +318,7 @@ let draw_timed_window iface reminders top lines =
       begin match rem_list with
       |[] ->
          ()
-      |(start, finish, msg, filename, line_num) :: tail ->
+      |(start, finish, msg, filename, line_num, has_weight) :: tail ->
          let rem_top_line =
             round_down ((start -. iface.top_timestamp) /. (time_inc iface))
          in
@@ -521,7 +521,7 @@ let draw_untimed (iface : interface_state_t) reminders =
    Rcfile.color_on iface.scr.untimed_win Rcfile.Untimed_reminder;
    (* Filter the reminders list to find only those corresponding to the
     * selected day *)
-   let is_current (rem_ts, msg, filename, line_num) =
+   let is_current (rem_ts, msg, filename, line_num, has_weight) =
       rem_ts >= day_start_ts && rem_ts < day_end_ts
    in
    let today_reminders = List.filter is_current reminders in
@@ -542,7 +542,7 @@ let draw_untimed (iface : interface_state_t) reminders =
       match rem_list with
       |[] ->
          ()
-      |(rem_ts, msg, filename, line_num) :: tail ->
+      |(rem_ts, msg, filename, line_num, has_weight) :: tail ->
          if line < iface.scr.uw_lines then
             if n >= iface.top_untimed then begin
                if line = iface.right_selection && iface.selected_side = Right then
