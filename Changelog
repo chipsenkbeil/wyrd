@@ -1,7 +1,11 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-09-13     The untimed reminders window now accepts focus even when
+2005-09-13     Implemented the 'edit_any' and associated 'edit_any_template',
+               which can be used to edit a reminder file without selecting
+               any particular reminder.
+               
+               The untimed reminders window now accepts focus even when
                there are no untimed reminders.
 
                Executing the 'edit' command on a blank timeslot now creates a

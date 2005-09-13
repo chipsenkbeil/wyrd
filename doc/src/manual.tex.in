@@ -250,6 +250,14 @@ file in your editor and move the cursor to the appropriate \texttt{REM} line.
 If you select a timeslot that contains multiple overlapping reminders, Wyrd
 will provide a dialog that allows you to select the desired reminder.
 
+If you hit \texttt{<enter>} on a blank timeslot, Wyrd will begin creating a new
+timed or untimed reminder (depending on whether the timed or the untimed window
+is selected).
+
+Finally, pressing \texttt{'e'} will open the reminder file in your editor without
+attempting to select any particular reminder.
+
+
 \subsection{Viewing Reminders}
 
 Aside from viewing reminders as they fall in the schedule, you can press
@@ -492,6 +500,10 @@ CONFIGURATION VARIABLES section.
       \texttt{'\%f'} will be substituted with a filename to edit.  Ideally, this
       command should move the cursor to the last line of the file, where the new
       reminder template is created.
+   \item \texttt{edit\_any\_command} \\
+      Controls the command used for editing a reminder file without selecting
+      any particular reminder.  The special character \texttt{'\%f'} will be
+      substituted with a filename to edit.
    \item \texttt{timed\_template} \\
       Controls the format of the \texttt{REM} line created when editing a new
       timed reminder.  The following character substitutions will be made:
@@ -586,6 +598,8 @@ The following is a list of every available operation.
       zoom in on the day schedule view (this operation is cyclic)
    \item \texttt{edit} \\
       edit the selected reminder
+   \item \texttt{edit\_any} \\
+      edit a reminder file, without selecting any particular reminder
    \item \texttt{scroll\_description\_up} \\
       scroll the description window contents up (when possible)
    \item \texttt{scroll\_description\_down} \\

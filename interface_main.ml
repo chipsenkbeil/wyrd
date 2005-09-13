@@ -913,6 +913,39 @@ let handle_edit (iface : interface_state_t) reminders =
    end
 
 
+
+(* handle free editing of the reminders file *)
+let handle_edit_any (iface : interface_state_t) reminders remfile =
+   let filename_sub = Str.regexp "%f" in
+   let command = 
+      Str.global_replace filename_sub remfile !Rcfile.edit_any_command
+   in
+   def_prog_mode ();
+   endwin ();
+   let _ = Unix.system command in 
+   reset_prog_mode ();
+   begin try
+      assert (curs_set 0)
+   with _ ->
+      ()
+   end;
+   let r = Remind.create_three_month iface.top_timestamp in
+   (* if the untimed list has been altered, change the focus
+    * to the first element *)
+   let new_iface =
+      if List.length r.Remind.curr_untimed <> 
+         List.length reminders.Remind.curr_untimed then {
+         iface with top_untimed = 0;
+                    top_desc = 0;
+                    right_selection = 1
+         }
+      else
+         iface
+   in
+   handle_refresh new_iface r
+
+
+
 (* handle scrolling the description window up *)
 let handle_scroll_desc_up iface reminders =
    let new_iface = {iface with top_desc = succ iface.top_desc} in
@@ -963,6 +996,12 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_home iface reminders
          |Rcfile.Edit ->
             handle_edit iface reminders
+         |Rcfile.EditAny ->
+            let remfile = 
+               do_selection_dialog iface "Choose a reminders file"
+               (Remind.get_included_remfiles ())
+            in
+            handle_edit_any iface reminders remfile
          |Rcfile.ScrollDescUp ->
             handle_scroll_desc_up iface reminders
          |Rcfile.ScrollDescDown ->

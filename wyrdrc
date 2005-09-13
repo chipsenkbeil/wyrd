@@ -5,14 +5,18 @@ set reminders_file="~/.reminders"
 set edit_old_command="vim +%n %f"
 # command for editing a new appointment, given a filename %f
 set edit_new_command="vim -c '$' %f"
+# command for free editing of the reminders file, given a filename %f
+set edit_any_command="vim %f"
 
 # emacs settings
 #set edit_old_command="emacs +%n %f"
 #set edit_new_command="emacs %f -f end-of-buffer -f beginning-of-line"
+#set edit_any_command="emacs %f"
 
 # nano settings
 #set edit_old_command="nano +%n %f"
 #set edit_new_command="nano +9999999 %f"
+#set edit_any_command="nano %f"
 
 
 # templates for creating new appointments
@@ -79,6 +83,7 @@ bind "<home>"            home
 bind "z"                 zoom
 bind "<return>"          edit
 bind "<enter>"           edit
+bind "e"                 edit_any
 bind "d"                 scroll_description_up
 bind "D"                 scroll_description_down
 bind "t"                 new_timed

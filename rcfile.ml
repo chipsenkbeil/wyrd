@@ -40,7 +40,7 @@ let config_failwith s = raise (Config_failure s)
 
 type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay 
                  | NextWeek | PrevWeek | NextMonth | PrevMonth
-                 | Home | Zoom | Edit | NewTimed | NewUntimed 
+                 | Home | Zoom | Edit | EditAny | NewTimed | NewUntimed 
                  | NewTimedDialog | NewUntimedDialog | SwitchWindow 
                  | SearchNext | BeginSearch | Quit | ViewReminders
                  | ScrollDescUp | ScrollDescDown | Refresh
@@ -70,8 +70,9 @@ let table_entry_key = Hashtbl.create 20
 (* Default reminders file *)
 let reminders_file = ref "~/.reminders"
 (* Default editing command strings *)
-let edit_old_command = ref "vim +%n + %f"
+let edit_old_command = ref "vim +%n %f"
 let edit_new_command = ref "vim -c '$' %f"
+let edit_any_command = ref "vim %f"
 (* Default new reminder templates *)
 let timed_template   = ref "REM %M %d %y AT %h:%m DURATION 1:00 MSG "
 let untimed_template = ref "REM %M %d %y MSG "
@@ -284,6 +285,7 @@ let operation_of_string command_str =
    |"home"                    -> CommandOp Home
    |"zoom"                    -> CommandOp Zoom
    |"edit"                    -> CommandOp Edit
+   |"edit_any"                -> CommandOp EditAny
    |"scroll_description_up"   -> CommandOp ScrollDescUp
    |"scroll_description_down" -> CommandOp ScrollDescDown
    |"new_timed"               -> CommandOp NewTimed
@@ -441,6 +443,8 @@ let parse_line line_stream =
          parse_set "edit_old_command" edit_old_command (fun x -> x) "Expected a command string after "
       | [< 'Ident "edit_new_command" >] ->
          parse_set "edit_new_command" edit_new_command (fun x -> x) "Expected a command string after "
+      | [< 'Ident "edit_any_command" >] ->
+         parse_set "edit_any_command" edit_any_command (fun x -> x) "Expected a command string after "
       | [< 'Ident "timed_template" >] ->
          parse_set "timed_template" timed_template (fun x -> x) "Expected a template string after "
       | [< 'Ident "untimed_template" >] ->
