@@ -90,7 +90,7 @@ let string_of_tm_wday i =
    match i with
    | 0 -> "Sun"
    | 1 -> "Mon"
-   | 2 -> "Tuey"
+   | 2 -> "Tue"
    | 3 -> "Wed"
    | 4 -> "Thu"
    | 5 -> "Fri"
