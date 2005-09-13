@@ -24,6 +24,7 @@
 
 
 open Curses;;
+open Rcfile;;
 
 exception Not_handled;;
 
@@ -109,7 +110,7 @@ let make (std : screen_t) =
       top_untimed        = 0;
       top_desc           = 0;
       selected_side      = Left;
-      left_selection     = 1;
+      left_selection     = if !Rcfile.center_cursor then (std.tw_lines / 2) - 1 else 1;
       right_selection    = 1;
       zoom_level         = Hour;
       timed_lineinfo     = Array.make std.tw_lines [];

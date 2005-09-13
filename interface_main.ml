@@ -201,13 +201,35 @@ let handle_selection_change_scroll iface reminders =
    (new_iface, new_reminders)
 
 
-(* handle a "scroll down" event when the timed window is focused *)
-let handle_scrolldown_timed (iface : interface_state_t) reminders =
-   let iface = {
-      iface with top_untimed = 0;
-                 top_desc = 0;
-                 right_selection = 1
+(* handle a "scroll down" event when the timed window is focused
+ * and the center_cursor option is turned on *)
+let handle_scrolldown_timed_center (iface : interface_state_t) reminders =
+   let second_timestamp = timestamp_of_line iface 1 in
+   let iface2 = {
+      iface with top_timestamp = second_timestamp
    } in
+   let (new_iface, new_reminders) =
+      handle_selection_change_scroll iface2 reminders
+   in
+   (* use a curses scroll operation to shift up the timed window *)
+   assert (wscrl new_iface.scr.timed_win 1);
+   (* adjust lineinfo array to compensate for scrolling *)
+   Array.blit iface.timed_lineinfo 1 iface.timed_lineinfo 0
+      (pred (Array.length iface.timed_lineinfo));
+   (* do a two-line update to recenter the cursor *)
+   draw_timed_window new_iface new_reminders.Remind.all_timed
+      (iface.left_selection - 1) 2;
+   (* draw in the new line at the bottom of the screen *)
+   draw_timed_window new_iface new_reminders.Remind.all_timed
+      (iface.scr.tw_lines - 1) 1;
+   draw_date_strip new_iface;
+   (new_iface, new_reminders)
+
+
+
+(* handle a "scroll down" event when the timed window is focused
+ * and the center_cursor option is turned off *)
+let handle_scrolldown_timed_nocenter (iface : interface_state_t) reminders =
    if iface.left_selection < pred iface.scr.tw_lines then begin
       (* case 1: only the cursor moves *)
       let iface2 = {
@@ -243,6 +265,21 @@ let handle_scrolldown_timed (iface : interface_state_t) reminders =
    end
 
 
+
+(* handle a "scroll down" event when the timed window is focused *)
+let handle_scrolldown_timed (iface : interface_state_t) reminders =
+   let iface = {
+      iface with top_untimed = 0;
+                 top_desc = 0;
+                 right_selection = 1
+   } in
+   if !Rcfile.center_cursor then
+      handle_scrolldown_timed_center iface reminders
+   else
+      handle_scrolldown_timed_nocenter iface reminders
+
+
+
 (* handle a "scroll down" event when the untimed window is focused *)
 let handle_scrolldown_untimed (iface : interface_state_t) reminders =
    if iface.right_selection < pred iface.scr.uw_lines then begin
@@ -267,13 +304,33 @@ let handle_scrolldown_untimed (iface : interface_state_t) reminders =
 
 
 
-(* handle a "scroll up" event when the timed window is focused *)
-let handle_scrollup_timed (iface : interface_state_t) reminders =
-   let iface = {
-      iface with top_untimed = 0;
-                 top_desc = 0;
-                 right_selection = 1
+(* handle a "scroll up" event when the timed window is focused
+ * and the center_cursor option is turned on *)
+let handle_scrollup_timed_center (iface : interface_state_t) reminders =
+   let prev_timestamp = timestamp_of_line iface (-1) in
+   let iface2 = {
+      iface with top_timestamp = prev_timestamp
    } in
+   let (new_iface, new_reminders) = 
+      handle_selection_change_scroll iface2 reminders
+   in
+   (* use a curses scroll operation to shift up the timed window *)
+   assert (wscrl new_iface.scr.timed_win (-1));
+   (* adjust lineinfo array to compensate for scrolling *)
+   Array.blit iface.timed_lineinfo 0 iface.timed_lineinfo 1
+      (pred (Array.length iface.timed_lineinfo));
+   (* do a two-line update to recenter the cursor *)
+   draw_timed_window new_iface new_reminders.Remind.all_timed iface.left_selection 2;
+   (* draw in the new top line of the schedule *)
+   draw_timed_window new_iface new_reminders.Remind.all_timed 0 1;
+   draw_date_strip new_iface;
+   (new_iface, new_reminders)
+
+
+
+(* handle a "scroll up" event when the timed window is focused
+ * and the center_cursor option is turned off *)
+let handle_scrollup_timed_nocenter (iface : interface_state_t) reminders =
    if iface.left_selection > 0 then begin
       (* case 1: only the cursor moves *)
       let iface2 = {
@@ -306,6 +363,20 @@ let handle_scrollup_timed (iface : interface_state_t) reminders =
       draw_date_strip new_iface;
       (new_iface, new_reminders)
    end
+
+
+
+(* handle a "scroll up" event when the timed window is focused *)
+let handle_scrollup_timed (iface : interface_state_t) reminders =
+   let iface = {
+      iface with top_untimed = 0;
+                 top_desc = 0;
+                 right_selection = 1
+   } in
+   if !Rcfile.center_cursor then
+      handle_scrollup_timed_center iface reminders
+   else
+      handle_scrollup_timed_nocenter iface reminders
 
 
 (* handle a "scroll up" event when the untimed window is focused *)
@@ -417,13 +488,18 @@ let handle_switch_focus (iface : interface_state_t) reminders =
 
 (* handle switching to the current timeslot *)
 let handle_home (iface : interface_state_t) reminders =
-   let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
+   let curr_time = 
+      if !Rcfile.center_cursor then
+         Unix.localtime ((Unix.time ()) -. (time_inc iface) *. (float_of_int iface.left_selection)) 
+      else 
+         Unix.localtime ((Unix.time ()) -. (time_inc iface))
+   in
    let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
    let new_iface = {
       iface with top_timestamp   = rounded_time;
                  top_desc        = 0;
                  selected_side   = Left;
-                 left_selection  = 1;
+                 left_selection  = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 1;
                  right_selection = 1
    } in
    handle_selection_change new_iface reminders

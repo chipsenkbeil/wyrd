@@ -97,6 +97,8 @@ let schedule_12_hour    = ref false
 let selection_12_hour   = ref true
 let status_12_hour      = ref true
 let description_12_hour = ref true
+(* Center the schedule on the cursor? *)
+let center_cursor = ref true
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -481,6 +483,8 @@ let parse_line line_stream =
          parse_set "status_12_hour" status_12_hour bool_of_string "Expected a boolean string after "
       | [< 'Ident "description_12_hour" >] ->
          parse_set "description_12_hour" description_12_hour bool_of_string "Expected a boolean string after "
+      | [< 'Ident "center_cursor" >] ->
+         parse_set "center_cursor" center_cursor bool_of_string "Expected a boolean string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end
