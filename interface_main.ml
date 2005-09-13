@@ -165,7 +165,7 @@ let handle_resize (iface : interface_state_t) reminders =
    let resized_iface = {
       iface with scr = new_scr;
                  top_untimed = 0;
-                 left_selection = 1;
+                 left_selection = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 1;
                  right_selection = 1;
                  timed_lineinfo = Array.make new_scr.tw_lines []
    } in
@@ -647,21 +647,40 @@ let handle_find_next (iface : interface_state_t) reminders =
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface =
                      (* take care of highlighting the correct untimed reminder *)
-                     if n >= iface.scr.uw_lines then {
-                        iface with top_timestamp   = rounded_time;
-                                   top_untimed     = n - iface.scr.uw_lines + 1;
-                                   top_desc        = 0;
-                                   left_selection  = 0;
-                                   right_selection = pred iface.scr.uw_lines;
-                                   selected_side   = Right
-                     } else {
-                        iface with top_timestamp   = rounded_time;
-                                   top_untimed     = 0;
-                                   top_desc        = 0;
-                                   left_selection  = 0;
-                                   right_selection = n;
-                                   selected_side   = Right
-                     }
+                     if n >= iface.scr.uw_lines then 
+                        if !Rcfile.center_cursor then {
+                           iface with top_timestamp   = rounded_time -. (time_inc iface) *. 
+                                                        (float_of_int (iface.scr.tw_lines / 2 - 1));
+                                      top_untimed     = n - iface.scr.uw_lines + 1;
+                                      top_desc        = 0;
+                                      left_selection  = (iface.scr.tw_lines / 2) - 1;
+                                      right_selection = pred iface.scr.uw_lines;
+                                      selected_side   = Right
+                        } else {
+                           iface with top_timestamp   = rounded_time;
+                                      top_untimed     = n - iface.scr.uw_lines + 1;
+                                      top_desc        = 0;
+                                      left_selection  = 0;
+                                      right_selection = pred iface.scr.uw_lines;
+                                      selected_side   = Right
+                        }
+                     else 
+                        if !Rcfile.center_cursor then {
+                           iface with top_timestamp   = rounded_time -. (time_inc iface) *. 
+                                                        (float_of_int (iface.scr.tw_lines / 2 - 1));
+                                      top_untimed     = 0;
+                                      top_desc        = 0;
+                                      left_selection  = (iface.scr.tw_lines / 2) - 1 ;
+                                      right_selection = n;
+                                      selected_side   = Right
+                        } else {
+                           iface with top_timestamp   = rounded_time;
+                                      top_untimed     = 0;
+                                      top_desc        = 0;
+                                      left_selection  = 0;
+                                      right_selection = n;
+                                      selected_side   = Right
+                        }
                   in
                   handle_selection_change new_iface new_reminders
                else
@@ -684,13 +703,23 @@ let handle_find_next (iface : interface_state_t) reminders =
                   let _ = Str.search_forward iface.search_regex msg 0 in
                   let tm = Unix.localtime ts in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
-                  let new_iface = {
-                     iface with top_timestamp   = rounded_time;
-                                top_desc        = 0;
-                                left_selection  = 0;
-                                right_selection = 1;
-                                selected_side   = Left
-                  } in
+                  let new_iface = 
+                     if !Rcfile.center_cursor then {
+                        iface with top_timestamp   = rounded_time -. (time_inc iface) *. 
+                                                     (float_of_int (iface.scr.tw_lines / 2 - 1));
+                                   top_desc        = 0;
+                                   left_selection  = (iface.scr.tw_lines / 2) - 1;
+                                   right_selection = 1;
+                                   selected_side   = Left
+                        } 
+                     else {
+                        iface with top_timestamp   = rounded_time;
+                                   top_desc        = 0;
+                                   left_selection  = 0;
+                                   right_selection = 1;
+                                   selected_side   = Left
+                     } 
+                  in
                   handle_selection_change new_iface new_reminders
                else
                   raise Not_found

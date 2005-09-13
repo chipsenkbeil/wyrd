@@ -98,7 +98,7 @@ let selection_12_hour   = ref true
 let status_12_hour      = ref true
 let description_12_hour = ref true
 (* Center the schedule on the cursor? *)
-let center_cursor = ref true
+let center_cursor = ref false
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
