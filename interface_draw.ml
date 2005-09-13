@@ -285,11 +285,14 @@ let draw_timed_window iface reminders top lines =
       else
          twentyfour_hour_string
    in
-   let desc_string_of_tm =
+   (* this ensures that if there are multiple reminder descriptions
+    * displayed simultaneously, the dashes between start and end times
+    * will line up properly *)
+   let (desc_string_of_tm1, desc_string_of_tm2) =
       if !Rcfile.description_12_hour then
-         twelve_hour_string
+         (twelve_hour_string_pad, twelve_hour_string)
       else
-         twentyfour_hour_string
+         (twentyfour_hour_string, twentyfour_hour_string)
    in
    (* draw in the blank timeslots *)
    Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
@@ -324,10 +327,10 @@ let draw_timed_window iface reminders top lines =
          in
          let get_time_str () =
             if finish > start then
-               (desc_string_of_tm (Unix.localtime start)) ^ "-" ^
-               (desc_string_of_tm (Unix.localtime finish)) ^ " "
+               (desc_string_of_tm1 (Unix.localtime start)) ^ "-" ^
+               (desc_string_of_tm2 (Unix.localtime finish)) ^ " "
             else
-               (desc_string_of_tm (Unix.localtime start)) ^ " "
+               (desc_string_of_tm1 (Unix.localtime start)) ^ " "
          in
          (* draw the top line of a reminder *)
          let clock_pad = if !Rcfile.schedule_12_hour then 10 else 8 in

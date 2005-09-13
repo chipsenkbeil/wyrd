@@ -1,7 +1,10 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-09-13     Fixed a typo in the short string representation for Tuesday.
+2005-09-13     Improved the alignment of timestamps in the reminder description
+               window.
+
+               Fixed a typo in the short string representation for Tuesday.
 
                Implemented the 'view_week' and 'view_month' commands, which
                view Remind's formatted weekly or monthly calendars for the
