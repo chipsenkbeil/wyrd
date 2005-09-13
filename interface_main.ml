@@ -785,9 +785,12 @@ let handle_view_calendar (iface : interface_state_t) reminders week_only =
       else
          Printf.sprintf "remind -c -w%d " iface.scr.cols
    in
+   let time_option = if !Rcfile.description_12_hour then "-b0 " else "-b1 " in
    let weekday_option = if !Rcfile.week_starts_monday then "-m " else "" in
-   let command = partial_command ^ weekday_option ^ !Rcfile.reminders_file ^ " " ^
-   rem_date_str ^ " | less -c" in
+   let command = 
+      partial_command ^ time_option ^ weekday_option ^ 
+      !Rcfile.reminders_file ^ " " ^ rem_date_str ^ " | less -c" 
+   in
    def_prog_mode ();
    endwin ();
    let _ = Unix.system command in 

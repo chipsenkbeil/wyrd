@@ -559,7 +559,9 @@ CONFIGURATION VARIABLES section.
       12- or 24-hour clock.
    \item \texttt{description\_12\_hour} \\
       A boolean value that determines whether reminder start and end times are
-      drawn using 12- or 24-hour time in the description window.
+      drawn using 12- or 24-hour time in the description window.  This value
+      also controls the format of timestamps in the formatted calendars
+      produced by \texttt{view\_week} and \texttt{view\_month}.
    \item \texttt{center\_cursor} \\
       A boolean value that determines how the screen and cursor move during 
       scrolling operations.  When set to \texttt{"true"}, the cursor is fixed 
@@ -651,8 +653,10 @@ The following is a list of every available operation.
       non-expired reminders
    \item \texttt{view\_week} \\
       view Remind's formatted calendar for the week that contains the selected date
+      (the in-calendar timestamp formats are determined by the value of \texttt{description\_12\_hour})
    \item \texttt{view\_month} \\
       view Remind's formatted calendar for the month that contains the selected date
+      (the in-calendar timestamp formats are determined by the value of \texttt{description\_12\_hour})
    \item \texttt{refresh} \\
       refresh the display
    \item \texttt{quit} \\
