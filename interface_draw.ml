@@ -531,7 +531,6 @@ let draw_untimed (iface : interface_state_t) reminders =
       iface.right_selection > List.length today_reminders then
          if List.length today_reminders = 0 then {
             iface with right_selection = 1;
-                       selected_side   = Left
          } else {
             iface with right_selection = List.length today_reminders
          }
@@ -541,7 +540,12 @@ let draw_untimed (iface : interface_state_t) reminders =
    let rec render_lines rem_list n line =
       match rem_list with
       |[] ->
-         ()
+         if n = 0 && iface.selected_side = Right then begin
+            wattron iface.scr.untimed_win A.reverse;
+            trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 3)  blank;
+            wattroff iface.scr.untimed_win A.reverse
+         end else
+            ()
       |(rem_ts, msg, filename, line_num, has_weight) :: tail ->
          if line < iface.scr.uw_lines then
             if n >= iface.top_untimed then begin

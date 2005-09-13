@@ -475,15 +475,12 @@ let handle_zoom (iface : interface_state_t) reminders =
 
 (* handle switching window focus *)
 let handle_switch_focus (iface : interface_state_t) reminders =
-   if iface.len_untimed > 0 then
-      let new_iface = 
-         match iface.selected_side with
-         |Left  -> {iface with selected_side = Right}
-         |Right -> {iface with selected_side = Left}
-      in
-      handle_selection_change new_iface reminders
-   else
-      (iface, reminders)
+   let new_iface = 
+      match iface.selected_side with
+      |Left  -> {iface with selected_side = Right}
+      |Right -> {iface with selected_side = Left}
+   in
+   handle_selection_change new_iface reminders
 
 
 (* handle switching to the current timeslot *)

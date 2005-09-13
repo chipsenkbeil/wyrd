@@ -1,7 +1,10 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-09-13     Added support for 'nodisplay' and 'noweight' TAG parameters,
+2005-09-13     The untimed reminders window now accepts focus even when
+               there are no untimed reminders.
+               
+               Added support for 'nodisplay' and 'noweight' TAG parameters,
                which can be used to suppress display of reminders or give
                them no weight when determining the "busy level" colorations
                on the month calendar.
