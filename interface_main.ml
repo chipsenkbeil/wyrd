@@ -600,14 +600,22 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
  * filtered untimed list, and locate the first entry that matches the regex (if any).
  * If only one of the lists has a match, return that one; if both lists have a match,
  * return the one with the earlier timestamp.
- * Finally, reconfigure the iface record to highlight the matched entry. *)
-let handle_find_next (iface : interface_state_t) reminders =
+ * Finally, reconfigure the iface record to highlight the matched entry.
+ *
+ * The saved search regex can be ignored by providing Some regex as the
+ * override_regex parameter. *)
+let handle_find_next (iface : interface_state_t) reminders override_regex =
+   let search_regex =
+      match override_regex with
+      |None       -> iface.search_regex
+      |Some regex -> regex
+   in
    try
       (* Note: selected_ts is the timestamp of the next timeslot, minus one second.
        *       This ensures that searching begins immediately after the current
        *       selection. *)
       let selected_ts     = (timestamp_of_line iface (succ iface.left_selection)) -. 1.0 in
-      let occurrence_time = Remind.find_next iface.search_regex selected_ts in
+      let occurrence_time = Remind.find_next search_regex selected_ts in
       let new_reminders   = Remind.update_reminders reminders occurrence_time in
       let occurrence_tm   = Unix.localtime occurrence_time in
       let temp1 = {
@@ -646,7 +654,7 @@ let handle_find_next (iface : interface_state_t) reminders =
          |(ts, msg, _, _, _) :: tail ->
             begin try
                if ts > selected_ts then
-                  let _ = Str.search_forward iface.search_regex msg 0 in
+                  let _ = Str.search_forward search_regex msg 0 in
                   let tm = Unix.localtime ts in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface =
@@ -713,7 +721,7 @@ let handle_find_next (iface : interface_state_t) reminders =
          |(ts, _, msg, _, _, _) :: tail ->
             begin try
                if ts > selected_ts then
-                  let _ = Str.search_forward iface.search_regex msg 0 in
+                  let _ = Str.search_forward search_regex msg 0 in
                   let tm = Unix.localtime ts in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface = 
@@ -758,6 +766,19 @@ let handle_begin_search (iface : interface_state_t) reminders =
    } in
    draw_error iface "search expression: " true;
    (new_iface, reminders)
+
+
+(* Find the next reminder after the current selection.
+ * This algorithm is a dirty hack, but actually seems to work:
+ * 1) If an untimed reminder is selected, and if it is not the last
+ *    untimed reminder in the list, then highlight the next untimed reminder
+ * 2) Otherwise, run find_next with a regexp that matches anything. *)
+let handle_next_reminder (iface : interface_state_t) reminders =
+   if iface.selected_side = Right && 
+   iface.right_selection < iface.len_untimed - iface.top_untimed then 
+      handle_scrolldown_untimed iface reminders
+   else
+      handle_find_next iface reminders (Some (Str.regexp ""))
 
 
 (* View the reminders for the selected date using 'less'.
@@ -1076,9 +1097,11 @@ let handle_keypress key (iface : interface_state_t) reminders =
             in
             handle_new_reminder iface reminders (General x) remfile
          |Rcfile.SearchNext ->
-            handle_find_next iface reminders
+            handle_find_next iface reminders None
          |Rcfile.BeginSearch ->
             handle_begin_search iface reminders
+         |Rcfile.NextReminder ->
+            handle_next_reminder iface reminders
          |Rcfile.ViewReminders ->
             handle_view_reminders iface reminders false
          |Rcfile.ViewAllReminders ->
@@ -1120,7 +1143,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
                              search_input = "";
                              is_entering_search = false
                } in
-               handle_find_next new_iface reminders
+               handle_find_next new_iface reminders None
             with Failure err ->
                let new_iface = {
                   iface with search_input = "";

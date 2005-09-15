@@ -96,6 +96,7 @@ bind "m"                 new_template2
 bind "M"                 new_template3
 bind "n"                 search_next
 bind "/"                 begin_search
+bind "<tab>"             next_reminder
 bind "r"                 view_remind
 bind "R"                 view_remind_all
 bind "c"                 view_week

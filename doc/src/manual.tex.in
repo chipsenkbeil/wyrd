@@ -196,6 +196,7 @@ or reminders that are currently selected.
       jump back or forward by a week & \texttt{8}, \texttt{2} or \texttt{[}, \texttt{]} or \texttt{K}, \texttt{J} \\
       jump back or forward by a month & \texttt{\{}, \texttt{\}} \\
       jump to current date and time & \texttt{<home>} \\
+      jump to the next reminder & \texttt{<tab>} \\
       switch between schedule and untimed reminders window & \texttt{<left>}, \texttt{<right>} or \texttt{h}, \texttt{l} \\
       zoom in on the schedule & \texttt{z} \\
       scroll the description window up and down & \texttt{d}, \texttt{D} \\
@@ -294,6 +295,8 @@ The regular expression syntax is Emacs-compatible.
 
 Note: Sorry, there is no "search backward" function.  The search function
 requires the use of \texttt{"remind -n"}, which operates only forward in time.
+For the same reason, there is a command to jump forward to the next reminder,
+but no command to jump backward to the previous reminder.
 
 \subsection{Other Commands}
 
@@ -646,6 +649,8 @@ The following is a list of every available operation.
       begin entering a search string
    \item \texttt{search\_next} \\
       search for the next occurrence of the search string
+   \item \texttt{next\_reminder} \\
+      jump to the next reminder
    \item \texttt{view\_remind} \\
       view the output of \texttt{remind} for the selected date
    \item \texttt{view\_remind\_all} \\
