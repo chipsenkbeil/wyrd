@@ -1,7 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2005-09-15     Implemented the 'next_reminder' command, which jumps forward
+2005-09-15     Released 1.1.0.
+
+               Implemented the 'next_reminder' command, which jumps forward
                to the next reminder in chronological order.
 
                Made 'search_next' more robust--certain edge cases are now
