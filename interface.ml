@@ -106,11 +106,14 @@ let make (std : screen_t) =
       version            = Version.version;
       scr                = std;
       run_wyrd           = true;
-      top_timestamp      = rounded_time;
+      top_timestamp      = if !Rcfile.center_cursor then 
+                              rounded_time -. 60.0 *. 60.0 *. (float_of_int ((std.tw_lines / 2) - 2))
+                           else
+                              rounded_time -. 60.0 *. 60.0;
       top_untimed        = 0;
       top_desc           = 0;
       selected_side      = Left;
-      left_selection     = if !Rcfile.center_cursor then (std.tw_lines / 2) - 1 else 1;
+      left_selection     = if !Rcfile.center_cursor then (std.tw_lines / 2) - 1 else 2;
       right_selection    = 1;
       zoom_level         = Hour;
       timed_lineinfo     = Array.make std.tw_lines [];

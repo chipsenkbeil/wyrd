@@ -485,18 +485,17 @@ let handle_switch_focus (iface : interface_state_t) reminders =
 
 (* handle switching to the current timeslot *)
 let handle_home (iface : interface_state_t) reminders =
-   let curr_time = 
-      if !Rcfile.center_cursor then
-         Unix.localtime ((Unix.time ()) -. (time_inc iface) *. (float_of_int iface.left_selection)) 
-      else 
-         Unix.localtime ((Unix.time ()) -. (time_inc iface))
-   in
+   let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
    let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
    let new_iface = {
-      iface with top_timestamp   = rounded_time;
+      iface with top_timestamp = 
+                    if !Rcfile.center_cursor then
+                       rounded_time -. (time_inc iface) *. (float_of_int ((iface.scr.tw_lines / 2) - 2))
+                    else
+                       rounded_time -. (time_inc iface) *. 1.;
                  top_desc        = 0;
                  selected_side   = Left;
-                 left_selection  = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 1;
+                 left_selection  = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 2;
                  right_selection = 1
    } in
    handle_selection_change new_iface reminders
@@ -734,9 +733,9 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                                    selected_side   = Left
                         } 
                      else {
-                        iface with top_timestamp   = rounded_time;
+                        iface with top_timestamp   = rounded_time -. (time_inc iface) *. 2.;
                                    top_desc        = 0;
-                                   left_selection  = 0;
+                                   left_selection  = 2;
                                    right_selection = 1;
                                    selected_side   = Left
                      } 
