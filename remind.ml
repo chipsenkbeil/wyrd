@@ -486,13 +486,55 @@ let update_reminders rem timestamp =
          create_three_month timestamp
 
 
+
+(* Check whether the reminder listed at the specified timestamp with
+ * matching MSG value is tagged with 'nodisplay'.
+ *
+ * Note: this would be unnecessary if 'rem -n' could output TAG information... *)
+let has_nodisplay tm exact_msg =
+   let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
+                      (string_of_int tm.Unix.tm_mday) ^ " " ^
+                      (string_of_int (tm.Unix.tm_year + 1900)) in
+   let remind_channel = Unix.open_process_in ("remind -s+1 -g -b2 " ^ 
+   !Rcfile.reminders_file ^ " " ^ rem_date_str) in
+   let rem_regex = Str.regexp "[^ ]+ [^ ]+ \\([^ ]+\\) [^ ]+ [^ ]+ \\(.*\\)$" in
+   let msg_regex = Str.regexp_string exact_msg in
+   let nodisplay_regex = Str.regexp_case_fold ".*nodisplay" in
+   let rec find_msg () =
+      try
+         let line = input_line remind_channel in
+         if Str.string_match rem_regex line 0 then begin
+            let tag = Str.matched_group 1 line
+            and msg = Str.matched_group 2 line in
+            (* is this the reminder we're looking for? *)
+            if Str.string_match msg_regex msg 0 then
+               let _ = Unix.close_process_in remind_channel in
+               (* return value: does it have the 'nodisplay' tag? *)
+               Str.string_match nodisplay_regex tag 0
+            else
+               find_msg ()
+         end else
+            find_msg ()
+      with End_of_file ->
+         let _ = Unix.close_process_in remind_channel in
+         (* if something goes wrong, assume it's tagged 'nodisplay' *)
+         true
+   in
+   find_msg ()
+
+
+
 (* Look at all 'next' reminders after the given timestamp.  Search
  * through the list for the first occurrence of the search regexp, and return
  * a timestamp for that date.
  * This calls 'remind -n' twice--once for the current day, once for the next day.
  * The second call is necessary because reminders falling on the current day
  * but before the current timestamp will effectively suppress later recurrences
- * of that reminder. *)
+ * of that reminder. 
+ *
+ * We also have to make a separate check that the matched reminder is not tagged
+ * with 'nodisplay'; since these reminders don't show up on the display, Wyrd
+ * should not be able to match them. *)
 let find_next msg_regex timestamp =
    let rem_regex_timed = 
       Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([0-9]+\\):\\([0-9]+\\) \\([^ ]+.*\\)$"
@@ -506,6 +548,7 @@ let find_next msg_regex timestamp =
    let rem_date_str2 = (string_of_tm_mon tm2.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm2.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
+   flush stderr;
    let remind_channel = Unix.open_process_in ("remind -n -b1 " ^ !Rcfile.reminders_file ^
    " " ^ rem_date_str1 ^ " > /tmp/wyrd-tmp && remind -n -b1 " ^ !Rcfile.reminders_file ^
    " " ^ rem_date_str2 ^ " | cat /tmp/wyrd-tmp - | sort") in
@@ -535,8 +578,12 @@ let find_next msg_regex timestamp =
             if ts > timestamp then
                begin try
                   let _ = Str.search_forward msg_regex msg 0 in
-                  let _ = Unix.close_process_in remind_channel in
-                  ts
+                  (* only return the match if this value is not tagged 'nodisplay' *)
+                  if not (has_nodisplay temp msg) then
+                     let _ = Unix.close_process_in remind_channel in
+                     ts
+                  else
+                     check_messages ()
                with Not_found ->
                   check_messages ()
                end

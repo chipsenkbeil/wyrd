@@ -595,8 +595,11 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
  * First find the date of the occurrence, by matching on the output of 'remind
  * -n'.  For that date, recompute timed and untimed reminder lists.  Filter the
  * timed and untimed reminder lists to get only the entries falling on the
- * occurrence date.  Search through the filtered timed list first, then the
- * filtered untimed list, and locate the first entry that matches the regex.
+ * occurrence date.  Search through the filtered timed list first, and locate
+ * the first entry that matches the regex (if any).  Then search through the 
+ * filtered untimed list, and locate the first entry that matches the regex (if any).
+ * If only one of the lists has a match, return that one; if both lists have a match,
+ * return the one with the earlier timestamp.
  * Finally, reconfigure the iface record to highlight the matched entry. *)
 let handle_find_next (iface : interface_state_t) reminders =
    try
@@ -628,13 +631,18 @@ let handle_find_next (iface : interface_state_t) reminders =
          rem_ts >= day_start_ts && rem_ts < day_end_ts
       in
       (* test the untimed reminders list for entries that match the regex *)
-      let rec check_untimed untimed n =
+      let rec check_untimed untimed n timed_match =
          match untimed with
          |[] ->
-            let _ = beep () in
-            draw_error iface "search expression not found." false;
-            assert (doupdate ());
-            (iface, reminders)
+            begin match timed_match with
+            |None ->
+               let _ = beep () in
+               draw_error iface "search expression not found." false;
+               assert (doupdate ());
+               (iface, reminders)
+            |Some (timed_match_ts, timed_match_iface) ->
+               handle_selection_change timed_match_iface new_reminders
+            end
          |(ts, msg, _, _, _) :: tail ->
             begin try
                if ts > selected_ts then
@@ -678,11 +686,20 @@ let handle_find_next (iface : interface_state_t) reminders =
                                       selected_side   = Right
                         }
                   in
-                  handle_selection_change new_iface new_reminders
+                  (* choose between the timed reminder match and the untimed reminder match *)
+                  begin match timed_match with
+                  |None ->
+                     handle_selection_change new_iface new_reminders
+                  |Some (timed_match_ts, timed_match_iface) ->
+                     if timed_match_ts < ts then
+                        handle_selection_change timed_match_iface new_reminders
+                     else
+                        handle_selection_change new_iface new_reminders
+                  end
                else
                   raise Not_found
             with Not_found ->
-               check_untimed tail (succ n)
+               check_untimed tail (succ n) timed_match
             end
       in
       (* test the timed reminders list for entries that match the regex *)
@@ -692,7 +709,7 @@ let handle_find_next (iface : interface_state_t) reminders =
             let today_untimed = 
                List.filter is_current_untimed new_reminders.Remind.curr_untimed
             in
-            check_untimed today_untimed 1
+            check_untimed today_untimed 1 None
          |(ts, _, msg, _, _, _) :: tail ->
             begin try
                if ts > selected_ts then
@@ -716,7 +733,10 @@ let handle_find_next (iface : interface_state_t) reminders =
                                    selected_side   = Left
                      } 
                   in
-                  handle_selection_change new_iface new_reminders
+                  let today_untimed = 
+                     List.filter is_current_untimed new_reminders.Remind.curr_untimed
+                  in
+                  check_untimed today_untimed 1 (Some (ts, new_iface))
                else
                   raise Not_found
             with Not_found ->
