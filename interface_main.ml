@@ -516,12 +516,12 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
             substitute_aux tail new_s
       in
       substitute_aux [
-         (Str.regexp "%M", Remind.string_of_tm_mon tm.Unix.tm_mon);
+         (Str.regexp "%M", Utility.string_of_tm_mon tm.Unix.tm_mon);
          (Str.regexp "%d", string_of_int tm.Unix.tm_mday);
          (Str.regexp "%y", string_of_int (tm.Unix.tm_year + 1900));
          (Str.regexp "%h", Printf.sprintf "%.2d" tm.Unix.tm_hour);
          (Str.regexp "%m", Printf.sprintf "%.2d" tm.Unix.tm_min);
-         (Str.regexp "%w", Remind.string_of_tm_wday tm.Unix.tm_wday)
+         (Str.regexp "%w", Utility.string_of_tm_wday tm.Unix.tm_wday)
       ] template
    in
    try
@@ -786,7 +786,7 @@ let handle_next_reminder (iface : interface_state_t) reminders =
 let handle_view_reminders (iface : interface_state_t) reminders trigger_all =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
-   let rem_date_str = (Remind.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
+   let rem_date_str = (Utility.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let partial_command =
@@ -816,7 +816,7 @@ let handle_view_reminders (iface : interface_state_t) reminders trigger_all =
 let handle_view_calendar (iface : interface_state_t) reminders week_only =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
-   let rem_date_str = (Remind.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
+   let rem_date_str = (Utility.string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let partial_command = 

@@ -22,23 +22,16 @@
  * functions for interfacing with 'remind(1)' *)
 
 
-exception String_of_tm_mon_failure of string
-exception String_of_tm_wday_failure of string
 exception Occurrence_not_found
 
-
-type cal_t = {
-   title    : string;
-   weekdays : string;
-   days     : string list
-}
+open Utility
 
 
 (* Storage for a three-month window of reminders and
  * the calendar for the current month.
  * Makes it possible to handle edge effects of moving
  * from month to month without constantly calling 
- * rem(1) and cal(1). *)
+ * rem(1) and regenerating calendar layouts. *)
 type three_month_rem_t = {
    curr_timestamp : float;
    prev_timed     : (float * float * string * string * string * bool) list array;
@@ -50,63 +43,9 @@ type three_month_rem_t = {
    next_untimed   : (float * string * string * string * bool) list;
    all_untimed    : (float * string * string * string * bool) list;
    curr_counts    : int array;
-   curr_cal       : cal_t
+   curr_cal       : Cal.t
 }
 
-
-let string_of_tm_mon i =
-   match i with
-   | 0 -> "Jan"
-   | 1 -> "Feb"
-   | 2 -> "Mar"
-   | 3 -> "Apr"
-   | 4 -> "May"
-   | 5 -> "Jun"
-   | 6 -> "Jul"
-   | 7 -> "Aug"
-   | 8 -> "Sep"
-   | 9 -> "Oct"
-   |10 -> "Nov"
-   |11 -> "Dec"
-   | x -> raise (String_of_tm_mon_failure ("unknown month " ^ (string_of_int x)))
-
-let full_string_of_tm_mon i =
-   match i with
-   | 0 -> "January"
-   | 1 -> "February"
-   | 2 -> "March"
-   | 3 -> "April"
-   | 4 -> "May"
-   | 5 -> "June"
-   | 6 -> "Jul"
-   | 7 -> "August"
-   | 8 -> "September"
-   | 9 -> "October"
-   |10 -> "November"
-   |11 -> "December"
-   | x -> raise (String_of_tm_mon_failure ("unknown month " ^ (string_of_int x)))
-
-let string_of_tm_wday i =
-   match i with
-   | 0 -> "Sun"
-   | 1 -> "Mon"
-   | 2 -> "Tue"
-   | 3 -> "Wed"
-   | 4 -> "Thu"
-   | 5 -> "Fri"
-   | 6 -> "Sat"
-   | x -> raise (String_of_tm_wday_failure ("unknown weekday " ^ (string_of_int x)))
-
-let full_string_of_tm_wday i =
-   match i with
-   | 0 -> "Sunday"
-   | 1 -> "Monday"
-   | 2 -> "Tuesday"
-   | 3 -> "Wednesday"
-   | 4 -> "Thursday"
-   | 5 -> "Friday"
-   | 6 -> "Saturday"
-   | x -> raise (String_of_tm_wday_failure ("unknown weekday " ^ (string_of_int x)))
 
 
 (* Obtain two lists of reminders for the month of the timestamp argument.
@@ -293,36 +232,6 @@ let count_reminders timed untimed =
    rem_counts
 
 
-(* use cal(1) to create a calendar record for the desired timestamp *)
-let make_cal timestamp =
-   let tm = Unix.localtime timestamp in
-   let month_s = string_of_int (succ tm.Unix.tm_mon)
-   and year_s  = string_of_int (tm.Unix.tm_year + 1900) in
-   let command = 
-      (* support Euro calendar style *)
-      if !Rcfile.week_starts_monday then
-         "cal -m " ^ month_s ^ " " ^ year_s
-      else
-         "cal " ^ month_s ^ " " ^ year_s
-   in
-   let cal_channel = Unix.open_process_in command in
-   let rec add_lines day_lines =
-      try
-         let line = input_line cal_channel in
-         add_lines (line :: day_lines)
-      with End_of_file ->
-         let _ = Unix.close_process_in cal_channel in
-         List.rev day_lines
-   in 
-   let t  = input_line cal_channel in
-   let wd = input_line cal_channel in
-   let d  = add_lines [] in {
-      title    = t;
-      weekdays = wd;
-      days     = d
-   }
-
-
 (* comparison functions for sorting reminders chronologically *)
 let cmp_timed rem_a rem_b =
    let (ts_a, _, _, _, _, _) = rem_a
@@ -386,7 +295,7 @@ let create_three_month timestamp =
       next_untimed   = nu;
       all_untimed    = safe_append cu (safe_append pu nu);
       curr_counts    = count_reminders ct cu;
-      curr_cal       = make_cal curr_ts
+      curr_cal       = Cal.make curr_ts !Rcfile.week_starts_monday
    }
 
 
@@ -421,7 +330,7 @@ let next_month reminders =
       next_untimed   = u;
       all_untimed    = safe_append reminders.curr_untimed (safe_append reminders.next_untimed u);
       curr_counts    = count_reminders reminders.next_timed reminders.next_untimed;
-      curr_cal       = make_cal new_curr_timestamp
+      curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday
    }
 
 
@@ -455,7 +364,7 @@ let prev_month reminders =
       next_untimed   = reminders.curr_untimed;
       all_untimed    = safe_append u (safe_append reminders.prev_untimed reminders.curr_untimed);
       curr_counts    = count_reminders reminders.prev_timed reminders.prev_untimed;
-      curr_cal       = make_cal new_curr_timestamp
+      curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday
    }
 
 
