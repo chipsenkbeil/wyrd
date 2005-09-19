@@ -46,8 +46,8 @@ CURSES_LIB = @CURSES_LIB@
 INCLUDES = -I ./curses
 BFLAGS   = -pp camlp4o -g $(INCLUDES)
 OFLAGS   = -pp camlp4o $(INCLUDES)
-BLFLAGS  = -custom -cclib '$(CURSES_LIB) -lm $(LDFLAGS)'
-OLFLAGS  = -cclib '$(CURSES_LIB) -lm $(LDFLAGS)'
+BLFLAGS  = -custom -cclib '$(LDFLAGS) $(CURSES_LIB) -lm'
+OLFLAGS  = -cclib '$(LDFLAGS) $(CURSES_LIB) -lm'
 DEPFLAGS = -pp camlp4o
 
 # main target
