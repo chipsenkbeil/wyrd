@@ -34,14 +34,15 @@ OCAMLYACC    = @OCAMLYACC@
 OCAMLVERSION = @OCAMLVERSION@
 OCAMLWIN32   = @OCAMLWIN32@
 EXE          = @EXE@
+DEFS         = @DEFS@
 
 CURSES_LIB = @CURSES_LIB@
 
 INCLUDES = -I ./curses
 BFLAGS   = -pp camlp4o -g $(INCLUDES)
 OFLAGS   = -pp camlp4o $(INCLUDES)
-BLFLAGS  = -custom -cclib '$(CURSES_LIB) -lm'
-OLFLAGS  = -cclib '$(CURSES_LIB) -lm'
+BLFLAGS  = -custom -cclib '$(CURSES_LIB) -lm $(LDFLAGS)'
+OLFLAGS  = -cclib '$(CURSES_LIB) -lm $(LDFLAGS)'
 DEPFLAGS = -pp camlp4o
 
 # main target
@@ -150,7 +151,7 @@ curses/functions.c:	curses/functions.c.in
 CURSES_INCLUDES = -I ./curses
 CURSES_BFLAGS = -g $(CURSES_INCLUDES)
 CURSES_OFLAGS = $(CURSES_INCLUDES)
-CURSES_CFLAGS = -Wall -fPIC -DPIC
+CURSES_CFLAGS = $(CPPFLAGS) $(DEFS) $(CFLAGS) -Wall -fPIC -DPIC
 
 curses/%.cmi : curses/%.mli
 	$(OCAMLC) -c $(CURSES_BFLAGS) $<
