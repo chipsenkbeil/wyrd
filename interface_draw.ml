@@ -26,7 +26,7 @@
 open Interface
 open Curses
 open Remind
-
+open Utility
 
 
 (* Word-wrap a string--split the string at whitespace boundaries
@@ -427,11 +427,11 @@ let draw_calendar (iface : interface_state_t)
    wclrtoeol iface.scr.calendar_win;
    Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_labels;
    wattron iface.scr.calendar_win A.bold;
-   assert (waddstr iface.scr.calendar_win cal.title);
+   assert (waddstr iface.scr.calendar_win cal.Cal.title);
    wattroff iface.scr.calendar_win A.bold;
    assert (wmove iface.scr.calendar_win (vspacer + 1) hspacer);
    wclrtoeol iface.scr.calendar_win;
-   assert (waddstr iface.scr.calendar_win cal.weekdays);
+   assert (waddstr iface.scr.calendar_win cal.Cal.weekdays);
    Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_labels;
    (* draw the day numbers *)
    let ws = Str.regexp " " in
@@ -490,7 +490,7 @@ let draw_calendar (iface : interface_state_t)
          draw_el split_week;
          draw_week tail (succ line)
    in
-   draw_week cal.days (vspacer + 2);
+   draw_week cal.Cal.days (vspacer + 2);
    assert (wnoutrefresh iface.scr.calendar_win)
 
 

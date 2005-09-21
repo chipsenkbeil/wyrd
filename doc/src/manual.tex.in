@@ -93,8 +93,7 @@ following software installed:
       GNU make\footnote{http://www.gnu.org/software/make/}
 %END LATEX
 %HEVEA \begin{rawhtml} <a href="http://www.gnu.org/software/make/">GNU make</a> \end{rawhtml}
-   \item standard Unix utilities such as \texttt{cat}, \texttt{sort}, \texttt{cal}, and
-      \texttt{less} 
+   \item standard Unix utilities such as \texttt{cat}, \texttt{sort}, and \texttt{less} 
 \end{itemize}
 Wyrd may be compiled by executing the following at the root of the source tree:
 \begin{verbatim}

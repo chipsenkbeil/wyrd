@@ -34,14 +34,20 @@ OCAMLYACC    = @OCAMLYACC@
 OCAMLVERSION = @OCAMLVERSION@
 OCAMLWIN32   = @OCAMLWIN32@
 EXE          = @EXE@
+DEFS         = @DEFS@
+CC           = @CC@
+CFLAGS       = @CFLAGS@
+CPPFLAGS     = @CPPFLAGS@
+LDFLAGS      = @LDFLAGS@
+
 
 CURSES_LIB = @CURSES_LIB@
 
 INCLUDES = -I ./curses
 BFLAGS   = -pp camlp4o -g $(INCLUDES)
 OFLAGS   = -pp camlp4o $(INCLUDES)
-BLFLAGS  = -custom -cclib '$(CURSES_LIB) -lm'
-OLFLAGS  = -cclib '$(CURSES_LIB) -lm'
+BLFLAGS  = -custom -cclib '$(LDFLAGS) $(CURSES_LIB) -lm'
+OLFLAGS  = -cclib '$(LDFLAGS) $(CURSES_LIB) -lm'
 DEPFLAGS = -pp camlp4o
 
 # main target
@@ -56,8 +62,8 @@ all: $(OCAMLBEST)
 # bytecode and native-code compilation
 ######################################
 
-CMO = install.cmo version.cmo utility.cmo rcfile.cmo interface.cmo remind.cmo interface_draw.cmo \
-		interface_main.cmo main.cmo
+CMO = install.cmo version.cmo utility.cmo rcfile.cmo interface.cmo cal.cmo remind.cmo \
+		interface_draw.cmo interface_main.cmo main.cmo
 CMX = $(CMO:.cmo=.cmx)
 CMA = str.cma unix.cma
 CMXA = $(CMA:.cma=.cmxa)
@@ -89,7 +95,7 @@ $(NAME).static-opt: $(CMX) $(CURSES_OOBJS) my-static-libs
 my-static-libs:
 	ar cr libmycurses.a curses/*.o
 
-VERSION=1.1.0
+VERSION=1.1.1
 
 version.ml: Makefile
 	echo "let version = \""$(VERSION)"\"" > version.ml
@@ -150,7 +156,7 @@ curses/functions.c:	curses/functions.c.in
 CURSES_INCLUDES = -I ./curses
 CURSES_BFLAGS = -g $(CURSES_INCLUDES)
 CURSES_OFLAGS = $(CURSES_INCLUDES)
-CURSES_CFLAGS = -Wall -fPIC -DPIC
+CURSES_CFLAGS = $(CPPFLAGS) $(DEFS) $(CFLAGS) -Wall -fPIC -DPIC
 
 curses/%.cmi : curses/%.mli
 	$(OCAMLC) -c $(CURSES_BFLAGS) $<
