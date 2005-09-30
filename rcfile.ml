@@ -68,6 +68,8 @@ let table_command_key = Hashtbl.create 20
 let table_key_entry = Hashtbl.create 20
 let table_entry_key = Hashtbl.create 20
 
+(* Default Remind command *)
+let remind_command = ref "remind"
 (* Default reminders file *)
 let reminders_file = ref "~/.reminders"
 (* Default editing command strings *)
@@ -441,6 +443,8 @@ let parse_line line_stream =
       end
    | [< 'Kwd "set" >] ->
       begin match line_stream with parser
+      | [< 'Ident "remind_command" >] ->
+         parse_set "remind_command" remind_command (fun x -> x) "Expected a command string after "
       | [< 'Ident "reminders_file" >] ->
          parse_set "reminders_file" reminders_file (fun x -> x) "Expected a filename string after "
       | [< 'Ident "edit_old_command" >] ->

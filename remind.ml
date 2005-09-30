@@ -69,7 +69,7 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("remind -s -l -g -b2 " ^ 
+   let remind_channel = Unix.open_process_in (!Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
    !Rcfile.reminders_file ^ " " ^ rem_date_str) in
    let num_indentations = 4 in
    let indentations = Array.make_matrix (24 * 31) num_indentations false in
@@ -404,7 +404,7 @@ let has_nodisplay tm exact_msg =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("remind -s+1 -g -b2 " ^ 
+   let remind_channel = Unix.open_process_in (!Rcfile.remind_command ^ " -s+1 -g -b2 " ^ 
    !Rcfile.reminders_file ^ " " ^ rem_date_str) in
    let rem_regex = Str.regexp "[^ ]+ [^ ]+ \\([^ ]+\\) [^ ]+ [^ ]+ \\(.*\\)$" in
    let msg_regex = Str.regexp_string exact_msg in
@@ -458,9 +458,9 @@ let find_next msg_regex timestamp =
                        (string_of_int tm2.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
    flush stderr;
-   let remind_channel = Unix.open_process_in ("remind -n -b1 " ^ !Rcfile.reminders_file ^
-   " " ^ rem_date_str1 ^ " > /tmp/wyrd-tmp && remind -n -b1 " ^ !Rcfile.reminders_file ^
-   " " ^ rem_date_str2 ^ " | cat /tmp/wyrd-tmp - | sort") in
+   let remind_channel = Unix.open_process_in (!Rcfile.remind_command ^ " -n -b1 " ^ 
+   !Rcfile.reminders_file ^ " " ^ rem_date_str1 ^ " > /tmp/wyrd-tmp && " ^ !Rcfile.remind_command ^ 
+   " -n -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat /tmp/wyrd-tmp - | sort") in
    let rec check_messages () =
       try
          let line = input_line remind_channel in

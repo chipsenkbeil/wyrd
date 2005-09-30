@@ -791,9 +791,9 @@ let handle_view_reminders (iface : interface_state_t) reminders trigger_all =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let partial_command =
       if trigger_all then
-         "remind -q -g -t "
+         !Rcfile.remind_command ^ " -q -g -t "
       else
-         "remind -q -g "
+         !Rcfile.remind_command ^ " -q -g "
    in
    let command = partial_command ^ !Rcfile.reminders_file ^ " " ^
    rem_date_str ^ " | less -c" in
@@ -821,9 +821,9 @@ let handle_view_calendar (iface : interface_state_t) reminders week_only =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let partial_command = 
       if week_only then
-         Printf.sprintf "remind -c+1 -w%d " iface.scr.cols
+         Printf.sprintf "%s -c+1 -w%d " !Rcfile.remind_command iface.scr.cols
       else
-         Printf.sprintf "remind -c -w%d " iface.scr.cols
+         Printf.sprintf "%s -c -w%d " !Rcfile.remind_command iface.scr.cols
    in
    let time_option = if !Rcfile.description_12_hour then "-b0 " else "-b1 " in
    let weekday_option = if !Rcfile.week_starts_monday then "-m " else "" in

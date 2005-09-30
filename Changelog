@@ -1,6 +1,16 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-09-30     Added the configuration variable 'remind_command', which can
+               be used to specify the Remind executable.
+
+2005-09-21     Released 1.1.1.
+
+2005-09-20     Updated the build script to support the NetBSD environment.
+
+2005-09-17     Implemented a built-in calendar layout algorithm, and removed
+               the dependence on cal(1).
+
 2005-09-15     Released 1.1.0.
 
                Implemented the 'next_reminder' command, which jumps forward

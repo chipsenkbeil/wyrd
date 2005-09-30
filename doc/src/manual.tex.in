@@ -504,6 +504,8 @@ The following configuration variables may be set as described in the SETTING
 CONFIGURATION VARIABLES section.
 %@% END-IF %@%
 \begin{itemize}
+   \item \texttt{remind\_command} \\
+      Determines the command used to execute Remind.
    \item \texttt{reminders\_file} \\
       Controls which Remind file Wyrd will operate on.  The default is
       %@% IF LATEX %@%
