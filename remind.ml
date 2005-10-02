@@ -413,7 +413,8 @@ let find_next msg_regex timestamp =
    in
    let nodisplay_regex = Str.regexp_case_fold ".*nodisplay" in
    let tm1 = Unix.localtime timestamp in
-   let tm2 = Unix.localtime (timestamp +. 86400.) in      (* 24 hours *)
+   let temp = {tm1 with Unix.tm_mday = succ tm1.Unix.tm_mday} in     (* add 24 hours *)
+   let (_, tm2) = Unix.mktime temp in
    let rem_date_str1 = (string_of_tm_mon tm1.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm1.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm1.Unix.tm_year + 1900)) in
