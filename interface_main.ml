@@ -752,7 +752,7 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
       in
       let merged_rem = Remind.merge_timed new_reminders.Remind.curr_timed in
       check_timed (List.filter is_current_timed merged_rem)
-   with Not_found ->
+   with Remind.Occurrence_not_found ->
       let _ = beep () in
       draw_error iface "search expression not found." false;
       (iface, reminders)
