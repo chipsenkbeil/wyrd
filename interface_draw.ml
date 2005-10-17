@@ -305,16 +305,27 @@ let draw_timed_window iface reminders top lines =
       let ts = timestamp_of_line iface i in
       let tm = Unix.localtime ts in
       let ts_str = string_of_tm tm in
-      let s = Str.string_before (ts_str ^ blank) (iface.scr.tw_cols - 2) in
+      let curr_ts = Unix.time () in
+      (* the current time is highlighted *)
+      if curr_ts >= ts && curr_ts < (timestamp_of_line iface (succ i)) then begin 
+         Rcfile.color_on iface.scr.timed_win Rcfile.Timed_current;
+         wattron iface.scr.timed_win A.bold
+      end else
+         ();
       if tm.Unix.tm_hour = before_midnight.Unix.tm_hour &&
          tm.Unix.tm_min  = before_midnight.Unix.tm_min then
          wattron iface.scr.timed_win A.underline
       else
          wattroff iface.scr.timed_win A.underline;
-      assert (mvwaddstr iface.scr.timed_win i 2 s)
+      assert (mvwaddstr iface.scr.timed_win i 2 ts_str);
+      Rcfile.color_off iface.scr.timed_win Rcfile.Timed_current;
+      wattroff iface.scr.timed_win A.bold;
+      let s = Str.string_before blank (iface.scr.tw_cols - 7) in
+      assert (mvwaddstr iface.scr.timed_win i 7 s)
    done;
    Rcfile.color_off iface.scr.timed_win Rcfile.Timed_default;
    wattroff iface.scr.timed_win (A.reverse lor A.underline);
+   (* draw in the timed reminders *)
    let rec process_reminders rem_list indent =
       Rcfile.color_on iface.scr.timed_win indent_colors.(indent);
       wattron iface.scr.timed_win A.bold;
@@ -408,13 +419,31 @@ let draw_timed_window iface reminders top lines =
 
 (* Draw the entire timed reminders window *)
 let draw_timed iface reminders = 
-   draw_timed_window iface reminders 0 iface.scr.tw_lines
+   draw_timed_window iface reminders 0 iface.scr.tw_lines;
+   {iface with last_timed_refresh = Unix.time ()}
+
+
+(* Draw just a portion of the timed window when possible.  If
+ * iface.last_timed_refresh indicates that the display is stale,
+ * then do a whole-window update.  This is to make sure that the
+ * current timeslot gets highlighted properly, and old highlights
+ * get erased. *)
+let draw_timed_try_window iface reminders top lines =
+   let curr_tm  = Unix.localtime (Unix.time ()) in
+   let timeslot = round_time iface.zoom_level curr_tm in
+   let (ts, _)  = Unix.mktime timeslot in
+   if iface.last_timed_refresh < ts then
+      draw_timed iface reminders
+   else begin
+      draw_timed_window iface reminders top lines;
+      iface
+   end
 
 
 (* render a calendar for the given reminders record *)
 let draw_calendar (iface : interface_state_t) 
        (reminders : three_month_rem_t) : unit =
-   let curr_tm  = Unix.localtime (timestamp_of_line iface iface.left_selection)
+   let sel_tm   = Unix.localtime (timestamp_of_line iface iface.left_selection)
    and today_tm = Unix.localtime (Unix.time()) in
    let cal = reminders.curr_cal in
    let acs = get_acs_codes () in
@@ -455,18 +484,28 @@ let draw_calendar (iface : interface_state_t)
                   assert (waddstr iface.scr.calendar_win s)
                |Str.Text d ->
                   let day = pred (int_of_string d) in
-                  if succ day = curr_tm.Unix.tm_mday then begin
+                  if succ day = sel_tm.Unix.tm_mday then begin
                      (* highlight selected day *)
+                     if today_tm.Unix.tm_year = sel_tm.Unix.tm_year &&
+                        today_tm.Unix.tm_mon = sel_tm.Unix.tm_mon &&
+                        succ day = today_tm.Unix.tm_mday then
+                        (* if it's also today's date, use boldface *)
+                           wattron iface.scr.calendar_win A.bold
+                     else
+                        ();
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_selection;
                      assert (waddstr iface.scr.calendar_win d);
-                     Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_selection
-                  end else if today_tm.Unix.tm_year = curr_tm.Unix.tm_year &&
-                              today_tm.Unix.tm_mon = curr_tm.Unix.tm_mon &&
+                     Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_selection;
+                     wattroff iface.scr.calendar_win A.bold
+                  end else if today_tm.Unix.tm_year = sel_tm.Unix.tm_year &&
+                              today_tm.Unix.tm_mon = sel_tm.Unix.tm_mon &&
                               succ day = today_tm.Unix.tm_mday then begin
                      (* highlight today's date *)
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_today;
+                     wattron iface.scr.calendar_win A.bold;
                      assert (waddstr iface.scr.calendar_win d);
-                     Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_today
+                     Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_today;
+                     wattroff iface.scr.calendar_win A.bold
                   end else if reminders.curr_counts.(day) <= !Rcfile.busy_level1 then begin
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_level1;
                      assert (waddstr iface.scr.calendar_win d);

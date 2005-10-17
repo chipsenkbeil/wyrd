@@ -52,7 +52,7 @@ type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
 
 type operation_t = CommandOp of command_t | EntryOp of entry_operation_t
 
-type colorable_object_t = | Help | Timed_default | Untimed_reminder
+type colorable_object_t = | Help | Timed_default | Timed_current | Untimed_reminder
                           | Timed_date | Selection_info | Description | Status 
                           | Calendar_labels | Calendar_level1 | Calendar_level2
                           | Calendar_level3 | Calendar_selection | Calendar_today 
@@ -501,6 +501,7 @@ let parse_line line_stream =
       begin match line_stream with parser
       | [< 'Ident "help" >]             -> parse_color "help" Help
       | [< 'Ident "timed_default" >]    -> parse_color "timed_default" Timed_default
+      | [< 'Ident "timed_current" >]    -> parse_color "timed_current" Timed_current
       | [< 'Ident "timed_reminder" >]   -> config_failwith 
              ("\"timed_reminder\" has been deprecated.  Please use \"timed_reminder1\".")
       | [< 'Ident "untimed_reminder" >] -> parse_color "untimed_reminder" Untimed_reminder

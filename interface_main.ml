@@ -150,10 +150,10 @@ let handle_refresh (iface : interface_state_t) reminders =
    let _ = touchwin iface.scr.untimed_win in
    let _ = touchwin iface.scr.msg_win in 
    draw_help iface;
-   draw_timed iface reminders.Remind.all_timed;
-   draw_date_strip iface;
-   draw_calendar iface reminders;
-   let new_iface = draw_untimed iface reminders.Remind.curr_untimed in
+   let new_iface = draw_timed iface reminders.Remind.all_timed in
+   draw_date_strip new_iface;
+   draw_calendar new_iface reminders;
+   let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
    draw_error new_iface "" false;
    (new_iface, reminders)
    
@@ -183,7 +183,7 @@ let handle_selection_change iface reminders =
    let new_reminders = Remind.update_reminders reminders 
    (timestamp_of_line iface iface.left_selection) in
    let new_iface = draw_untimed iface new_reminders.Remind.curr_untimed in
-   draw_timed new_iface new_reminders.Remind.all_timed;
+   let new_iface = draw_timed new_iface new_reminders.Remind.all_timed in
    draw_date_strip new_iface;
    draw_calendar new_iface new_reminders;
    draw_error new_iface "" false;
@@ -217,11 +217,11 @@ let handle_scrolldown_timed_center (iface : interface_state_t) reminders =
    Array.blit iface.timed_lineinfo 1 iface.timed_lineinfo 0
       (pred (Array.length iface.timed_lineinfo));
    (* do a two-line update to recenter the cursor *)
-   draw_timed_window new_iface new_reminders.Remind.all_timed
-      (iface.left_selection - 1) 2;
+   let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed
+      (iface.left_selection - 1) 2 in
    (* draw in the new line at the bottom of the screen *)
-   draw_timed_window new_iface new_reminders.Remind.all_timed
-      (iface.scr.tw_lines - 1) 1;
+   let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed
+      (iface.scr.tw_lines - 1) 1 in
    draw_date_strip new_iface;
    (new_iface, new_reminders)
 
@@ -239,8 +239,8 @@ let handle_scrolldown_timed_nocenter (iface : interface_state_t) reminders =
          handle_selection_change_scroll iface2 reminders
       in
       (* make a two-line update to erase and redraw the cursor *)
-      draw_timed_window new_iface new_reminders.Remind.all_timed 
-         iface.left_selection 2;
+      let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed 
+         iface.left_selection 2 in
       (new_iface, new_reminders)
    end else begin
       (* case 2: the entire timed window scrolls *)
@@ -258,8 +258,8 @@ let handle_scrolldown_timed_nocenter (iface : interface_state_t) reminders =
          (pred (Array.length iface.timed_lineinfo));
       (* do a two-line update to erase the cursor and draw in the
        * new line at the bottom of the screen *)
-      draw_timed_window new_iface new_reminders.Remind.all_timed
-         (iface.scr.tw_lines - 2) 2;
+      let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed
+         (iface.scr.tw_lines - 2) 2 in
       draw_date_strip new_iface;
       (new_iface, new_reminders)
    end
@@ -320,9 +320,10 @@ let handle_scrollup_timed_center (iface : interface_state_t) reminders =
    Array.blit iface.timed_lineinfo 0 iface.timed_lineinfo 1
       (pred (Array.length iface.timed_lineinfo));
    (* do a two-line update to recenter the cursor *)
-   draw_timed_window new_iface new_reminders.Remind.all_timed iface.left_selection 2;
+   let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed 
+      iface.left_selection 2 in
    (* draw in the new top line of the schedule *)
-   draw_timed_window new_iface new_reminders.Remind.all_timed 0 1;
+   let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed 0 1 in
    draw_date_strip new_iface;
    (new_iface, new_reminders)
 
@@ -340,8 +341,8 @@ let handle_scrollup_timed_nocenter (iface : interface_state_t) reminders =
          handle_selection_change_scroll iface2 reminders
       in
       (* make a two-line update to erase and redraw the cursor *)
-      draw_timed_window new_iface new_reminders.Remind.all_timed 
-         (pred iface.left_selection) 2;
+      let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed 
+         (pred iface.left_selection) 2 in
       (new_iface, new_reminders)
    end else begin
       (* case 2: the entire timed window scrolls *)
@@ -359,7 +360,7 @@ let handle_scrollup_timed_nocenter (iface : interface_state_t) reminders =
          (pred (Array.length iface.timed_lineinfo));
       (* do a two-line update to erase the cursor and draw in the
        * new line at the bottom of the screen *)
-      draw_timed_window new_iface new_reminders.Remind.all_timed 0 2;
+      let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed 0 2 in
       draw_date_strip new_iface;
       (new_iface, new_reminders)
    end
@@ -468,7 +469,7 @@ let handle_zoom (iface : interface_state_t) reminders =
                        zoom_level    = Hour
          }
    in
-   draw_timed new_iface reminders.Remind.all_timed;
+   let new_iface = draw_timed new_iface reminders.Remind.all_timed in
    draw_date_strip new_iface;
    (new_iface, reminders)
 
@@ -1242,9 +1243,9 @@ let run (iface : interface_state_t) =
    assert (keypad iface.scr.help_win true);
    draw_help iface;
    draw_date_strip iface;
-   draw_timed iface reminders.Remind.all_timed;
-   draw_calendar iface reminders;
-   let new_iface = draw_untimed iface reminders.Remind.curr_untimed in
+   let new_iface = draw_timed iface reminders.Remind.all_timed in
+   draw_calendar new_iface reminders;
+   let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
    let new_iface = draw_msg new_iface in
    draw_error new_iface "" false;
    assert (doupdate ());

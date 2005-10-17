@@ -74,7 +74,8 @@ type interface_state_t = {
    len_untimed       : int;                 (* number of entries in the untimed reminders list *)
    search_regex      : Str.regexp;          (* most recent search string *)
    search_input      : string;              (* buffer to hold search string input *)
-   is_entering_search: bool                 (* whether or not the user is entering a search string *)
+   is_entering_search: bool;                (* whether or not the user is entering a search string *)
+   last_timed_refresh: float                (* the last time the timed window had a complete refresh *)
 }
    
 
@@ -121,7 +122,8 @@ let make (std : screen_t) =
       len_untimed        = 0;
       search_regex       = Str.regexp "";
       search_input       = "";
-      is_entering_search = false
+      is_entering_search = false;
+      last_timed_refresh = 0.0;
    }
                                                
 
