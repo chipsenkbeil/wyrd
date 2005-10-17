@@ -844,6 +844,41 @@ let handle_view_calendar (iface : interface_state_t) reminders week_only =
    handle_refresh iface reminders
 
 
+let handle_view_keybindings (iface : interface_state_t) reminders =
+   let bindings = ref [] in
+   let find_binding commandstr operation =
+      match operation with
+      |Rcfile.CommandOp command ->
+         begin try
+            let key_str = Hashtbl.find Rcfile.table_command_key command in
+            bindings := (Printf.sprintf "%-30s%-20s\n" commandstr key_str) :: !bindings
+         with Not_found ->
+            bindings := (Printf.sprintf "%-30s\n" commandstr) :: !bindings
+         end
+      |Rcfile.EntryOp entry ->
+         begin try
+            let key_str = Hashtbl.find Rcfile.table_entry_key entry in
+            bindings := (Printf.sprintf "%-30s%-20s\n" commandstr key_str) :: !bindings
+         with Not_found ->
+            bindings := (Printf.sprintf "%-30s\n" commandstr) :: !bindings
+         end
+   in
+   Hashtbl.iter find_binding Rcfile.table_commandstr_command;
+   let sorted_list = List.fast_sort Pervasives.compare !bindings in
+   let out_channel = open_out "/tmp/wyrd-tmp" in
+   List.iter (output_string out_channel) sorted_list;
+   close_out out_channel;
+   def_prog_mode ();
+   endwin ();
+   let _ = Unix.system ("less /tmp/wyrd-tmp") in 
+   reset_prog_mode ();
+   begin try
+      assert (curs_set 0)
+   with _ ->
+      ()
+   end;
+   handle_refresh iface reminders
+
 
 (* Handle scrolling down during selection dialog loop *)
 let handle_selection_dialog_scrolldown (elements : string list) 
@@ -1110,6 +1145,8 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_view_calendar iface reminders true
          |Rcfile.ViewMonth ->
             handle_view_calendar iface reminders false
+         |Rcfile.ViewKeybindings ->
+            handle_view_keybindings iface reminders
          |Rcfile.Refresh ->
             (* NOTE: I'm not sure why the endwin call is necessary here,
              * but I'm having problems getting a true full-screen refresh

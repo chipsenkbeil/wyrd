@@ -45,7 +45,7 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | SearchNext | BeginSearch | Quit | ViewReminders
                  | ScrollDescUp | ScrollDescDown | Refresh
                  | ViewAllReminders | ViewWeek | ViewMonth
-                 | NextReminder
+                 | NextReminder | ViewKeybindings
                  | NewGenReminder of int | NewGenReminderDialog of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
@@ -68,6 +68,9 @@ let table_command_key = Hashtbl.create 20
 
 let table_key_entry = Hashtbl.create 20
 let table_entry_key = Hashtbl.create 20
+
+let table_commandstr_command = Hashtbl.create 30
+let table_command_commandstr = Hashtbl.create 30
 
 (* Default reminders file *)
 let reminders_file = ref "~/.reminders"
@@ -273,63 +276,74 @@ let unregister_binding key_string =
    end
 
 
+let commands_list = [
+   ("scroll_up"               , CommandOp ScrollUp);
+   ("scroll_down"             , CommandOp ScrollDown);
+   ("next_day"                , CommandOp NextDay);
+   ("previous_day"            , CommandOp PrevDay);
+   ("next_week"               , CommandOp NextWeek);
+   ("previous_week"           , CommandOp PrevWeek);
+   ("next_month"              , CommandOp NextMonth);
+   ("previous_month"          , CommandOp PrevMonth);
+   ("home"                    , CommandOp Home);
+   ("zoom"                    , CommandOp Zoom);
+   ("edit"                    , CommandOp Edit);
+   ("edit_any"                , CommandOp EditAny);
+   ("scroll_description_up"   , CommandOp ScrollDescUp);
+   ("scroll_description_down" , CommandOp ScrollDescDown);
+   ("new_timed"               , CommandOp NewTimed);
+   ("new_timed_dialog"        , CommandOp NewTimedDialog);
+   ("new_untimed"             , CommandOp NewUntimed);
+   ("new_untimed_dialog"      , CommandOp NewUntimedDialog);
+   ("new_template0"           , CommandOp (NewGenReminder 0));
+   ("new_template0_dialog"    , CommandOp (NewGenReminderDialog 0));
+   ("new_template1"           , CommandOp (NewGenReminder 1));
+   ("new_template1_dialog"    , CommandOp (NewGenReminderDialog 1));
+   ("new_template2"           , CommandOp (NewGenReminder 2));
+   ("new_template2_dialog"    , CommandOp (NewGenReminderDialog 2));
+   ("new_template3"           , CommandOp (NewGenReminder 3));
+   ("new_template3_dialog"    , CommandOp (NewGenReminderDialog 3));
+   ("new_template4"           , CommandOp (NewGenReminder 4));
+   ("new_template4_dialog"    , CommandOp (NewGenReminderDialog 4));
+   ("new_template5"           , CommandOp (NewGenReminder 5));
+   ("new_template5_dialog"    , CommandOp (NewGenReminderDialog 5));
+   ("new_template6"           , CommandOp (NewGenReminder 6));
+   ("new_template6_dialog"    , CommandOp (NewGenReminderDialog 6));
+   ("new_template7"           , CommandOp (NewGenReminder 7));
+   ("new_template7_dialog"    , CommandOp (NewGenReminderDialog 7));
+   ("new_template8"           , CommandOp (NewGenReminder 8));
+   ("new_template8_dialog"    , CommandOp (NewGenReminderDialog 8));
+   ("new_template9"           , CommandOp (NewGenReminder 9));
+   ("new_template9_dialog"    , CommandOp (NewGenReminderDialog 9));
+   ("switch_window"           , CommandOp SwitchWindow);
+   ("search_next"             , CommandOp SearchNext);
+   ("begin_search"            , CommandOp BeginSearch);
+   ("next_reminder"           , CommandOp NextReminder);
+   ("view_remind"             , CommandOp ViewReminders);
+   ("view_remind_all"         , CommandOp ViewAllReminders);
+   ("view_week"               , CommandOp ViewWeek);
+   ("view_month"              , CommandOp ViewMonth);
+   ("refresh"                 , CommandOp Refresh );
+   ("help"                    , CommandOp ViewKeybindings);
+   ("entry_complete"          , EntryOp EntryComplete);
+   ("entry_backspace"         , EntryOp EntryBackspace);
+   ("entry_cancel"            , EntryOp EntryExit);
+   ("quit"                    , CommandOp Quit)
+] in
+let create_translation ((commandstr, operation) : string * operation_t) =
+   Hashtbl.add table_commandstr_command commandstr operation;
+   Hashtbl.add table_command_commandstr operation commandstr
+in
+List.iter create_translation commands_list
+
+
 (* translate a command string to the command type it represents *)
 let operation_of_string command_str =
-   begin match command_str with
-   |"scroll_up"               -> CommandOp ScrollUp
-   |"scroll_down"             -> CommandOp ScrollDown
-   |"next_day"                -> CommandOp NextDay
-   |"previous_day"            -> CommandOp PrevDay
-   |"next_week"               -> CommandOp NextWeek
-   |"previous_week"           -> CommandOp PrevWeek
-   |"next_month"              -> CommandOp NextMonth
-   |"previous_month"          -> CommandOp PrevMonth
-   |"home"                    -> CommandOp Home
-   |"zoom"                    -> CommandOp Zoom
-   |"edit"                    -> CommandOp Edit
-   |"edit_any"                -> CommandOp EditAny
-   |"scroll_description_up"   -> CommandOp ScrollDescUp
-   |"scroll_description_down" -> CommandOp ScrollDescDown
-   |"new_timed"               -> CommandOp NewTimed
-   |"new_timed_dialog"        -> CommandOp NewTimedDialog
-   |"new_untimed"             -> CommandOp NewUntimed
-   |"new_untimed_dialog"      -> CommandOp NewUntimedDialog
-   |"new_template0"           -> CommandOp (NewGenReminder 0)
-   |"new_template0_dialog"    -> CommandOp (NewGenReminderDialog 0)
-   |"new_template1"           -> CommandOp (NewGenReminder 1)
-   |"new_template1_dialog"    -> CommandOp (NewGenReminderDialog 1)
-   |"new_template2"           -> CommandOp (NewGenReminder 2)
-   |"new_template2_dialog"    -> CommandOp (NewGenReminderDialog 2)
-   |"new_template3"           -> CommandOp (NewGenReminder 3)
-   |"new_template3_dialog"    -> CommandOp (NewGenReminderDialog 3)
-   |"new_template4"           -> CommandOp (NewGenReminder 4)
-   |"new_template4_dialog"    -> CommandOp (NewGenReminderDialog 4)
-   |"new_template5"           -> CommandOp (NewGenReminder 5)
-   |"new_template5_dialog"    -> CommandOp (NewGenReminderDialog 5)
-   |"new_template6"           -> CommandOp (NewGenReminder 6)
-   |"new_template6_dialog"    -> CommandOp (NewGenReminderDialog 6)
-   |"new_template7"           -> CommandOp (NewGenReminder 7)
-   |"new_template7_dialog"    -> CommandOp (NewGenReminderDialog 7)
-   |"new_template8"           -> CommandOp (NewGenReminder 8)
-   |"new_template8_dialog"    -> CommandOp (NewGenReminderDialog 8)
-   |"new_template9"           -> CommandOp (NewGenReminder 9)
-   |"new_template9_dialog"    -> CommandOp (NewGenReminderDialog 9)
-   |"switch_window"           -> CommandOp SwitchWindow
-   |"search_next"             -> CommandOp SearchNext
-   |"begin_search"            -> CommandOp BeginSearch
-   |"next_reminder"           -> CommandOp NextReminder
-   |"view_remind"             -> CommandOp ViewReminders
-   |"view_remind_all"         -> CommandOp ViewAllReminders
-   |"view_week"               -> CommandOp ViewWeek
-   |"view_month"              -> CommandOp ViewMonth
-   |"refresh"                 -> CommandOp Refresh 
-   |"entry_complete"          -> EntryOp EntryComplete
-   |"entry_backspace"         -> EntryOp EntryBackspace
-   |"entry_cancel"            -> EntryOp EntryExit
-   |"quit"                    -> CommandOp Quit
-   |_                         -> config_failwith ("Unknown command name \"" ^ command_str ^ "\"")
-   end
+   Hashtbl.find table_commandstr_command command_str
 
+(* translate a command to a string representation *)
+let string_of_operation op =
+   Hashtbl.find table_command_commandstr op
 
 
 (* Parse a line from a configuration file.  This operates on a stream

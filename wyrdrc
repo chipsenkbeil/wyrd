@@ -101,6 +101,7 @@ bind "r"                 view_remind
 bind "R"                 view_remind_all
 bind "c"                 view_week
 bind "C"                 view_month
+bind "?"                 help
 bind "\\Cl"              refresh
 bind "Q"                 quit
 
