@@ -865,12 +865,12 @@ let handle_view_keybindings (iface : interface_state_t) reminders =
    in
    Hashtbl.iter find_binding Rcfile.table_commandstr_command;
    let sorted_list = List.fast_sort Pervasives.compare !bindings in
-   let out_channel = open_out "/tmp/wyrd-tmp" in
+   let out_channel = open_out Rcfile.tmpfile in
    List.iter (output_string out_channel) sorted_list;
    close_out out_channel;
    def_prog_mode ();
    endwin ();
-   let _ = Unix.system ("less /tmp/wyrd-tmp") in 
+   let _ = Unix.system ("less " ^ Rcfile.tmpfile) in 
    reset_prog_mode ();
    begin try
       assert (curs_set 0)

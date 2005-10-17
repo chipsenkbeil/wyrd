@@ -1,8 +1,6 @@
 Wyrd To-Do list
 ----------------------------------------------------------------------------------
 
-* Fix the /tmp/wyrd-tmp file so it is unique per-user (/tmp/wyrd-temp.username)
-
 * Review new code for highlighting current timeslot.  In particular, make sure
   that highlight gets properly erased and redrawn when the time passes from
   one timeslot to another.

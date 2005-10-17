@@ -459,8 +459,9 @@ let find_next msg_regex timestamp =
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
    flush stderr;
    let remind_channel = Unix.open_process_in ("remind -n -b1 " ^ !Rcfile.reminders_file ^
-   " " ^ rem_date_str1 ^ " > /tmp/wyrd-tmp && remind -n -b1 " ^ !Rcfile.reminders_file ^
-   " " ^ rem_date_str2 ^ " | cat /tmp/wyrd-tmp - | sort") in
+   " " ^ rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && remind -n -b1 " ^ 
+   !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ Rcfile.tmpfile ^ 
+   " - | sort") in
    let rec check_messages () =
       try
          let line = input_line remind_channel in
