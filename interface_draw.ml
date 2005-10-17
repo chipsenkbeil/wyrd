@@ -414,7 +414,8 @@ let draw_timed iface reminders =
 (* render a calendar for the given reminders record *)
 let draw_calendar (iface : interface_state_t) 
        (reminders : three_month_rem_t) : unit =
-   let curr_tm = Unix.localtime (timestamp_of_line iface iface.left_selection) in
+   let curr_tm  = Unix.localtime (timestamp_of_line iface iface.left_selection)
+   and today_tm = Unix.localtime (Unix.time()) in
    let cal = reminders.curr_cal in
    let acs = get_acs_codes () in
    Rcfile.color_on iface.scr.calendar_win Rcfile.Right_divider;
@@ -456,6 +457,13 @@ let draw_calendar (iface : interface_state_t)
                   let day = pred (int_of_string d) in
                   if succ day = curr_tm.Unix.tm_mday then begin
                      (* highlight selected day *)
+                     Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_selection;
+                     assert (waddstr iface.scr.calendar_win d);
+                     Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_selection
+                  end else if today_tm.Unix.tm_year = curr_tm.Unix.tm_year &&
+                              today_tm.Unix.tm_mon = curr_tm.Unix.tm_mon &&
+                              succ day = today_tm.Unix.tm_mday then begin
+                     (* highlight today's date *)
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_today;
                      assert (waddstr iface.scr.calendar_win d);
                      Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_today
@@ -483,7 +491,8 @@ let draw_calendar (iface : interface_state_t)
                      assert (waddstr iface.scr.calendar_win d);
                      Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_level3;
                      wattroff iface.scr.calendar_win A.bold
-                  end
+                  end;
+                  wattroff iface.scr.calendar_win A.reverse
                end;
                draw_el days
          in
