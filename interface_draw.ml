@@ -29,6 +29,11 @@ open Remind
 open Utility
 
 
+(* sort timed lineinfo entries by starting timestamp *)
+let sort_lineinfo (_, _, _, _, a) (_, _, _, _, b) =
+   ~- (Pervasives.compare a b)
+
+
 (* Word-wrap a string--split the string at whitespace boundaries
  * to form a list of strings, each of which has length less than
  * 'len'. *)
@@ -361,7 +366,7 @@ let draw_timed_window iface reminders top lines =
             else
                wattroff iface.scr.timed_win A.underline;
             iface.timed_lineinfo.(rem_top_line) <- 
-               (filename, line_num, time_str, msg) :: iface.timed_lineinfo.(rem_top_line);
+               (filename, line_num, time_str, msg, start) :: iface.timed_lineinfo.(rem_top_line);
             trunc_mvwaddstr iface.scr.timed_win rem_top_line (clock_pad + (9 * indent)) 
                (iface.scr.tw_cols - clock_pad - (9 * indent)) ("  " ^ msg);
             assert (mvwaddch iface.scr.timed_win rem_top_line 
@@ -390,7 +395,7 @@ let draw_timed_window iface reminders top lines =
                else
                   wattroff iface.scr.timed_win A.underline;
                iface.timed_lineinfo.(rem_top_line + !count) <- 
-                  (filename, line_num, time_str, msg) :: 
+                  (filename, line_num, time_str, msg, start) :: 
                   iface.timed_lineinfo.(rem_top_line + !count);
                trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) 
                   (clock_pad + (9 * indent)) (iface.scr.tw_cols - clock_pad - (9 * indent)) " ";
@@ -713,11 +718,12 @@ let draw_msg iface =
          |[] -> 
             ([""], [["(no reminder selected)"]])
          |rem_list -> 
-              let get_times (_, _, time_str, msg) = time_str in
-              let get_lines (_, _, time_str, msg) = 
+              let sorted_rem_list = List.fast_sort sort_lineinfo rem_list in
+              let get_times (_, _, time_str, msg, start) = time_str in
+              let get_lines (_, _, time_str, msg, start) = 
                  word_wrap msg (iface.scr.mw_cols - 24)
               in
-              (List.rev_map get_times rem_list, List.rev_map get_lines rem_list)
+              (List.rev_map get_times sorted_rem_list, List.rev_map get_lines sorted_rem_list)
          end
       |Right ->
          begin match iface.untimed_lineinfo.(iface.right_selection) with

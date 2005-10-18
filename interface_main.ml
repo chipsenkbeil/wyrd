@@ -955,17 +955,18 @@ let handle_edit (iface : interface_state_t) reminders =
          begin match iface.timed_lineinfo.(iface.left_selection) with
          | [] -> 
             None
-         | (f, l, t, m) :: [] -> 
+         | (f, l, t, m, s) :: [] -> 
             Some (f, l, m)
          | rem_list -> 
-              let get_msg (_, _, time, msg) = (adjust_s 16 time) ^ msg in
-              let msg_list = List.rev_map get_msg rem_list in
+              let sorted_rem_list = List.fast_sort sort_lineinfo rem_list in
+              let get_msg (_, _, time, msg, _) = (adjust_s 16 time) ^ msg in
+              let msg_list = List.rev_map get_msg sorted_rem_list in
               let selected_msg =
                  do_selection_dialog iface "Choose a reminder to edit" msg_list
               in
-              let test_msg_match (_, _, time, msg) = 
+              let test_msg_match (_, _, time, msg, _) = 
                  ((adjust_s 16 time) ^ msg) = selected_msg in
-              let (f, l, t, m) = (List.find test_msg_match rem_list) in
+              let (f, l, t, m, s) = (List.find test_msg_match sorted_rem_list) in
               Some (f, l, m)
          end
       |Right -> iface.untimed_lineinfo.(iface.right_selection)

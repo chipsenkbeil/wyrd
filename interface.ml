@@ -68,7 +68,7 @@ type interface_state_t = {
    left_selection    : int;                 (* controls which element of the left window is selected *)
    right_selection   : int;                 (* controls which element of the right window is selected *)
    zoom_level        : zoom_t;              (* controls the resolution of the timed window *)
-   timed_lineinfo    : (string * string * string * string) list array;   (* keeps track of the filename, line number, and message 
+   timed_lineinfo    : (string * string * string * string * float) list array;   (* keeps track of the filename, line number, message, and starting timestamp
                                                                           * associated with each line of the timed reminders window *)
    untimed_lineinfo  : (string * string * string) option array; (* same as above, for untimed window *)
    len_untimed       : int;                 (* number of entries in the untimed reminders list *)
