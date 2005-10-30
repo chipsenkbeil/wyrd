@@ -1,19 +1,23 @@
-interface.cmo: version.cmo ./curses/curses.cmi 
-interface.cmx: version.cmx ./curses/curses.cmx 
-interface_draw.cmo: version.cmo remind.cmo rcfile.cmo interface.cmo \
-    ./curses/curses.cmi 
-interface_draw.cmx: version.cmx remind.cmx rcfile.cmx interface.cmx \
-    ./curses/curses.cmx 
+cal.cmo: utility.cmo 
+cal.cmx: utility.cmx 
+interface.cmo: version.cmo rcfile.cmo ./curses/curses.cmi 
+interface.cmx: version.cmx rcfile.cmx ./curses/curses.cmx 
+interface_draw.cmo: version.cmo utility.cmo remind.cmo rcfile.cmo \
+    interface.cmo ./curses/curses.cmi cal.cmo 
+interface_draw.cmx: version.cmx utility.cmx remind.cmx rcfile.cmx \
+    interface.cmx ./curses/curses.cmx cal.cmx 
 interface_main.cmo: utility.cmo remind.cmo rcfile.cmo interface_draw.cmo \
     interface.cmo ./curses/curses.cmi 
 interface_main.cmx: utility.cmx remind.cmx rcfile.cmx interface_draw.cmx \
     interface.cmx ./curses/curses.cmx 
-main.cmo: rcfile.cmo interface_main.cmo interface.cmo ./curses/curses.cmi 
-main.cmx: rcfile.cmx interface_main.cmx interface.cmx ./curses/curses.cmx 
+main.cmo: version.cmo rcfile.cmo interface_main.cmo interface.cmo \
+    ./curses/curses.cmi 
+main.cmx: version.cmx rcfile.cmx interface_main.cmx interface.cmx \
+    ./curses/curses.cmx 
 rcfile.cmo: utility.cmo install.cmo ./curses/curses.cmi 
 rcfile.cmx: utility.cmx install.cmx ./curses/curses.cmx 
-remind.cmo: rcfile.cmo 
-remind.cmx: rcfile.cmx 
+remind.cmo: utility.cmo rcfile.cmo cal.cmo 
+remind.cmx: utility.cmx rcfile.cmx cal.cmx 
 curses/curses.cmo: curses/curses.cmi 
 curses/curses.cmx: curses/curses.cmi 
 curses/test.cmo: ./curses/curses.cmi 
