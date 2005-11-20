@@ -28,7 +28,11 @@ Wyrd ChangeLog
                be used to specify the Remind executable.
 
 2005-09-18     The current date and time are now highlighted within the month
-               calendar and timed reminders window.
+               calendar and timed reminders window, according to the color
+               values set for 'calendar_today' and 'timed_current'.  (The
+               selected date is now highlighted in the calendar window
+               according to the 'calendar_selection' setting, rather than
+               the 'calendar_today' setting.)
 
 2005-09-17     If there are multiple reminders listed in the message window,
                they are now sorted by starting timestamp.

@@ -746,6 +746,8 @@ The following is a list of all colorable objects.
       the help bar at the top of the screen
    \item \texttt{timed\_default} \\
       an empty timeslot in the day-schedule window
+   \item \texttt{timed\_current} \\
+      the current time in the day-schedule window (if it is visible)
    \item \texttt{timed\_reminder1} \\
       a nonempty timeslot in the day-schedule window, indented to level 1
    \item \texttt{timed\_reminder2} \\
@@ -773,7 +775,9 @@ The following is a list of all colorable objects.
    \item \texttt{calendar\_level3} \\
       calendar days with high activity
    \item \texttt{calendar\_today} \\
-      the current day in the calendar window
+      the current day in the calendar window (if it is visible)
+   \item \texttt{calendar\_selection} \\
+      the selected day in the calendar window
    \item \texttt{left\_divider} \\
       the vertical line to the left of the timed reminders window
    \item \texttt{right\_divider} \\
