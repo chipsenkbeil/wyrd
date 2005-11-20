@@ -1,8 +1,39 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2005-11-20     Released 1.2.0.
+
+               Added the 'busy_algorithm' and 'untimed_duration' configuration
+               variables, which can be used to set the algorithm for
+               determining the "busy" level for each day on the month calendar.
+               There are two algorithms to choose from: count number of 
+               triggered reminders per day, or count number of hours of
+               reminders per day.
+
+2005-10-30     Corrected the build script to support parallel make once again.
+
+               Replaced the deprecated "tail -1" syntax in the configure
+               script.
+
+2005-10-15     Fixed an off-by-one error in the resize handler, which could
+               cause the Wyrd status line to appear on two different lines.
+
+2005-10-02     Fixed a bug that could cause find_next and next_reminder to
+               fail.
+
 2005-09-30     Added the configuration variable 'remind_command', which can
                be used to specify the Remind executable.
+
+2005-09-18     The current date and time are now highlighted within the month
+               calendar and timed reminders window.
+
+2005-09-17     If there are multiple reminders listed in the message window,
+               they are now sorted by starting timestamp.
+
+               Wyrd now chooses tempfile names that are unique for each user.
+
+               Added the 'help' command, which generates a list of all
+               keybindings.
 
 2005-09-21     Released 1.1.1.
 

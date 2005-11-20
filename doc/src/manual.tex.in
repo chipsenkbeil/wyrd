@@ -16,7 +16,7 @@
 \usepackage{fullpage}
 %@% ELSE %@%
 \usepackage{latex2man}
-\setVersion{1.1}
+\setVersion{1.2}
 %@% END-IF %@%
 
 % End preamble
