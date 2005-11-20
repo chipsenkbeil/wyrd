@@ -24,9 +24,9 @@
 
 \begin{document}
 %@% IF LATEX %@%
-\title{Wyrd v1.1 User Manual}
+\title{Wyrd v1.2 User Manual}
 \author{Paul J. Pelzl}
-\date{September 15, 2005}
+\date{November 19, 2005}
 \maketitle
 
 \begin{center}
@@ -47,7 +47,7 @@ Inc.\footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php}
 %HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Roaring Penguin Software, Inc.</a> \end{rawhtml}
 Wyrd serves two purposes:
 \begin{enumerate}
-   \item It displays reminders in a day-calendar view suitable for visualizing
+   \item It displays reminders in a scrollable timetable view suitable for visualizing
       your calendar at a glance.
    \item It makes creating and editing reminders fast and easy.  However, Wyrd
       does not hide Remind's textfile programmability, for this is what makes
@@ -85,9 +85,9 @@ following software installed:
       (and development headers)
    \item 
 %BEGIN LATEX
-      Remind \footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php} $\ge$ 3.0.23
+      Remind \footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php} $\ge$ 3.0.24
 %END LATEX
-%HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Remind</a> >= 3.0.23 \end{rawhtml}
+%HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Remind</a> >= 3.0.24 \end{rawhtml}
    \item 
 %BEGIN LATEX
       GNU make\footnote{http://www.gnu.org/software/make/}
@@ -113,7 +113,7 @@ systems (particularly *BSD), you may need to use \texttt{gmake}.
    \texttt{wyrdrc} is the configuration textfile for the \Cmd{wyrd}{1} console calendar application.
 \end{Name}
    %@% ELSE %@%
-\begin{Name}{1}{wyrd}{Paul J. Pelzl}{a console calendar application}{Wyrd 1.0 Manpage}
+\begin{Name}{1}{wyrd}{Paul J. Pelzl}{a console calendar application}{Wyrd 1.2 Manpage}
    \Prog{wyrd} is a text-based front-end to \Cmd{remind}{1}, a sophisticated
    calendar and alarm program.
 \end{Name}
@@ -170,16 +170,18 @@ executing \texttt{wyrd <filename>}.
 
 At the top of the window is a short (incomplete) list of keybindings.
 
-The left window displays a scrollable day schedule view, with reminders
+The left window displays a scrollable timetable view, with reminders
 highlighted in various colors.  If the \texttt{DURATION} specifier is used for a
 reminder, the highlighted area is rendered with an appropriate size.
 Overlapping reminders are rendered using one of four different indentation
-levels so that all reminders are at least partially visible.
+levels so that all reminders are at least partially visible.  If the current
+time is visible in this window, it is highlighted in red.
 
 The upper right window displays a month calendar, with the color of each day
 representing the number of reminders it contains.  The colors range across
 shades of white to blue to magenta as the number of reminders increases.  The
-selected date is highlighted in cyan.
+selected date is highlighted in cyan; if the current date is visible, it
+is highlighted in red.
 
 The lower right window displays a list of the untimed reminders falling on
 the selected date.
@@ -306,8 +308,37 @@ but no command to jump backward to the previous reminder.
 
 \subsection{Other Commands}
 
-You can exit Wyrd by pressing \texttt{'Q'}.  If the screen is corrupted for some
-reason, hit \texttt{'Ctrl-L'} to refresh the display.
+A list of all keybindings may be viewed by pressing \texttt{'?'}.  You can exit
+Wyrd by pressing \texttt{'Q'}.  If the screen is corrupted for some reason, hit
+\texttt{'Ctrl-L'} to refresh the display.
+
+\subsection{Alarm Strategies}
+You may wish to generate some sort of alarm when a reminder is triggered.
+Wyrd does not offer any special alarm functionality, because Remind can handle
+the job already.  Check the Remind manpage and consider how the \texttt{-k}
+option could be used to generate alarms with the aid of external programs.  For
+example, the following command will generate a popup window using
+\texttt{gxmessage(1)} whenever a timed reminder is triggered:
+\begin{verbatim}
+remind -z -k'gxmessage -title "reminder" %s &' ~/.reminders &
+\end{verbatim}
+(A sensible way to start this alarm command is to place it in
+\texttt{\~{}.xinitrc} so that it launches when the X server is started.)
+If you want some advance warning (say, 15 minutes), you can cause Remind to
+trigger early by setting a \texttt{tdelta} in the AT clause:
+\begin{verbatim}
+   REM Nov 27 2005 AT 14:30 +15 MSG Do something
+\end{verbatim}
+
+Alternatively, if you want to generate alarms only for specific reminders,
+consider using Remind's \texttt{RUN} command.  This process could be easily
+automated by using the \texttt{template\emph{N}} configuration variables
+described in
+%@% IF LATEX %@%
+Section \ref{advanced}.
+%@% ELSE %@%
+the \Cmd{wyrdrc}{5} manpage.
+%@% END-IF %@%
 
 \subsection{Miscellaneous}
 
