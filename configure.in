@@ -52,12 +52,12 @@ echo "ocaml library path is $OCAMLLIB"
 
 
 # check for sufficient OCAMLVERSION
-MAJORVERSION=`echo $OCAMLVERSION | cut -d '.' -f 1`
-MINORVERSION=`echo $OCAMLVERSION | cut -d '.' -f 2`
-if test $MAJORVERSION -lt 3 ; then
+OCAMLMAJORVERSION=`echo $OCAMLVERSION | cut -d '.' -f 1`
+OCAMLMINORVERSION=`echo $OCAMLVERSION | cut -d '.' -f 2`
+if test $OCAMLMAJORVERSION -lt 3 ; then
    AC_MSG_ERROR(Wyrd requires OCaml version 3.08 or greater.)
 else
-   if test $MINORVERSION -lt 8 ; then
+   if test $OCAMLMINORVERSION -lt 8 ; then
       AC_MSG_ERROR(Wyrd requires OCaml version 3.08 or greater.)
    fi
 fi
@@ -148,6 +148,20 @@ fi
 MP_WITH_CURSES
 if test ! "$CURSES_LIB"; then
    AC_MSG_ERROR(Cannot find a curses library.  Perhaps you failed to install an ncurses development package?)
+fi
+
+# check Remind version
+REMINDVERSION=`remind --help 2> /dev/null | head -n 2 | tail -n 1 | cut -d ' ' -f 2`
+echo "remind version is $REMINDVERSION"
+REMMAJORVERSION=`echo $REMINDVERSION | cut -d '.' -f 1`
+REMMINORVERSION=`echo $REMINDVERSION | cut -d '.' -f 2`
+REMFIXVERSION=`echo $REMINDVERSION | cut -d '.' -f 3`
+if test $REMMAJORVERSION -lt 3 ; then
+   AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
+else
+   if test $REMFIXVERSION -lt 24 ; then
+   AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
+   fi
 fi
 
 # substitutions to perform
