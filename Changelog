@@ -10,6 +10,9 @@ Wyrd ChangeLog
                triggered reminders per day, or count number of hours of
                reminders per day.
 
+               The configuration script now checks for acceptable versions
+               of OCaml and Remind.
+
 2005-10-30     Corrected the build script to support parallel make once again.
 
                Replaced the deprecated "tail -1" syntax in the configure
