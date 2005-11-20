@@ -92,7 +92,7 @@ let resize_subwins iface =
    let height, width  = get_size () in
    let cal_height     = 10
    and cal_width      = 40 in
-   let msg_height     = 5 in
+   let msg_height     = 6 in
    let err_height     = 1 in
    let timed_height   = height - 1 - msg_height - err_height
    and timed_width    = width - cal_width
@@ -100,25 +100,18 @@ let resize_subwins iface =
    and untimed_width  = cal_width in
    let new_scr = 
       if height >= 24 then 
-         if width >= 80 then {
-            stdscr       = iface.scr.stdscr;
+         if width >= 80 then {iface.scr with
             lines        = height;
             cols         = width;
-            help_win     = iface.scr.help_win;  (* subwindow pointers are unchanged *)
             hw_cols      = width;
-            timed_win    = iface.scr.timed_win;
             tw_lines     = timed_height;
             tw_cols      = timed_width;
-            calendar_win = iface.scr.calendar_win;
             cw_lines     = cal_height;
             cw_cols      = cal_width;
-            untimed_win  = iface.scr.untimed_win;
             uw_lines     = untimed_height;
             uw_cols      = untimed_width;
-            msg_win      = iface.scr.msg_win;
             mw_lines     = msg_height;
             mw_cols      = width;
-            err_win      = iface.scr.err_win;
             ew_lines     = err_height;
             ew_cols      = pred width
          }
@@ -753,7 +746,7 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
       in
       let merged_rem = Remind.merge_timed new_reminders.Remind.curr_timed in
       check_timed (List.filter is_current_timed merged_rem)
-   with Not_found ->
+   with Remind.Occurrence_not_found ->
       let _ = beep () in
       draw_error iface "search expression not found." false;
       (iface, reminders)
@@ -792,9 +785,9 @@ let handle_view_reminders (iface : interface_state_t) reminders trigger_all =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let partial_command =
       if trigger_all then
-         "remind -q -g -t "
+         !Rcfile.remind_command ^ " -q -g -t "
       else
-         "remind -q -g "
+         !Rcfile.remind_command ^ " -q -g "
    in
    let command = partial_command ^ !Rcfile.reminders_file ^ " " ^
    rem_date_str ^ " | less -c" in
@@ -822,9 +815,9 @@ let handle_view_calendar (iface : interface_state_t) reminders week_only =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let partial_command = 
       if week_only then
-         Printf.sprintf "remind -c+1 -w%d " iface.scr.cols
+         Printf.sprintf "%s -c+1 -w%d " !Rcfile.remind_command iface.scr.cols
       else
-         Printf.sprintf "remind -c -w%d " iface.scr.cols
+         Printf.sprintf "%s -c -w%d " !Rcfile.remind_command iface.scr.cols
    in
    let time_option = if !Rcfile.description_12_hour then "-b0 " else "-b1 " in
    let weekday_option = if !Rcfile.week_starts_monday then "-m " else "" in

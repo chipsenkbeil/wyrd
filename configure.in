@@ -47,7 +47,7 @@ fi
 # we extract Ocaml version number and library path
 OCAMLVERSION=`$OCAMLC -v | sed -n -e 's|.*version *\(.*\)$|\1|p' `
 echo "ocaml version is $OCAMLVERSION"
-OCAMLLIB=`$OCAMLC -v | tail -1 | cut -f 4 -d " "`
+OCAMLLIB=`$OCAMLC -v | tail -n 1 | cut -f 4 -d " "`
 echo "ocaml library path is $OCAMLLIB"
 
 # then we look for ocamlopt; if not present, we issue a warning

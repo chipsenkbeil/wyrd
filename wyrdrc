@@ -1,5 +1,8 @@
 # Wyrd run-configuration file
 
+# command for the Remind executable
+set remind_command="remind"
+# the default reminder file to display
 set reminders_file="~/.reminders"
 # command for editing an old appointment, given a line number %n and filename %f
 set edit_old_command="vim +%n %f"

@@ -69,7 +69,7 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("remind -s -l -g -b2 " ^ 
+   let remind_channel = Unix.open_process_in (!Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
    !Rcfile.reminders_file ^ " " ^ rem_date_str) in
    let num_indentations = 4 in
    let indentations = Array.make_matrix (24 * 31) num_indentations false in
@@ -396,43 +396,6 @@ let update_reminders rem timestamp =
 
 
 
-(* Check whether the reminder listed at the specified timestamp with
- * matching MSG value is tagged with 'nodisplay'.
- *
- * Note: this would be unnecessary if 'rem -n' could output TAG information... *)
-let has_nodisplay tm exact_msg =
-   let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
-                      (string_of_int tm.Unix.tm_mday) ^ " " ^
-                      (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in ("remind -s+1 -g -b2 " ^ 
-   !Rcfile.reminders_file ^ " " ^ rem_date_str) in
-   let rem_regex = Str.regexp "[^ ]+ [^ ]+ \\([^ ]+\\) [^ ]+ [^ ]+ \\(.*\\)$" in
-   let msg_regex = Str.regexp_string exact_msg in
-   let nodisplay_regex = Str.regexp_case_fold ".*nodisplay" in
-   let rec find_msg () =
-      try
-         let line = input_line remind_channel in
-         if Str.string_match rem_regex line 0 then begin
-            let tag = Str.matched_group 1 line
-            and msg = Str.matched_group 2 line in
-            (* is this the reminder we're looking for? *)
-            if Str.string_match msg_regex msg 0 then
-               let _ = Unix.close_process_in remind_channel in
-               (* return value: does it have the 'nodisplay' tag? *)
-               Str.string_match nodisplay_regex tag 0
-            else
-               find_msg ()
-         end else
-            find_msg ()
-      with End_of_file ->
-         let _ = Unix.close_process_in remind_channel in
-         (* if something goes wrong, assume it's tagged 'nodisplay' *)
-         true
-   in
-   find_msg ()
-
-
-
 (* Look at all 'next' reminders after the given timestamp.  Search
  * through the list for the first occurrence of the search regexp, and return
  * a timestamp for that date.
@@ -445,69 +408,37 @@ let has_nodisplay tm exact_msg =
  * with 'nodisplay'; since these reminders don't show up on the display, Wyrd
  * should not be able to match them. *)
 let find_next msg_regex timestamp =
-   let rem_regex_timed = 
-      Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([0-9]+\\):\\([0-9]+\\) \\([^ ]+.*\\)$"
+   let rem_regex = 
+      Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) [^ ]+ \\([^ ]+\\) [^ ]+ \\([^ ]+\\) \\([^ ]+.*\\)$"
    in
-   let rem_regex_untimed = Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) \\([^ ]+.*\\)$" in
+   let nodisplay_regex = Str.regexp_case_fold ".*nodisplay" in
    let tm1 = Unix.localtime timestamp in
-   let tm2 = Unix.localtime (timestamp +. 86400.) in      (* 24 hours *)
+   let temp = {tm1 with Unix.tm_mday = succ tm1.Unix.tm_mday} in     (* add 24 hours *)
+   let (_, tm2) = Unix.mktime temp in
    let rem_date_str1 = (string_of_tm_mon tm1.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm1.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm1.Unix.tm_year + 1900)) in
    let rem_date_str2 = (string_of_tm_mon tm2.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm2.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
-   flush stderr;
-   let remind_channel = Unix.open_process_in ("remind -n -b1 " ^ !Rcfile.reminders_file ^
-   " " ^ rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && remind -n -b1 " ^ 
-   !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ Rcfile.tmpfile ^ 
-   " - | sort") in
+   let remind_channel = Unix.open_process_in (!Rcfile.remind_command ^ " -n -s -b1 " ^ 
+   !Rcfile.reminders_file ^ " " ^ rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && " ^
+   !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ 
+   Rcfile.tmpfile ^ " - | sort") in
    let rec check_messages () =
       try
          let line = input_line remind_channel in
-         if Str.string_match rem_regex_timed line 0 then begin
+         if Str.string_match rem_regex line 0 then begin
             (* go here if this line is a timed reminder *)
             let year  = int_of_string (Str.matched_group 1 line)
             and month = int_of_string (Str.matched_group 2 line)
             and day   = int_of_string (Str.matched_group 3 line)
-            and hour  = int_of_string (Str.matched_group 4 line)
-            and min   = int_of_string (Str.matched_group 5 line)
+            and tag   = Str.matched_group 4 line
+            and min_s = Str.matched_group 5 line
             and msg   = Str.matched_group 6 line in
             let temp = {
                Unix.tm_sec   = 0;
-               Unix.tm_min   = min;
-               Unix.tm_hour  = hour;
-               Unix.tm_mday  = day;
-               Unix.tm_mon   = pred month;
-               Unix.tm_year  = year - 1900;
-               Unix.tm_wday  = 0;
-               Unix.tm_yday  = 0;
-               Unix.tm_isdst = false
-            } in
-            let (ts, _) = Unix.mktime temp in
-            if ts > timestamp then
-               begin try
-                  let _ = Str.search_forward msg_regex msg 0 in
-                  (* only return the match if this value is not tagged 'nodisplay' *)
-                  if not (has_nodisplay temp msg) then
-                     let _ = Unix.close_process_in remind_channel in
-                     ts
-                  else
-                     check_messages ()
-               with Not_found ->
-                  check_messages ()
-               end
-            else
-               check_messages ()
-         end else if Str.string_match rem_regex_untimed line 0 then begin
-            (* go here if this line is an untimed reminder *)
-            let year  = int_of_string (Str.matched_group 1 line)
-            and month = int_of_string (Str.matched_group 2 line)
-            and day   = int_of_string (Str.matched_group 3 line)
-            and msg   = Str.matched_group 4 line in
-            let temp = {
-               Unix.tm_sec   = 0;
-               Unix.tm_min   = 0;
+               Unix.tm_min   = if min_s = "*" then 0 else (int_of_string min_s);
                Unix.tm_hour  = 0;
                Unix.tm_mday  = day;
                Unix.tm_mon   = pred month;
@@ -520,20 +451,25 @@ let find_next msg_regex timestamp =
             if ts > timestamp then
                begin try
                   let _ = Str.search_forward msg_regex msg 0 in
-                  let _ = Unix.close_process_in remind_channel in
-                  ts
+                  (* only return the match if this value is not tagged 'nodisplay' *)
+                  if not (Str.string_match nodisplay_regex tag 0) then
+                     let _ = Unix.close_process_in remind_channel in
+                     ts
+                  else
+                     check_messages ()
                with Not_found ->
                   check_messages ()
                end
-            else
+            else begin
                check_messages ()
+            end
          end else
             (* if there was no regexp match, continue with next line *)
             check_messages ()
       with
       | End_of_file ->
          let _ = Unix.close_process_in remind_channel in
-         raise Not_found
+         raise Occurrence_not_found
       | Failure s ->
         (* if there's an error in string coersion, just drop that reminder and go
          * to the next line *)
