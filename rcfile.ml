@@ -93,6 +93,10 @@ let template6        = ref None
 let template7        = ref None
 let template8        = ref None
 let template9        = ref None
+(* algorithm to use for counting busy-ness *)
+let busy_algorithm = ref 1
+(* number of minutes to assume an untimed reminder requires *)
+let untimed_duration = ref 60.
 (* Default thresholds for calendar colorization *)
 let busy_level1 = ref 2
 let busy_level2 = ref 4
@@ -495,6 +499,10 @@ let parse_line line_stream =
          parse_set "template8" template8 (fun x -> Some x) "Expected a template string after "
       | [< 'Ident "template9" >] ->
          parse_set "template9" template9 (fun x -> Some x) "Expected a template string after "
+      | [< 'Ident "busy_algorithm" >] ->
+         parse_set "busy_algorithm" busy_algorithm int_of_string "Expected an integral string after "
+      | [< 'Ident "untimed_duration" >] ->
+         parse_set "untimed_duration" untimed_duration float_of_string "Expected a float string after "
       | [< 'Ident "busy_level1" >] ->
          parse_set "busy_level1" busy_level1 int_of_string "Expected an integral string after "
       | [< 'Ident "busy_level2" >] ->

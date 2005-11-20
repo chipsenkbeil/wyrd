@@ -209,27 +209,88 @@ let month_reminders timestamp =
 
 (* generate a count of how many reminders fall on any given day of
  * the month *)
-let count_reminders timed untimed =
+let count_reminders month_start_tm timed untimed =
    let rem_counts = Array.make 31 0 in
-   let count_timed (start, _, _, _, _, has_weight) =
-      if has_weight then
-         let tm = Unix.localtime start in
+   let count_rems start has_weight =
+      let tm = Unix.localtime start in
+      if has_weight && tm.Unix.tm_year = month_start_tm.Unix.tm_year &&
+      tm.Unix.tm_mon = month_start_tm.Unix.tm_mon then
          let day = pred tm.Unix.tm_mday in
          rem_counts.(day) <- succ rem_counts.(day)
       else
          ()
    in
+   let count_timed (start, _, _, _, _, has_weight) =
+      count_rems start has_weight
+   in
    let count_untimed (start, _, _, _, has_weight) =
-      if has_weight then
-         let tm = Unix.localtime start in
-         let day = pred tm.Unix.tm_mday in
-         rem_counts.(day) <- succ rem_counts.(day)
-      else
-         ()
+      count_rems start has_weight
    in
    Array.iter (List.iter count_timed) timed;
    List.iter count_untimed untimed;
    rem_counts
+
+
+(* generate a count of how many hours of reminders one has on
+ * any given day of the month.  Note: some minor errors can
+ * occur during DST, but this is too small to worry about. *)
+let count_busy_hours month_start_tm timed untimed =
+   let hour_counts = Array.make 31 0.0 in
+   let last_day = 
+      let temp = {month_start_tm with Unix.tm_mday = 32} in
+      let (_, nextmonth) = Unix.mktime temp in
+      32 - nextmonth.Unix.tm_mday
+   in
+   let count_hours start stop has_weight =
+      if has_weight then
+         for day = 1 to last_day do
+            let day_tm = {month_start_tm with Unix.tm_mday = day} in
+            let (day_ts, _) = Unix.mktime day_tm in
+            if day_ts >= start then
+               if stop > day_ts +. 86400. then
+                  hour_counts.(pred day) <- hour_counts.(pred day) +. 24.
+               else if stop > day_ts then
+                  hour_counts.(pred day) <- hour_counts.(pred day) +.
+                  ((stop -. day_ts) /. 3600.)
+               else
+                  ()
+            else if day_ts +. 86400. > start then
+               if stop > day_ts +. 86400. then
+                  hour_counts.(pred day) <- hour_counts.(pred day) +.
+                  24. -. ((start -. day_ts) /. 3600.)
+               else
+                  hour_counts.(pred day) <- hour_counts.(pred day) +.
+                  ((stop -. start) /. 3600.)
+            else
+               ()
+         done
+      else
+         ()
+   in
+   let count_timed (start, stop, _, _, _, has_weight) =
+      count_hours start stop has_weight
+   in
+   let count_untimed (start, _, _, _, has_weight) =
+      let stop = start +. (!Rcfile.untimed_duration *. 60.) in
+      count_hours start stop has_weight
+   in
+   Array.iter (List.iter count_timed) timed;
+   List.iter count_untimed untimed;
+   Array.map int_of_float hour_counts
+
+
+(* determine the busy-ness level for each day in the month *)
+let count_busy month_tm timed untimed =
+   let month_start_tm = {
+      month_tm with Unix.tm_sec  = 0;
+                    Unix.tm_min  = 0;
+                    Unix.tm_hour = 0;
+                    Unix.tm_mday = 1
+   } in
+   match !Rcfile.busy_algorithm with
+   |1 -> count_reminders month_start_tm timed untimed
+   |2 -> count_busy_hours month_start_tm timed untimed
+   |_ -> Rcfile.config_failwith "busy_algorithm must be either 1 or 2"
 
 
 (* comparison functions for sorting reminders chronologically *)
@@ -260,41 +321,39 @@ let safe_append a b = List.rev_append (List.rev a) b
 
 (* initialize a new three-month reminder record *)
 let create_three_month timestamp =
-   let temp = {
+   let month_start_tm = {
       Unix.localtime timestamp with Unix.tm_sec  = 0;
                                     Unix.tm_min  = 0;
                                     Unix.tm_hour = 0;
                                     Unix.tm_mday = 1
    } in
-   let (curr_ts, _) = Unix.mktime temp in
+   let (curr_ts, _) = Unix.mktime month_start_tm in
    let temp_prev = {
-      temp with Unix.tm_mon = pred temp.Unix.tm_mon
+      month_start_tm with Unix.tm_mon = pred month_start_tm.Unix.tm_mon
    } in
    let temp_next = {
-      temp with Unix.tm_mon = succ temp.Unix.tm_mon
+      month_start_tm with Unix.tm_mon = succ month_start_tm.Unix.tm_mon
    } in
    let (prev_ts, _) = Unix.mktime temp_prev
    and (next_ts, _) = Unix.mktime temp_next in
    let (pt, pu) = month_reminders prev_ts in
    let (ct, cu) = month_reminders curr_ts in
-   let (nt, nu) = month_reminders next_ts in {
+   let (nt, nu) = month_reminders next_ts in 
+   let at = Array.make (Array.length pt) [] in
+   for i = 0 to pred (Array.length at) do
+      at.(i) <- safe_append pt.(i) (safe_append ct.(i) nt.(i))
+   done;
+   let au = safe_append cu (safe_append pu nu) in {
       curr_timestamp = curr_ts;
       prev_timed     = pt;
       curr_timed     = ct;
       next_timed     = nt;
-      all_timed      = 
-         begin
-            let at = Array.make (Array.length pt) [] in
-            for i = 0 to pred (Array.length at) do
-               at.(i) <- safe_append pt.(i) (safe_append ct.(i) nt.(i))
-            done;
-            at
-         end;
+      all_timed      = at;
       prev_untimed   = pu;
       curr_untimed   = cu;
       next_untimed   = nu;
-      all_untimed    = safe_append cu (safe_append pu nu);
-      curr_counts    = count_reminders ct cu;
+      all_untimed    = au;
+      curr_counts    = count_busy month_start_tm at au;
       curr_cal       = Cal.make curr_ts !Rcfile.week_starts_monday
    }
 
@@ -309,27 +368,25 @@ let next_month reminders =
    let temp2 = {
       curr_tm with Unix.tm_mon = curr_tm.Unix.tm_mon + 2
    } in
-   let (new_curr_timestamp, _) = Unix.mktime temp1 in
-   let (next_timestamp, _)     = Unix.mktime temp2 in
-   let (t, u) = month_reminders next_timestamp in {
+   let (new_curr_timestamp, temp1) = Unix.mktime temp1 in
+   let (next_timestamp, temp2)     = Unix.mktime temp2 in
+   let (t, u) = month_reminders next_timestamp in 
+   let at = Array.make (Array.length t) [] in
+   for i = 0 to pred (Array.length t) do
+      at.(i) <- safe_append reminders.curr_timed.(i) 
+                (safe_append reminders.next_timed.(i) t.(i))
+   done;
+   let au = safe_append reminders.curr_untimed (safe_append reminders.next_untimed u) in {
       curr_timestamp = new_curr_timestamp;
       prev_timed     = reminders.curr_timed;
       curr_timed     = reminders.next_timed;
       next_timed     = t;
-      all_timed      =
-         begin
-            let at = Array.make (Array.length t) [] in
-            for i = 0 to pred (Array.length t) do
-               at.(i) <- safe_append reminders.curr_timed.(i) 
-                         (safe_append reminders.next_timed.(i) t.(i))
-            done;
-            at
-         end;
+      all_timed      = at;
       prev_untimed   = reminders.curr_untimed;
       curr_untimed   = reminders.next_untimed;
       next_untimed   = u;
-      all_untimed    = safe_append reminders.curr_untimed (safe_append reminders.next_untimed u);
-      curr_counts    = count_reminders reminders.next_timed reminders.next_untimed;
+      all_untimed    = au;
+      curr_counts    = count_busy temp1 at au;
       curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday
    }
 
@@ -343,27 +400,25 @@ let prev_month reminders =
    let temp2 = {
       curr_tm with Unix.tm_mon = curr_tm.Unix.tm_mon - 2
    } in
-   let (new_curr_timestamp, _) = Unix.mktime temp1 in
-   let (prev_timestamp, _)     = Unix.mktime temp2 in
-   let (t, u) = month_reminders prev_timestamp in {
+   let (new_curr_timestamp, temp1) = Unix.mktime temp1 in
+   let (prev_timestamp, temp2)     = Unix.mktime temp2 in
+   let (t, u) = month_reminders prev_timestamp in
+   let at = Array.make (Array.length t) [] in
+   for i = 0 to pred (Array.length t) do
+      at.(i) <- safe_append t.(i) 
+                (safe_append reminders.prev_timed.(i) reminders.curr_timed.(i))
+   done;
+   let au = safe_append u (safe_append reminders.prev_untimed reminders.curr_untimed) in {
       curr_timestamp = new_curr_timestamp;
       prev_timed     = t;
       curr_timed     = reminders.prev_timed;
       next_timed     = reminders.curr_timed;
-      all_timed      = 
-         begin
-            let at = Array.make (Array.length t) [] in
-            for i = 0 to pred (Array.length t) do
-               at.(i) <- safe_append t.(i) 
-                         (safe_append reminders.prev_timed.(i) reminders.curr_timed.(i))
-            done;
-            at
-         end;
+      all_timed      = at;
       prev_untimed   = u;
       curr_untimed   = reminders.prev_untimed;
       next_untimed   = reminders.curr_untimed;
-      all_untimed    = safe_append u (safe_append reminders.prev_untimed reminders.curr_untimed);
-      curr_counts    = count_reminders reminders.prev_timed reminders.prev_untimed;
+      all_untimed    = au;
+      curr_counts    = count_busy temp1 at au;
       curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday
    }
 

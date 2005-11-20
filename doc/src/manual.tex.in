@@ -575,8 +575,21 @@ CONFIGURATION VARIABLES section.
       Controls the format of a generic user-defined \texttt{REM} line template;
       \emph{N} may range from 0 to 9.  The substitution syntax is the same as
       for \texttt{timed\_template}.
+   \item \texttt{busy\_algorithm} \\
+      An integer value specifying which algorithm to use for measuring how
+      busy the user is on a particular day.  If \texttt{busy\_algorithm="1"},
+      then Wyrd will simply count the total number of reminders triggered on
+      that day.  If \texttt{busy\_algorithm="2"}, then Wyrd will count the
+      number of hours of reminders that fall on that day.  (Untimed reminders
+      are assumed to occupy \texttt{untimed\_duration} minutes.)
+   \item \texttt{untimed\_duration} \\
+      An integer value that specifies the assumed duration of an untimed
+      reminder, in minutes.  This is used only when computing the busy level
+      with \texttt{busy\_algorithm="2"}.
    \item \texttt{busy\_level1} \\
-      An integer value specifying the maximum number of reminders in a day,
+      An integer value specifying the maximum number of reminders in a day
+      (with \texttt{busy\_algorithm="1"}) or maximum hours of reminders in
+      a day (with \texttt{busy\_algorithm="2"}) which will be
       colored using the color scheme for \texttt{calendar\_level1}.
    \item \texttt{busy\_level2} \\
       Same as above, using the \texttt{calendar\_level2} color scheme.
