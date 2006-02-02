@@ -45,7 +45,7 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | SearchNext | BeginSearch | Quit | ViewReminders
                  | ScrollDescUp | ScrollDescDown | Refresh
                  | ViewAllReminders | ViewWeek | ViewMonth
-                 | NextReminder | ViewKeybindings
+                 | NextReminder | ViewKeybindings | CopyReminder
                  | NewGenReminder of int | NewGenReminderDialog of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
@@ -298,6 +298,7 @@ let commands_list = [
    ("zoom"                    , CommandOp Zoom);
    ("edit"                    , CommandOp Edit);
    ("edit_any"                , CommandOp EditAny);
+   ("copy"                    , CommandOp CopyReminder);
    ("scroll_description_up"   , CommandOp ScrollDescUp);
    ("scroll_description_down" , CommandOp ScrollDescDown);
    ("new_timed"               , CommandOp NewTimed);

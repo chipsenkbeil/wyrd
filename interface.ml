@@ -75,7 +75,8 @@ type interface_state_t = {
    search_regex      : Str.regexp;          (* most recent search string *)
    search_input      : string;              (* buffer to hold search string input *)
    is_entering_search: bool;                (* whether or not the user is entering a search string *)
-   last_timed_refresh: float                (* the last time the timed window had a complete refresh *)
+   last_timed_refresh: float;               (* the last time the timed window had a complete refresh *)
+   rem_buffer        : string               (* buffer that acts as a clipboard for REM strings *)
 }
    
 
@@ -124,6 +125,7 @@ let make (std : screen_t) =
       search_input       = "";
       is_entering_search = false;
       last_timed_refresh = 0.0;
+      rem_buffer         = ""
    }
                                                
 

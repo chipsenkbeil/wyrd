@@ -1051,6 +1051,107 @@ let handle_scroll_desc_down iface reminders =
    handle_refresh new_iface reminders
 
 
+(* copy a reminder string to the buffer *)
+let handle_copy_reminder iface reminders =
+   let adjust_s len s =
+      let pad = s ^ (String.make len ' ') in
+      Str.string_before pad len
+   in
+   let fl =
+      match iface.selected_side with
+      |Left  -> 
+         begin match iface.timed_lineinfo.(iface.left_selection) with
+         | [] -> 
+            None
+         | (f, l, t, m, s) :: [] -> 
+            Some (f, l)
+         | rem_list -> 
+              let sorted_rem_list = List.fast_sort sort_lineinfo rem_list in
+              let get_msg (_, _, time, msg, _) = (adjust_s 16 time) ^ msg in
+              let msg_list = List.rev_map get_msg sorted_rem_list in
+              let selected_msg =
+                 do_selection_dialog iface "Choose a reminder to copy" msg_list
+              in
+              let test_msg_match (_, _, time, msg, _) = 
+                 ((adjust_s 16 time) ^ msg) = selected_msg in
+              let (f, l, t, m, s) = (List.find test_msg_match sorted_rem_list) in
+              Some (f, l)
+         end
+      |Right ->
+         begin match iface.untimed_lineinfo.(iface.right_selection) with
+         |Some (f, l, m) -> Some (f, l)
+         |None -> None
+         end
+   in
+   begin match fl with
+   |None ->
+      let _ = beep () in
+      draw_error iface "no reminder is selected." false;
+      assert (doupdate ());
+      (iface, reminders)
+   |Some (filename, line_num_str) ->
+      let in_channel = open_in filename in
+      let cont_regex = Str.regexp "*\\(\\\\[ \t]*\\)$" in
+      begin try
+         (* grab a copy of the specified line *)
+         let line = ref "" in
+         for curr_line = 1 to int_of_string line_num_str do
+            line := input_line in_channel
+         done;
+         (* continue grabbing lines if they are connected by backslashes *)
+         while Str.string_match cont_regex !line 0 do
+            let bs_loc = Str.group_beginning 2 in
+            line := Str.string_before !line bs_loc;
+            line := !line ^ (input_line in_channel)
+         done;
+         close_in in_channel;
+         (* break the REM line up into chunks corresponding to the different fields *)
+         let rem_kw_regex = 
+            Str.regexp ("\\(REM\\|PRIORITY\\|SKIP\\|BEFORE\\|AFTER\\|" ^
+            "OMIT\\|AT\\|SCHED\\|WARN\\|UNTIL\\|SCANFROM\\|DURATION\\|TAG\\|" ^
+            "MSG\\|MSF\\|RUN\\|CAL\\|SATISFY\\|SPECIAL\\|PS\\|PSFILE\\)")
+         in
+         let rem_chunks = Str.full_split rem_kw_regex !line in
+         (* merge the chunks back together, but replace the REM and AT clauses
+          * with special markers *)
+         let rec merge_chunks chunks s found_rem =
+            match chunks with
+            | [] ->
+               if found_rem then s else "REMREPLACE " ^ s
+            | (Str.Delim "REM") :: (Str.Text datespec) :: tail ->
+               merge_chunks tail (s ^ "REMREPLACE") true
+            | (Str.Delim "REM") :: tail ->
+               merge_chunks tail (s ^ "REMREPLACE") true
+            | (Str.Delim "AT")  :: (Str.Text timespec) :: tail ->
+               merge_chunks tail (s ^ "ATREPLACE") found_rem
+            | (Str.Delim "AT")  :: tail ->
+               merge_chunks tail (s ^ "ATREPLACE") found_rem
+            | (Str.Delim x)      :: tail ->
+               merge_chunks tail (s ^ x) found_rem
+            | (Str.Text x)      :: tail ->
+               merge_chunks tail (s ^ x) found_rem
+         in
+         let marked_remline = merge_chunks rem_chunks "" false in
+         let new_iface = {iface with rem_buffer = marked_remline} in
+         draw_error iface "copied reminder to clipboard." false;
+         assert (doupdate ());
+         (new_iface, reminders)
+      with
+      |End_of_file ->
+         close_in in_channel;
+         let _ = beep () in
+         draw_error iface "error while copying reminder." false;
+         assert (doupdate ());
+         (iface, reminders)
+      |_ ->
+         let _ = beep () in
+         draw_error iface "unable to parse selected reminder." false;
+         assert (doupdate ());
+         (iface, reminders)
+      end
+   end
+
+
 (* handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
    if not iface.is_entering_search then begin
@@ -1100,6 +1201,8 @@ let handle_keypress key (iface : interface_state_t) reminders =
                   List.hd all_remfiles
             in
             handle_edit_any iface reminders selected_remfile
+         |Rcfile.CopyReminder ->
+            handle_copy_reminder iface reminders
          |Rcfile.ScrollDescUp ->
             handle_scroll_desc_up iface reminders
          |Rcfile.ScrollDescDown ->

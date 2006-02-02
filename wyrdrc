@@ -96,6 +96,7 @@ bind "z"                 zoom
 bind "<return>"          edit
 bind "<enter>"           edit
 bind "e"                 edit_any
+bind "y"                 copy
 bind "d"                 scroll_description_up
 bind "D"                 scroll_description_down
 bind "t"                 new_timed
