@@ -500,6 +500,7 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
        remfile =
    let ts = timestamp_of_line iface iface.left_selection in
    let tm = Unix.localtime ts in
+   (* take care of the substitution characters in remline templates *)
    let substitute template =
       let rec substitute_aux subst_list s =
          match subst_list with
@@ -544,11 +545,13 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
             | (Some t, _)          -> substitute t
             end
       in
+      (* append the remline to the reminders file *)
       let remfile_channel = 
          open_out_gen [Open_append; Open_creat; Open_text] 416 remfile
       in
       output_string remfile_channel remline;
       close_out remfile_channel;
+      (* open the reminders file in an editor *)
       let filename_sub = Str.regexp "%f" in
       let command = 
          Str.global_replace filename_sub remfile
@@ -1051,7 +1054,7 @@ let handle_scroll_desc_down iface reminders =
    handle_refresh new_iface reminders
 
 
-(* copy a reminder string to the buffer *)
+(* handle copying a reminder string to the buffer *)
 let handle_copy_reminder iface reminders =
    let adjust_s len s =
       let pad = s ^ (String.make len ' ') in
@@ -1152,6 +1155,61 @@ let handle_copy_reminder iface reminders =
    end
 
 
+(* handle pasting a reminder into a new location *)
+let handle_paste_reminder (iface : interface_state_t) reminders remfile =
+   let ts = timestamp_of_line iface iface.left_selection in
+   let tm = Unix.localtime ts in
+   let rem_datespec = 
+      "REM " ^ Utility.string_of_tm_mon tm.Unix.tm_mon ^ " " ^
+      string_of_int tm.Unix.tm_mday ^ " " ^
+      string_of_int (tm.Unix.tm_year + 1900) ^ " "
+   and at_timespec =
+      "AT " ^ Printf.sprintf "%.2d" tm.Unix.tm_hour ^ ":" ^
+      Printf.sprintf "%.2d" tm.Unix.tm_min ^ " "
+   in
+   (* replace REMREPLACE and ATREPLACE keywords by sensible REM and
+    * AT clauses corresponding to the selected date and time *)
+   let rem_regex = Str.regexp "REMREPLACE" in
+   let at_regex  = Str.regexp "ATREPLACE" in
+   let temp        = Str.replace_first rem_regex rem_datespec iface.rem_buffer in
+   let new_remline = Str.replace_first at_regex at_timespec temp in
+   (* paste into the reminders file *)
+   let remfile_channel = 
+      open_out_gen [Open_append; Open_creat; Open_text] 416 remfile
+   in
+   output_string remfile_channel new_remline;
+   close_out remfile_channel;
+   (* open reminders file in editor *)
+   let filename_sub = Str.regexp "%f" in
+   let command = 
+      Str.global_replace filename_sub remfile
+         !Rcfile.edit_new_command
+   in
+   def_prog_mode ();
+   endwin ();
+   let _ = Unix.system command in 
+   reset_prog_mode ();
+   begin try
+      assert (curs_set 0)
+   with _ ->
+      ()
+   end;
+   let r = Remind.create_three_month iface.top_timestamp in
+   (* if the untimed list has been altered, change the focus to
+    * the first element of the list *)
+   let new_iface =
+      if List.length r.Remind.curr_untimed <> 
+         List.length reminders.Remind.curr_untimed then {
+         iface with top_untimed = 0;
+                    top_desc = 0;
+                    right_selection = 1
+         }
+      else
+         iface
+   in
+   handle_refresh new_iface r
+
+
 (* handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
    if not iface.is_entering_search then begin
@@ -1195,7 +1253,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
                (* if there's only one remfile, jump right in, otherwise
                 * pop up a selection dialog *)
                if List.length all_remfiles > 1 then
-                  do_selection_dialog iface "Choose a reminders file"
+                  do_selection_dialog iface "Choose a reminders file to edit"
                      all_remfiles
                else
                   List.hd all_remfiles
@@ -1203,6 +1261,21 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_edit_any iface reminders selected_remfile
          |Rcfile.CopyReminder ->
             handle_copy_reminder iface reminders
+         |Rcfile.PasteReminder ->
+            handle_paste_reminder iface reminders 
+            (Utility.expand_file !Rcfile.reminders_file)
+         |Rcfile.PasteReminderDialog ->
+            let all_remfiles = Remind.get_included_remfiles () in
+            let selected_remfile = 
+               (* if there's only one remfile, jump right in, otherwise
+                * pop up a selection dialog *)
+               if List.length all_remfiles > 1 then
+                  do_selection_dialog iface "Choose a reminders file to paste into"
+                     all_remfiles
+               else
+                  List.hd all_remfiles
+            in
+            handle_paste_reminder iface reminders selected_remfile
          |Rcfile.ScrollDescUp ->
             handle_scroll_desc_up iface reminders
          |Rcfile.ScrollDescDown ->

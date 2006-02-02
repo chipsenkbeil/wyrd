@@ -46,6 +46,7 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | ScrollDescUp | ScrollDescDown | Refresh
                  | ViewAllReminders | ViewWeek | ViewMonth
                  | NextReminder | ViewKeybindings | CopyReminder
+                 | PasteReminder | PasteReminderDialog
                  | NewGenReminder of int | NewGenReminderDialog of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
@@ -299,6 +300,8 @@ let commands_list = [
    ("edit"                    , CommandOp Edit);
    ("edit_any"                , CommandOp EditAny);
    ("copy"                    , CommandOp CopyReminder);
+   ("paste"                   , CommandOp PasteReminder);
+   ("paste_dialog"            , CommandOp PasteReminderDialog);
    ("scroll_description_up"   , CommandOp ScrollDescUp);
    ("scroll_description_down" , CommandOp ScrollDescDown);
    ("new_timed"               , CommandOp NewTimed);
