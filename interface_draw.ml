@@ -264,10 +264,6 @@ let draw_timed_window iface reminders top lines =
       if x >= 0.0 then int_of_float x
       else pred (int_of_float x)
    in
-   let adjust_s len s =
-      let padded = s ^ (String.make len ' ') in
-      Str.string_before padded len
-   in
    let indent_colors = [| 
       Rcfile.Timed_reminder1;
       Rcfile.Timed_reminder2;
@@ -355,7 +351,6 @@ let draw_timed_window iface reminders top lines =
             let time_str = get_time_str () in
             let ts = timestamp_of_line iface rem_top_line in
             let tm = Unix.localtime ts in
-            let ts_str = string_of_tm tm in
             if rem_top_line = iface.left_selection && iface.selected_side = Left then
                wattron iface.scr.timed_win A.reverse
             else
@@ -383,7 +378,6 @@ let draw_timed_window iface reminders top lines =
                let time_str = get_time_str () in
                let ts = timestamp_of_line iface (rem_top_line + !count) in
                let tm = Unix.localtime ts in
-               let ts_str = string_of_tm tm in
                if rem_top_line + !count = iface.left_selection && 
                   iface.selected_side = Left then
                   wattron iface.scr.timed_win A.reverse
@@ -666,7 +660,6 @@ let draw_msg iface =
       wclrtoeol iface.scr.msg_win
    done;
    (* draw the date stamp *)
-   let acs = get_acs_codes () in
    Rcfile.color_on iface.scr.msg_win Rcfile.Selection_info;
    wattron iface.scr.msg_win (A.bold lor A.underline);
    trunc_mvwaddstr iface.scr.msg_win 0 0 iface.scr.mw_cols day_time_s;
