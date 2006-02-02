@@ -1089,11 +1089,17 @@ let handle_keypress key (iface : interface_state_t) reminders =
          |Rcfile.Edit ->
             handle_edit iface reminders
          |Rcfile.EditAny ->
-            let remfile = 
-               do_selection_dialog iface "Choose a reminders file"
-               (Remind.get_included_remfiles ())
+            let all_remfiles = Remind.get_included_remfiles () in
+            let selected_remfile = 
+               (* if there's only one remfile, jump right in, otherwise
+                * pop up a selection dialog *)
+               if List.length all_remfiles > 1 then
+                  do_selection_dialog iface "Choose a reminders file"
+                     all_remfiles
+               else
+                  List.hd all_remfiles
             in
-            handle_edit_any iface reminders remfile
+            handle_edit_any iface reminders selected_remfile
          |Rcfile.ScrollDescUp ->
             handle_scroll_desc_up iface reminders
          |Rcfile.ScrollDescDown ->

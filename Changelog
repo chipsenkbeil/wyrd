@@ -1,6 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2006-02-01     The 'edit_any' command now spawns a selection dialog only
+               when the user has multiple reminder files.
+
 2005-11-20     Released 1.2.0.
 
                Added the 'busy_algorithm' and 'untimed_duration' configuration

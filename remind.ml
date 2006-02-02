@@ -533,7 +533,7 @@ let find_next msg_regex timestamp =
    check_messages ()
 
 
-(* get a list of all INCLUDEd reminder files *)
+(* get a list of the main remfile and all INCLUDEd reminder files *)
 let get_included_remfiles () =   
    let main_remfile = Utility.expand_file !Rcfile.reminders_file in
    let remfile_channel = open_in main_remfile in
