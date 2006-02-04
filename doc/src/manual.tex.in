@@ -226,6 +226,16 @@ movement using the standard mapping from
 \Cmd{vi}{1}.
 %@% END-IF %@%
 
+In addition to the hotkeys provided above, Wyrd lets you jump immediately to a
+desired date by pressing \texttt{'g'}, entering in a date specifier, and
+then pressing \texttt{<return>}.  Any of the following date specifiers may be used:
+\begin{itemize}
+   \item 8 digits representing year, month, and day: YYYYMMDD
+   \item 4 digits representing month and day (of current year): MMDD
+   \item 2 digits representing day (of current month and year): DD
+\end{itemize}
+
+
 \subsection{Editing Reminders}
 Note: By default, Wyrd is configured to use the Vim editor for modifying your
 reminder files.  To use a different editor, see
@@ -649,6 +659,11 @@ CONFIGURATION VARIABLES section.
       in the center of the timed reminders window, and the schedule scrolls around
       it.  When set to \texttt{"false"} (the default), the cursor will move up
       and down the schedule during scrolling operations.
+   \item \texttt{goto\_big\_endian} \\
+      A boolean value that determines how the the \texttt{goto} operation will
+      parse dates.  When set to \texttt{"true"}, date specifiers should be in
+      ISO 8601 (YYYYMMDD) format.  When set to \texttt{"false"}, date specifiers
+      should be in European style DDMMYYYY format.
 \end{itemize}
 For maximum usefulness, \texttt{busy\_level1} $<$ \texttt{busy\_level2} $<$ 
 \texttt{busy\_level3} $<$ \texttt{busy\_level4}.
@@ -688,6 +703,8 @@ The following is a list of every available operation.
       jump backward one month
    \item \texttt{home} \\
       jump to the current date and time
+   \item \texttt{goto} \\
+      begin entering a date specifier to jump to
    \item \texttt{zoom} \\
       zoom in on the day schedule view (this operation is cyclic)
    \item \texttt{edit} \\
@@ -753,11 +770,11 @@ The following is a list of every available operation.
    \item \texttt{quit} \\
       exit Wyrd
    \item \texttt{entry\_complete} \\
-      signal completion of search string entry
+      signal completion of search string entry or date specifier
    \item \texttt{entry\_backspace} \\
-      delete the last character of the search string
+      delete the last character of the search string or date specifier
    \item \texttt{entry\_cancel} \\
-      cancel entry of a search string
+      cancel entry of a search string or date specifier
 \end{itemize}
 
 

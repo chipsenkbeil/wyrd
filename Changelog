@@ -1,7 +1,12 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2006-02-04     Implemented the 'cut', 'copy', and 'paste' operations, which
+2006-02-04     Implemented the 'goto' operation, which allows the user to
+               manually enter a date and then jump immediately to that day.
+               The boolean option 'goto_big_endian' selects whether dates
+               are represented using YYYYMMDD or DDMMYYYY format.
+
+2006-02-03     Implemented the 'cut', 'copy', and 'paste' operations, which
                provide a convenient interface to duplicate or reschedule
                reminders.
 

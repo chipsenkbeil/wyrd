@@ -47,7 +47,7 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | ViewAllReminders | ViewWeek | ViewMonth
                  | NextReminder | ViewKeybindings | CopyReminder
                  | PasteReminder | PasteReminderDialog 
-                 | CutReminder
+                 | CutReminder | Goto
                  | NewGenReminder of int | NewGenReminderDialog of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
@@ -113,6 +113,8 @@ let status_12_hour      = ref true
 let description_12_hour = ref true
 (* Center the schedule on the cursor? *)
 let center_cursor = ref false
+(* "jump to" date syntax is big-endian? *)
+let goto_big_endian = ref true
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -297,6 +299,7 @@ let commands_list = [
    ("next_month"              , CommandOp NextMonth);
    ("previous_month"          , CommandOp PrevMonth);
    ("home"                    , CommandOp Home);
+   ("goto"                    , CommandOp Goto);
    ("zoom"                    , CommandOp Zoom);
    ("edit"                    , CommandOp Edit);
    ("edit_any"                , CommandOp EditAny);
@@ -529,6 +532,8 @@ let parse_line line_stream =
          parse_set "description_12_hour" description_12_hour bool_of_string "Expected a boolean string after "
       | [< 'Ident "center_cursor" >] ->
          parse_set "center_cursor" center_cursor bool_of_string "Expected a boolean string after "
+      | [< 'Ident "goto_big_endian" >] ->
+         parse_set "goto_big_endian" goto_big_endian bool_of_string "Expected a boolean string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end

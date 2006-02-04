@@ -66,6 +66,10 @@ set description_12_hour="true"
 # reminders
 set center_cursor="false"
 
+# date syntax for the 'go to date' command can be big or little endian
+set goto_big_endian="true"
+
+
 # key bindings
 bind "j"                 scroll_down
 bind "<down>"            scroll_down
@@ -92,6 +96,7 @@ bind "J"                 next_week
 bind "{"                 previous_month
 bind "}"                 next_month
 bind "<home>"            home
+bind "g"                 goto
 bind "z"                 zoom
 bind "<return>"          edit
 bind "<enter>"           edit

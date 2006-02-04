@@ -1294,9 +1294,102 @@ let handle_cut_reminder iface reminders =
    end
 
 
+(* handle jumping to a specified date *)
+let handle_goto (iface : interface_state_t) reminders =
+   let tm = Unix.localtime (Unix.time () -. (time_inc iface)) in
+   let len = String.length iface.goto_input in
+   if not (List.mem len [2; 4; 8]) then
+      failwith "length must be 2, 4, or 8 characters."
+   else begin
+      let (year_s, month_s, day_s) = 
+         if !Rcfile.goto_big_endian then
+            if len = 8 then (
+               String.sub iface.goto_input 0 4,
+               String.sub iface.goto_input 4 2,
+               String.sub iface.goto_input 6 2
+            )
+            else if len = 4 then (
+               string_of_int (tm.Unix.tm_year + 1900),
+               String.sub iface.goto_input 0 2,
+               String.sub iface.goto_input 2 2
+            )
+            else (
+               string_of_int (tm.Unix.tm_year + 1900),
+               string_of_int (tm.Unix.tm_mon + 1),
+               iface.goto_input
+            )
+         else
+            if len = 8 then (
+               String.sub iface.goto_input 4 4,
+               String.sub iface.goto_input 2 2,
+               String.sub iface.goto_input 0 2
+            )
+            else if len = 4 then (
+               string_of_int (tm.Unix.tm_year + 1900),
+               String.sub iface.goto_input 2 2,
+               String.sub iface.goto_input 0 2
+            )
+            else (
+               string_of_int (tm.Unix.tm_year + 1900),
+               string_of_int (tm.Unix.tm_mon + 1),
+               iface.goto_input
+            )
+      in
+      let year  = (int_of_string year_s) - 1900 
+      and month = (int_of_string month_s) - 1
+      and day   = int_of_string day_s in
+      let jump_time = {
+         tm with Unix.tm_year = year;
+                 Unix.tm_mon  = month;
+                 Unix.tm_mday = day
+      } in
+      let (rounded_time, rt) =
+         try
+            Unix.mktime (round_time iface.zoom_level jump_time)
+         with _ ->
+            failwith "requested date is out of range."
+      in
+      if rt.Unix.tm_mday <> jump_time.Unix.tm_mday then
+         failwith "requested day of the month is out of range."
+      else if rt.Unix.tm_mon <> jump_time.Unix.tm_mon then
+         failwith "requested month is out of range."
+      else if (rt.Unix.tm_year + 1900) < 1991 || (rt.Unix.tm_year + 1900) > 2074 then
+         failwith "requested year is out of range."
+      else
+         ();
+      let new_iface = {
+         iface with top_timestamp = 
+                       if !Rcfile.center_cursor then
+                          rounded_time -. (time_inc iface) *. (float_of_int ((iface.scr.tw_lines / 2) - 2))
+                       else
+                          rounded_time -. (time_inc iface) *. 1.;
+                    top_desc         = 0;
+                    selected_side    = Left;
+                    left_selection   = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 2;
+                    right_selection  = 1;
+                    is_entering_goto = false;
+                    goto_input       = ""
+      } in
+      handle_selection_change new_iface reminders
+   end
+         
+
+(* Begin entry of a date/time to navigate to *)
+let handle_begin_goto (iface : interface_state_t) reminders =
+   let new_iface = {
+      iface with is_entering_goto = true
+   } in
+   if !Rcfile.goto_big_endian then
+      draw_error iface "go to date [[YYYY]MM]DD: " true
+   else
+      draw_error iface "go to date DD[MM[YYYY]]: " true;
+   (new_iface, reminders)
+
+
+
 (* handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
-   if not iface.is_entering_search then begin
+   if not (iface.is_entering_search || iface.is_entering_goto) then begin
       try
          match Rcfile.command_of_key key with
          |Rcfile.ScrollDown ->
@@ -1329,6 +1422,8 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_switch_focus iface reminders
          |Rcfile.Home ->
             handle_home iface reminders
+         |Rcfile.Goto ->
+            handle_begin_goto iface reminders
          |Rcfile.Edit ->
             handle_edit iface reminders
          |Rcfile.EditAny ->
@@ -1436,57 +1531,116 @@ let handle_keypress key (iface : interface_state_t) reminders =
       try
          begin match Rcfile.entry_of_key key with
          |Rcfile.EntryComplete ->
-            begin try
-               let new_iface = {
-                  iface with search_regex = Str.regexp_case_fold iface.search_input;
-                             search_input = "";
-                             is_entering_search = false
-               } in
-               handle_find_next new_iface reminders None
-            with Failure err ->
+            if iface.is_entering_search then
+               begin try
+                  let new_iface = {
+                     iface with search_regex = Str.regexp_case_fold iface.search_input;
+                                search_input = "";
+                                is_entering_search = false
+                  } in
+                  handle_find_next new_iface reminders None
+               with Failure err ->
+                  let new_iface = {
+                     iface with search_input = "";
+                                is_entering_search = false
+                  } in
+                  let _ = beep () in
+                  draw_error new_iface ("syntax error in search string: " ^ err) false;
+                  assert (doupdate ());
+                  (new_iface, reminders)
+               end
+            else
+               begin try
+                  handle_goto iface reminders
+               with Failure err ->
+                  let new_iface = {
+                     iface with is_entering_goto = false;
+                                goto_input = ""
+                  } in
+                  let _ = beep () in
+                  draw_error new_iface ("syntax error in date specifier: " ^ err) false;
+                  assert (doupdate ());
+                  (new_iface, reminders)
+               end
+         |Rcfile.EntryBackspace ->
+            if iface.is_entering_search then
+               let len = String.length iface.search_input in
+               if len > 0 then 
+                  let new_iface = {
+                     iface with search_input = 
+                                 Str.string_before iface.search_input (pred len)
+                  } in
+                  draw_error iface ("search expression: " ^ new_iface.search_input) true;
+                  (new_iface, reminders)
+               else
+                  let _ = beep () in
+                  (iface, reminders)
+            else
+               let len = String.length iface.goto_input in
+               if len > 0 then begin
+                  let new_iface = {
+                     iface with goto_input = 
+                                 Str.string_before iface.goto_input (pred len)
+                  } in
+                  if !Rcfile.goto_big_endian then
+                     draw_error iface ("go to date [[YYYY]MM]DD: " ^ new_iface.goto_input) true
+                  else
+                     draw_error iface ("go to date DD[MM[YYYY]]: " ^ new_iface.goto_input) true;
+                  (new_iface, reminders)
+               end else
+                  let _ = beep () in
+                  (iface, reminders)
+         |Rcfile.EntryExit ->
+            if iface.is_entering_search then begin
                let new_iface = {
                   iface with search_input = "";
                              is_entering_search = false
                } in
-               draw_error new_iface ("syntax error in search string: " ^ err) false;
-               assert (doupdate ());
+               draw_error new_iface "search cancelled." false;
+               (new_iface, reminders)
+            end else begin
+               let new_iface = {
+                  iface with goto_input = "";
+                             is_entering_goto = false
+               } in
+               draw_error new_iface "date entry cancelled." false;
                (new_iface, reminders)
             end
-         |Rcfile.EntryBackspace ->
-            let len = String.length iface.search_input in
-            if len > 0 then 
-               let new_iface = {
-               iface with search_input = 
-                           Str.string_before iface.search_input (pred len)
-               } in
-               draw_error iface ("search expression: " ^ new_iface.search_input) true;
-               (new_iface, reminders)
-            else
-               let _ = beep () in
-               (iface, reminders)
-         |Rcfile.EntryExit ->
-            let new_iface = {
-               iface with search_input = "";
-                          is_entering_search = false
-            } in
-            draw_error new_iface "search cancelled." false;
-            (new_iface, reminders)
          end
       with Not_found ->
-         begin try
-            (* only printable characters are accepted for search strings *)
-            if key >= 32 && key <= 126 then begin
-               let c = char_of_int key in
-               let new_iface = {
-                  iface with search_input = iface.search_input ^ (String.make 1 c)
-               } in
-               draw_error new_iface ("search expression: " ^ new_iface.search_input) true;
-               (new_iface, reminders)
-            end else
-               failwith "cannot search for unprintable characters"
-         with Failure _ ->
-            let _ = beep () in
-            (iface, reminders)
+         if iface.is_entering_search then begin 
+            try
+               (* only printable characters are accepted for search strings *)
+               if key >= 32 && key <= 126 then begin
+                  let c = char_of_int key in
+                  let new_iface = {
+                     iface with search_input = iface.search_input ^ (String.make 1 c)
+                  } in
+                  draw_error new_iface ("search expression: " ^ new_iface.search_input) true;
+                  (new_iface, reminders)
+               end else
+                  failwith "cannot search for unprintable characters"
+            with Failure _ ->
+               let _ = beep () in
+               (iface, reminders)
+         end else begin
+            try
+               (* only digits are accepted for goto dates *)
+               if key >= 48 && key <= 57 && (String.length iface.goto_input < 8) then begin
+                  let c = char_of_int key in
+                  let new_iface = {
+                     iface with goto_input = iface.goto_input ^ (String.make 1 c)
+                  } in
+                  if !Rcfile.goto_big_endian then
+                     draw_error iface ("go to date [[YYYY]MM]DD: " ^ new_iface.goto_input) true
+                  else
+                     draw_error iface ("go to date DD[MM[YYYY]]: " ^ new_iface.goto_input) true;
+                  (new_iface, reminders)
+               end else
+                  failwith "date characters must be digits"
+            with Failure _ ->
+               let _ = beep () in
+               (iface, reminders)
          end
    end
 
