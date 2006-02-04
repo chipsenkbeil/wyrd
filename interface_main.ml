@@ -1101,18 +1101,17 @@ let handle_copy_reminder_aux iface reminders copy_only =
       (iface, fl)
    |Some (filename, line_num_str) ->
       let in_channel = open_in filename in
-      let cont_regex = Str.regexp "*\\(\\\\[ \t]*\\)$" in
+      let cont_regex = Str.regexp ".*\\(\\\\\\)$" in
       begin try
          (* grab a copy of the specified line *)
          let line = ref "" in
          for curr_line = 1 to int_of_string line_num_str do
-            line := input_line in_channel
-         done;
-         (* continue grabbing lines if they are connected by backslashes *)
-         while Str.string_match cont_regex !line 0 do
-            let bs_loc = Str.group_beginning 2 in
-            line := Str.string_before !line bs_loc;
-            line := !line ^ (input_line in_channel)
+            (* concatenate lines with trailing backslashes *)
+            if Str.string_match cont_regex !line 0 then
+               let bs_loc = Str.group_beginning 1 in
+               line := (Str.string_before !line bs_loc) ^ (input_line in_channel)
+            else
+               line := input_line in_channel
          done;
          close_in in_channel;
          (* break the REM line up into chunks corresponding to the different fields *)
@@ -1228,31 +1227,34 @@ let handle_paste_reminder (iface : interface_state_t) reminders remfile =
 
 (* handle cutting a reminder and dropping it in the clipboard *)
 let handle_cut_reminder iface reminders =
+   (* yes, there's some redundant code here... maybe cut and copy
+    * should be merged into one function? *)
    let (iface, fl) = handle_copy_reminder_aux iface reminders false in
    begin match fl with
    |None ->
       (iface, reminders)
    |Some (filename, line_num_str) ->
       let in_channel = open_in filename in
-      let cont_regex = Str.regexp "*\\(\\\\[ \t]*\\)$" in
+      let cont_regex = Str.regexp ".*\\(\\\\\\)$" in
       (* load in the file, but skip over the selected reminder *)
-      let rec process_in_lines lines line_num =
+      let rec process_in_lines lines continuations line_num =
          try
             let line = input_line in_channel in
             if line_num = int_of_string line_num_str then
-               (* continue grabbing lines if they are connected by backslashes *)
-               let line_ref = ref line in
-               while Str.string_match cont_regex !line_ref 0 do
-                  line_ref := input_line in_channel
-               done;
-               process_in_lines lines (succ line_num)
+               (* throw out any continued lines *)
+               process_in_lines lines [] (succ line_num)
+            else if Str.string_match cont_regex line 0 then
+               (* if there's a backslash, buffer the line in continuations list *)
+               process_in_lines lines (line :: continuations) (succ line_num)
             else
-               process_in_lines (line :: lines) (succ line_num)
+               (* if there's no backslash, go ahead and dump the continuations list
+                * into the list of lines to write *)
+               process_in_lines (line :: (continuations @ lines)) [] (succ line_num)
          with End_of_file ->
             close_in in_channel;
             List.rev lines
       in
-      let remaining_lines = process_in_lines [] 1 in
+      let remaining_lines = process_in_lines [] [] 1 in
       let out_channel = open_out filename in
       (* write out the new file *)
       let rec write_lines lines =
