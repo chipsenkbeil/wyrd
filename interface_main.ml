@@ -137,11 +137,11 @@ let resize_subwins iface =
 
 (* refresh the screen *)
 let handle_refresh (iface : interface_state_t) reminders =
-   let _ = touchwin iface.scr.help_win in
-   let _ = touchwin iface.scr.timed_win in
-   let _ = touchwin iface.scr.calendar_win in
-   let _ = touchwin iface.scr.untimed_win in
-   let _ = touchwin iface.scr.msg_win in 
+   let _ = wtouchln iface.scr.help_win 0 1 true in
+   let _ = wtouchln iface.scr.timed_win 0 iface.scr.tw_lines true in
+   let _ = wtouchln iface.scr.calendar_win 0 iface.scr.cw_lines true in
+   let _ = wtouchln iface.scr.untimed_win 0 iface.scr.uw_lines true in
+   let _ = wtouchln iface.scr.msg_win 0 iface.scr.mw_lines true in
    draw_help iface;
    let new_iface = draw_timed iface reminders.Remind.all_timed in
    draw_date_strip new_iface;
