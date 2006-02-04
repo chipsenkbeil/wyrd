@@ -16,7 +16,7 @@
 \usepackage{fullpage}
 %@% ELSE %@%
 \usepackage{latex2man}
-\setVersion{1.2}
+\setVersion{1.3}
 %@% END-IF %@%
 
 % End preamble
@@ -24,9 +24,9 @@
 
 \begin{document}
 %@% IF LATEX %@%
-\title{Wyrd v1.2 User Manual}
+\title{Wyrd v1.3 User Manual}
 \author{Paul J. Pelzl}
-\date{November 19, 2005}
+\date{February 4, 2006}
 \maketitle
 
 \begin{center}
@@ -113,7 +113,7 @@ systems (particularly *BSD), you may need to use \texttt{gmake}.
    \texttt{wyrdrc} is the configuration textfile for the \Cmd{wyrd}{1} console calendar application.
 \end{Name}
    %@% ELSE %@%
-\begin{Name}{1}{wyrd}{Paul J. Pelzl}{a console calendar application}{Wyrd 1.2 Manpage}
+\begin{Name}{1}{wyrd}{Paul J. Pelzl}{a console calendar application}{Wyrd 1.3 Manpage}
    \Prog{wyrd} is a text-based front-end to \Cmd{remind}{1}, a sophisticated
    calendar and alarm program.
 \end{Name}
@@ -254,7 +254,7 @@ file.
 
 If you select a reminder (either timed or untimed) and hit \texttt{<return>}, you
 will begin editing that reminder.  Wyrd will open up the appropriate reminders
-file in your editor and move the cursor to the appropriate \texttt{REM} line.
+file in your editor and move the cursor to the corresponding \texttt{REM} line.
 
 If you select a timeslot that contains multiple overlapping reminders, Wyrd
 will provide a dialog that allows you to select the desired reminder.
@@ -266,6 +266,32 @@ is selected).
 Finally, pressing \texttt{'e'} will open the reminder file in your editor without
 attempting to select any particular reminder.
 
+\subsection{Cutting and Pasting Reminders}
+Reminders can be easily duplicated or rescheduled through the use of Wyrd's
+cutting and pasting features.
+
+Selecting a reminder and pressing \texttt{'X'} will cut that reminder: the
+corrdsponding \texttt{REM} line is deleted from your reminders file, and the
+reminder is copied to Wyrd's clipboard.  To copy a reminder without deleting it,
+use \texttt{'y'} instead.
+
+To paste a reminder from the clipboard back into your schedule, just move the
+cursor to the desired date/time and press \texttt{'p'}.  Wyrd will append a
+new \texttt{REM} line to the end of your reminders file, and open the file with
+your editor.  The \texttt{REM} line will be configured to trigger on the
+selected date.  If the copied reminder was timed, then the pasted reminder will
+be set to trigger at the selected time using the original \texttt{DURATION}
+setting.  (Additional Remind settings such as \texttt{delta} and \texttt{tdelta}
+are not preserved by copy-and-paste.)
+
+If you wish to paste a reminder into a non-default reminders file, use
+\texttt{'P'}.  This will spawn a selection dialog where you can choose the
+file that will hold the new reminder.
+
+WARNING: Cutting a reminder will delete only the single \texttt{REM} command
+responsible for triggering it.  If you are using more complicated Remind
+scripting techniques to generate a particular reminder, then the \texttt{cut}
+operation may not do what you want.
 
 \subsection{Viewing Reminders}
 
@@ -693,6 +719,14 @@ The following is a list of every available operation.
    %@% ELSE %@%
    \item new\_template\emph{N}\_dialog \\
    %@% END-IF %@%
+      same as previous, with a reminder file selection dialog
+   \item copy \\
+      copy a reminder to Wyrd's clipboard
+   \item cut \\
+      delete a reminder and copy it to Wyrd's clipboard
+   \item paste \\
+      paste a reminder from Wyrd's clipboard into the schedule
+   \item paste\_dialog \\
       same as previous, with a reminder file selection dialog
    \item \texttt{switch\_window} \\
       switch between the day schedule window on the left, and the untimed

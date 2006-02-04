@@ -1,6 +1,10 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2006-02-04     Implemented the 'cut', 'copy', and 'paste' operations, which
+               provide a convenient interface to duplicate or reschedule
+               reminders.
+
 2006-02-01     The 'edit_any' command now spawns a selection dialog only
                when the user has multiple reminder files.
 
