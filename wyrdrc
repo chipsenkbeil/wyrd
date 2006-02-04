@@ -97,6 +97,7 @@ bind "<return>"          edit
 bind "<enter>"           edit
 bind "e"                 edit_any
 bind "y"                 copy
+bind "X"                 cut
 bind "p"                 paste
 bind "P"                 paste_dialog
 bind "d"                 scroll_description_up

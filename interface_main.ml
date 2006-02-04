@@ -1054,8 +1054,8 @@ let handle_scroll_desc_down iface reminders =
    handle_refresh new_iface reminders
 
 
-(* handle copying a reminder string to the buffer *)
-let handle_copy_reminder iface reminders =
+(* auxiliary function for the following *)
+let handle_copy_reminder_aux iface reminders copy_only =
    let adjust_s len s =
       let pad = s ^ (String.make len ' ') in
       Str.string_before pad len
@@ -1073,8 +1073,15 @@ let handle_copy_reminder iface reminders =
               let get_msg (_, _, time, msg, _) = (adjust_s 16 time) ^ msg in
               let msg_list = List.rev_map get_msg sorted_rem_list in
               let selected_msg =
-                 do_selection_dialog iface "Choose a reminder to copy" msg_list
+                 let dialog_msg =
+                    if copy_only then
+                       "Choose a reminder to copy"
+                    else
+                       "Choose a reminder to cut"
+                 in
+                 do_selection_dialog iface dialog_msg msg_list
               in
+              let _ = handle_refresh iface reminders in
               let test_msg_match (_, _, time, msg, _) = 
                  ((adjust_s 16 time) ^ msg) = selected_msg in
               let (f, l, t, m, s) = (List.find test_msg_match sorted_rem_list) in
@@ -1091,7 +1098,7 @@ let handle_copy_reminder iface reminders =
       let _ = beep () in
       draw_error iface "no reminder is selected." false;
       assert (doupdate ());
-      (iface, reminders)
+      (iface, fl)
    |Some (filename, line_num_str) ->
       let in_channel = open_in filename in
       let cont_regex = Str.regexp "*\\(\\\\[ \t]*\\)$" in
@@ -1136,23 +1143,32 @@ let handle_copy_reminder iface reminders =
          in
          let marked_remline = merge_chunks rem_chunks "" false in
          let new_iface = {iface with rem_buffer = marked_remline} in
-         draw_error iface "copied reminder to clipboard." false;
-         assert (doupdate ());
-         (new_iface, reminders)
+         if copy_only then begin
+            draw_error iface "copied reminder to clipboard." false;
+            assert (doupdate ());
+         end else
+            ();
+         (new_iface, fl)
       with
       |End_of_file ->
          close_in in_channel;
          let _ = beep () in
          draw_error iface "error while copying reminder." false;
          assert (doupdate ());
-         (iface, reminders)
+         (iface, fl)
       |_ ->
          let _ = beep () in
          draw_error iface "unable to parse selected reminder." false;
          assert (doupdate ());
-         (iface, reminders)
+         (iface, fl)
       end
    end
+
+
+(* handle copying a reminder string to the buffer *)
+let handle_copy_reminder iface reminders copy_only =
+   let new_iface, _ = handle_copy_reminder_aux iface reminders copy_only in
+   (new_iface, reminders)
 
 
 (* handle pasting a reminder into a new location *)
@@ -1210,6 +1226,65 @@ let handle_paste_reminder (iface : interface_state_t) reminders remfile =
    handle_refresh new_iface r
 
 
+(* handle cutting a reminder and dropping it in the clipboard *)
+let handle_cut_reminder iface reminders =
+   let (iface, fl) = handle_copy_reminder_aux iface reminders false in
+   begin match fl with
+   |None ->
+      (iface, reminders)
+   |Some (filename, line_num_str) ->
+      let in_channel = open_in filename in
+      let cont_regex = Str.regexp "*\\(\\\\[ \t]*\\)$" in
+      (* load in the file, but skip over the selected reminder *)
+      let rec process_in_lines lines line_num =
+         try
+            let line = input_line in_channel in
+            if line_num = int_of_string line_num_str then
+               (* continue grabbing lines if they are connected by backslashes *)
+               let line_ref = ref line in
+               while Str.string_match cont_regex !line_ref 0 do
+                  line_ref := input_line in_channel
+               done;
+               process_in_lines lines (succ line_num)
+            else
+               process_in_lines (line :: lines) (succ line_num)
+         with End_of_file ->
+            close_in in_channel;
+            List.rev lines
+      in
+      let remaining_lines = process_in_lines [] 1 in
+      let out_channel = open_out filename in
+      (* write out the new file *)
+      let rec write_lines lines =
+         begin match lines with
+         | [] ->
+            close_out out_channel
+         | line :: tail ->
+            output_string out_channel (line ^ "\n");
+            write_lines tail
+         end
+      in
+      write_lines remaining_lines;
+      let r = Remind.create_three_month iface.top_timestamp in
+      (* if the untimed list has been altered, change the focus to
+       * the first element of the list *)
+      let new_iface =
+         if List.length r.Remind.curr_untimed <> 
+            List.length reminders.Remind.curr_untimed then {
+            iface with top_untimed = 0;
+                       top_desc = 0;
+                       right_selection = 1
+            }
+         else
+            iface
+      in
+      let final_iface, _ = handle_refresh new_iface r in
+      draw_error final_iface "cut reminder to clipboard." false;
+      assert (doupdate ());
+      (final_iface, r)
+   end
+
+
 (* handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
    if not iface.is_entering_search then begin
@@ -1260,7 +1335,9 @@ let handle_keypress key (iface : interface_state_t) reminders =
             in
             handle_edit_any iface reminders selected_remfile
          |Rcfile.CopyReminder ->
-            handle_copy_reminder iface reminders
+            handle_copy_reminder iface reminders true
+         |Rcfile.CutReminder ->
+            handle_cut_reminder iface reminders
          |Rcfile.PasteReminder ->
             handle_paste_reminder iface reminders 
             (Utility.expand_file !Rcfile.reminders_file)
