@@ -559,7 +559,7 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
       in
       def_prog_mode ();
       endwin ();
-      let _ = Unix.system command in 
+      let editor_process_status = Unix.system command in 
       reset_prog_mode ();
       begin try
          assert (curs_set 0)
@@ -579,7 +579,24 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
          else
             iface
       in
-      handle_refresh new_iface r
+      begin match editor_process_status with
+      | Unix.WEXITED return_code ->
+         if return_code <> 0 then begin
+            let (new_iface, r)  = handle_refresh new_iface r in
+            let _ = beep () in
+            draw_error new_iface 
+               "Error when launching editor; configure a different editor in ~/.wyrdrc ." false;
+            assert (doupdate ());
+            (new_iface, r)
+         end else
+            handle_refresh new_iface r
+      | _ -> 
+         let (new_iface, r) = handle_refresh new_iface r in
+         draw_error new_iface
+            "Editor process was interrupted." false;
+         assert (doupdate ());
+         (new_iface, r)
+      end
    with Template_undefined template_str ->
       draw_error iface (template_str ^ " is undefined.") false;
       assert (doupdate ());

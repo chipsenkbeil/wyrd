@@ -3,6 +3,8 @@ Wyrd ChangeLog
 
 2006-02-24     Set the default editor to $EDITOR.
 
+               Errors are now detected when launching an editor.
+
                Improved the Remind version detection within the build script.
 
 2006-02-04     Implemented the 'goto' operation, which allows the user to
