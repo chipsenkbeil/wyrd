@@ -26,7 +26,7 @@
 %@% IF LATEX %@%
 \title{Wyrd v1.3 User Manual}
 \author{Paul J. Pelzl}
-\date{February 4, 2006}
+\date{February 24, 2006}
 \maketitle
 
 \begin{center}
@@ -234,7 +234,13 @@ then pressing \texttt{<return>}.  Any of the following date specifiers may be us
    \item 4 digits representing month and day (of current year): MMDD
    \item 2 digits representing day (of current month and year): DD
 \end{itemize}
-
+(The date specifier format may be changed to DDMMYYYY; consult
+%@% IF LATEX %@%
+Section \ref{variables}.
+%@% ELSE %@%
+the section on CONFIGURATION VARIABLES.
+%@% END-IF %@%
+)
 
 \subsection{Editing Reminders}
 Note: By default, Wyrd is configured to modify your reminder files using the
