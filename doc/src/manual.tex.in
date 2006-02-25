@@ -237,8 +237,11 @@ then pressing \texttt{<return>}.  Any of the following date specifiers may be us
 
 
 \subsection{Editing Reminders}
-Note: By default, Wyrd is configured to use the Vim editor for modifying your
-reminder files.  To use a different editor, see
+Note: By default, Wyrd is configured to modify your reminder files using the
+text editor specified by the \texttt{\$EDITOR} environment variable.  (This
+configuration has been tested successfully with a number of common settings for
+\texttt{\$EDITOR}, including \texttt{'vim'}, \texttt{'emacs'}, and
+\texttt{'nano'}.)  If you wish to use a different editor, see
 %@% IF LATEX %@%
 Section \ref{advanced}.
 %@% ELSE %@%

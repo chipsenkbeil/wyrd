@@ -5,21 +5,11 @@ set remind_command="remind"
 # the default reminder file to display
 set reminders_file="~/.reminders"
 # command for editing an old appointment, given a line number %n and filename %f
-set edit_old_command="vim +%n %f"
+set edit_old_command="$EDITOR +%n %f"
 # command for editing a new appointment, given a filename %f
-set edit_new_command="vim -c '$' %f"
+set edit_new_command="$EDITOR +999999 %f"
 # command for free editing of the reminders file, given a filename %f
-set edit_any_command="vim %f"
-
-# emacs settings
-#set edit_old_command="emacs +%n %f"
-#set edit_new_command="emacs %f -f end-of-buffer -f beginning-of-line"
-#set edit_any_command="emacs %f"
-
-# nano settings
-#set edit_old_command="nano +%n %f"
-#set edit_new_command="nano +9999999 %f"
-#set edit_any_command="nano %f"
+set edit_any_command="$EDITOR %f"
 
 
 # templates for creating new appointments
