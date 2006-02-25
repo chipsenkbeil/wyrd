@@ -1,7 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2006-02-24     Set the default editor to $EDITOR.
+2006-02-24     Released 1.3.0.
+
+               Set the default editor to $EDITOR.
 
                Errors are now detected when launching an editor.
 
