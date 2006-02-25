@@ -151,7 +151,7 @@ if test ! "$CURSES_LIB"; then
 fi
 
 # check Remind version
-REMINDVERSION=`remind --help 2> /dev/null | head -n 2 | tail -n 1 | cut -d ' ' -f 2`
+REMINDVERSION=`strings \`which remind\` | grep 03\.0`
 echo "remind version is $REMINDVERSION"
 REMMAJORVERSION=`echo $REMINDVERSION | cut -d '.' -f 1`
 REMMINORVERSION=`echo $REMINDVERSION | cut -d '.' -f 2`
