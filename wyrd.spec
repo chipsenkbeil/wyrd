@@ -4,7 +4,7 @@
 # %#define __spec_install_post /usr/lib/rpm/brp-compress
 
 %define name wyrd
-%define version 1.2.0
+%define version 1.3.0
 %define sfx tar.gz
 %define release 1
 %define descr term based calendar frontend for remind
