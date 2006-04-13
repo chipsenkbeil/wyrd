@@ -147,7 +147,11 @@ let handle_refresh (iface : interface_state_t) reminders =
    draw_date_strip new_iface;
    draw_calendar new_iface reminders;
    let new_iface = draw_untimed new_iface reminders.Remind.curr_untimed in
-   draw_error new_iface "" false;
+   if String.length reminders.Remind.remind_error > 0 then
+      let _ = beep () in ()
+   else
+      ();
+   draw_error new_iface reminders.Remind.remind_error false;
    (new_iface, reminders)
    
 
@@ -1673,6 +1677,11 @@ let handle_keypress key (iface : interface_state_t) reminders =
 
 let rec do_main_loop (iface : interface_state_t) reminders last_update =
    if iface.run_wyrd then begin
+      if String.length reminders.Remind.remind_error > 0 then
+         draw_error iface ("Error in reminders file: \"" ^
+         reminders.Remind.remind_error ^ "\"") false
+      else
+         ();
       (* refresh the msg window (which contains a clock)
        * every wgetch timeout cycle *)
       let iface = draw_msg iface in

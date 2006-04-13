@@ -43,7 +43,8 @@ type three_month_rem_t = {
    next_untimed   : (float * string * string * string * bool) list;
    all_untimed    : (float * string * string * string * bool) list;
    curr_counts    : int array;
-   curr_cal       : Cal.t
+   curr_cal       : Cal.t;
+   remind_error   : string
 }
 
 
@@ -69,8 +70,17 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in (!Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
-   !Rcfile.reminders_file ^ " " ^ rem_date_str) in
+   let (remind_channel, remind_in_channel, remind_err_channel) = 
+      Unix.open_process_full (!Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
+      !Rcfile.reminders_file ^ " " ^ rem_date_str) [||] 
+   in
+   (* check for Remind errors *)
+   let remind_err =
+      try
+         input_line remind_err_channel
+      with End_of_file ->
+         ""
+   in
    let num_indentations = 4 in
    let indentations = Array.make_matrix (24 * 31) num_indentations false in
    let (month_start_ts, _) =
@@ -194,11 +204,13 @@ let month_reminders timestamp =
             build_lists untimed
       with
       | End_of_file ->
-           let _ = Unix.close_process_in remind_channel in
+           let _ = Unix.close_process_full (remind_channel, 
+              remind_in_channel, remind_err_channel) 
+           in
            for i = 0 to pred (Array.length timed) do
               timed.(i) <- List.rev timed.(i)
            done;
-           (timed, List.rev untimed)
+           (remind_err, timed, List.rev untimed)
       | _ ->
            (* if there's an error in regexp matching or string coersion,
             * just drop that reminder and go to the next line *)
@@ -336,13 +348,21 @@ let create_three_month timestamp =
    } in
    let (prev_ts, _) = Unix.mktime temp_prev
    and (next_ts, _) = Unix.mktime temp_next in
-   let (pt, pu) = month_reminders prev_ts in
-   let (ct, cu) = month_reminders curr_ts in
-   let (nt, nu) = month_reminders next_ts in 
+   let (pre, pt, pu) = month_reminders prev_ts in
+   let (cre, ct, cu) = month_reminders curr_ts in
+   let (nre, nt, nu) = month_reminders next_ts in 
    let at = Array.make (Array.length pt) [] in
    for i = 0 to pred (Array.length at) do
       at.(i) <- safe_append pt.(i) (safe_append ct.(i) nt.(i))
    done;
+   let err_str = 
+      if String.length pre > 0 then
+         pre
+      else if String.length cre > 0 then
+         cre
+      else
+         nre
+   in
    let au = safe_append cu (safe_append pu nu) in {
       curr_timestamp = curr_ts;
       prev_timed     = pt;
@@ -354,7 +374,8 @@ let create_three_month timestamp =
       next_untimed   = nu;
       all_untimed    = au;
       curr_counts    = count_busy month_start_tm at au;
-      curr_cal       = Cal.make curr_ts !Rcfile.week_starts_monday
+      curr_cal       = Cal.make curr_ts !Rcfile.week_starts_monday;
+      remind_error   = err_str   
    }
 
 
@@ -370,7 +391,7 @@ let next_month reminders =
    } in
    let (new_curr_timestamp, temp1) = Unix.mktime temp1 in
    let (next_timestamp, temp2)     = Unix.mktime temp2 in
-   let (t, u) = month_reminders next_timestamp in 
+   let (re, t, u) = month_reminders next_timestamp in 
    let at = Array.make (Array.length t) [] in
    for i = 0 to pred (Array.length t) do
       at.(i) <- safe_append reminders.curr_timed.(i) 
@@ -387,7 +408,8 @@ let next_month reminders =
       next_untimed   = u;
       all_untimed    = au;
       curr_counts    = count_busy temp1 at au;
-      curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday
+      curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday;
+      remind_error   = re
    }
 
 
@@ -402,7 +424,7 @@ let prev_month reminders =
    } in
    let (new_curr_timestamp, temp1) = Unix.mktime temp1 in
    let (prev_timestamp, temp2)     = Unix.mktime temp2 in
-   let (t, u) = month_reminders prev_timestamp in
+   let (re, t, u) = month_reminders prev_timestamp in
    let at = Array.make (Array.length t) [] in
    for i = 0 to pred (Array.length t) do
       at.(i) <- safe_append t.(i) 
@@ -419,7 +441,8 @@ let prev_month reminders =
       next_untimed   = reminders.curr_untimed;
       all_untimed    = au;
       curr_counts    = count_busy temp1 at au;
-      curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday
+      curr_cal       = Cal.make new_curr_timestamp !Rcfile.week_starts_monday;
+      remind_error   = re
    }
 
 
@@ -476,10 +499,12 @@ let find_next msg_regex timestamp =
    let rem_date_str2 = (string_of_tm_mon tm2.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm2.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
-   let remind_channel = Unix.open_process_in (!Rcfile.remind_command ^ " -n -s -b1 " ^ 
-   !Rcfile.reminders_file ^ " " ^ rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && " ^
-   !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ 
-   Rcfile.tmpfile ^ " - | sort") in
+   let (remind_channel, remind_in_channel, remind_err_channel) = 
+      Unix.open_process_full (!Rcfile.remind_command ^ " -n -s -b1 " ^ 
+      !Rcfile.reminders_file ^ " " ^ rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && " ^
+      !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ 
+      Rcfile.tmpfile ^ " - | sort") [||]
+   in
    let rec check_messages () =
       try
          let line = input_line remind_channel in
@@ -508,7 +533,9 @@ let find_next msg_regex timestamp =
                   let _ = Str.search_forward msg_regex msg 0 in
                   (* only return the match if this value is not tagged 'nodisplay' *)
                   if not (Str.string_match nodisplay_regex tag 0) then
-                     let _ = Unix.close_process_in remind_channel in
+                     let _ = Unix.close_process_full (remind_channel,
+                        remind_in_channel, remind_err_channel)
+                     in
                      ts
                   else
                      check_messages ()
@@ -523,7 +550,9 @@ let find_next msg_regex timestamp =
             check_messages ()
       with
       | End_of_file ->
-         let _ = Unix.close_process_in remind_channel in
+         let _ = Unix.close_process_full (remind_channel, 
+            remind_in_channel, remind_err_channel) 
+         in
          raise Occurrence_not_found
       | Failure s ->
         (* if there's an error in string coersion, just drop that reminder and go
