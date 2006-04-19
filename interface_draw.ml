@@ -30,8 +30,8 @@ open Utility
 
 
 (* sort timed lineinfo entries by starting timestamp *)
-let sort_lineinfo (_, _, _, _, a) (_, _, _, _, b) =
-   ~- (Pervasives.compare a b)
+let sort_lineinfo line1 line2 =
+   ~- (Pervasives.compare line1.tl_start line2.tl_start)
 
 
 (* Word-wrap a string--split the string at whitespace boundaries
@@ -360,9 +360,15 @@ let draw_timed_window iface reminders top lines =
                wattron iface.scr.timed_win A.underline
             else
                wattroff iface.scr.timed_win A.underline;
+            let curr_lineinfo = {
+               tl_filename = rem.tr_filename;
+               tl_linenum  = rem.tr_linenum;
+               tl_timestr  = time_str;
+               tl_msg      = rem.tr_msg;
+               tl_start    = rem.tr_start
+            } in
             iface.timed_lineinfo.(rem_top_line) <- 
-               (rem.tr_filename, rem.tr_linenum, time_str, rem.tr_msg, rem.tr_start) :: 
-               iface.timed_lineinfo.(rem_top_line);
+               (curr_lineinfo :: iface.timed_lineinfo.(rem_top_line));
             trunc_mvwaddstr iface.scr.timed_win rem_top_line (clock_pad + (9 * indent)) 
                (iface.scr.tw_cols - clock_pad - (9 * indent)) ("  " ^ rem.tr_msg);
             assert (mvwaddch iface.scr.timed_win rem_top_line 
@@ -389,9 +395,15 @@ let draw_timed_window iface reminders top lines =
                   wattron iface.scr.timed_win A.underline
                else
                   wattroff iface.scr.timed_win A.underline;
+               let curr_lineinfo = {
+                  tl_filename = rem.tr_filename;
+                  tl_linenum  = rem.tr_linenum;
+                  tl_timestr  = time_str;
+                  tl_msg      = rem.tr_msg;
+                  tl_start    = rem.tr_start
+               } in
                iface.timed_lineinfo.(rem_top_line + !count) <- 
-                  (rem.tr_filename, rem.tr_linenum, time_str, rem.tr_msg, rem.tr_start) :: 
-                  iface.timed_lineinfo.(rem_top_line + !count);
+                  (curr_lineinfo :: iface.timed_lineinfo.(rem_top_line + !count));
                trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) 
                   (clock_pad + (9 * indent)) (iface.scr.tw_cols - clock_pad - (9 * indent)) " ";
                assert (mvwaddch iface.scr.timed_win (rem_top_line + !count) 
@@ -607,7 +619,12 @@ let draw_untimed (iface : interface_state_t) reminders =
                   wattroff iface.scr.untimed_win A.reverse;
                trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 3) 
                   ("* " ^ rem.ur_msg);
-               lineinfo.(line) <- Some (rem.ur_filename, rem.ur_linenum, rem.ur_msg);
+               let curr_lineinfo = {
+                  ul_filename = rem.ur_filename;
+                  ul_linenum  = rem.ur_linenum;
+                  ul_msg      = rem.ur_msg
+               } in
+               lineinfo.(line) <- Some curr_lineinfo;
                render_lines tail (succ n) (succ line)
             end else
                render_lines tail (succ n) line
@@ -713,16 +730,16 @@ let draw_msg iface =
             ([""], [["(no reminder selected)"]])
          |rem_list -> 
               let sorted_rem_list = List.fast_sort sort_lineinfo rem_list in
-              let get_times (_, _, time_str, msg, start) = time_str in
-              let get_lines (_, _, time_str, msg, start) = 
-                 word_wrap msg (iface.scr.mw_cols - 24)
+              let get_times tline = tline.tl_timestr in
+              let get_lines tline = 
+                 word_wrap tline.tl_msg (iface.scr.mw_cols - 24)
               in
               (List.rev_map get_times sorted_rem_list, List.rev_map get_lines sorted_rem_list)
          end
       |Right ->
          begin match iface.untimed_lineinfo.(iface.right_selection) with
-         |None             -> ([""], [["(no reminder selected)"]])
-         |Some (_, _, msg) -> ([""], [word_wrap msg (iface.scr.mw_cols - 24)])
+         |None       -> ([""], [["(no reminder selected)"]])
+         |Some uline -> ([""], [word_wrap uline.ul_msg (iface.scr.mw_cols - 24)])
          end
    in
    let desc_lines = render_desc times descriptions [] in
