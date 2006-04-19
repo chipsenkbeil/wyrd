@@ -649,11 +649,11 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
       let (day_start_ts, _) = Unix.mktime temp1 in
       let (day_end_ts, _)   = Unix.mktime temp2 in
       (* filter functions to determine reminders falling on the occurrence day *)
-      let is_current_untimed (rem_ts, msg, _, _, _) =
-         rem_ts >= day_start_ts && rem_ts < day_end_ts
+      let is_current_untimed rem =
+         rem.Remind.ur_start >= day_start_ts && rem.Remind.ur_start < day_end_ts
       in
-      let is_current_timed (rem_ts, msg, _, _, _, _) =
-         rem_ts >= day_start_ts && rem_ts < day_end_ts
+      let is_current_timed rem =
+         rem.Remind.tr_start >= day_start_ts && rem.Remind.tr_start < day_end_ts
       in
       (* test the untimed reminders list for entries that match the regex *)
       let rec check_untimed untimed n timed_match =
@@ -668,11 +668,11 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
             |Some (timed_match_ts, timed_match_iface) ->
                handle_selection_change timed_match_iface new_reminders
             end
-         |(ts, msg, _, _, _) :: tail ->
+         |urem :: tail ->
             begin try
-               if ts > selected_ts then
-                  let _ = Str.search_forward search_regex msg 0 in
-                  let tm = Unix.localtime ts in
+               if urem.Remind.ur_start > selected_ts then
+                  let _ = Str.search_forward search_regex urem.Remind.ur_msg 0 in
+                  let tm = Unix.localtime urem.Remind.ur_start in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface =
                      (* take care of highlighting the correct untimed reminder *)
@@ -716,7 +716,7 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                   |None ->
                      handle_selection_change new_iface new_reminders
                   |Some (timed_match_ts, timed_match_iface) ->
-                     if timed_match_ts < ts then
+                     if timed_match_ts < urem.Remind.ur_start then
                         handle_selection_change timed_match_iface new_reminders
                      else
                         handle_selection_change new_iface new_reminders
@@ -735,11 +735,11 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                List.filter is_current_untimed new_reminders.Remind.curr_untimed
             in
             check_untimed today_untimed 1 None
-         |(ts, _, msg, _, _, _) :: tail ->
+         |trem :: tail ->
             begin try
-               if ts > selected_ts then
-                  let _ = Str.search_forward search_regex msg 0 in
-                  let tm = Unix.localtime ts in
+               if trem.Remind.tr_start > selected_ts then
+                  let _ = Str.search_forward search_regex trem.Remind.tr_msg 0 in
+                  let tm = Unix.localtime trem.Remind.tr_start in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface = 
                      if !Rcfile.center_cursor then {
@@ -761,7 +761,7 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                   let today_untimed = 
                      List.filter is_current_untimed new_reminders.Remind.curr_untimed
                   in
-                  check_untimed today_untimed 1 (Some (ts, new_iface))
+                  check_untimed today_untimed 1 (Some (trem.Remind.tr_start, new_iface))
                else
                   raise Not_found
             with Not_found ->

@@ -27,21 +27,50 @@ exception Occurrence_not_found
 open Utility
 
 
+(* A record for an individual timed reminder, as read from
+ * the output of 'remind -s'. *)
+type timed_rem_t = {
+   tr_start      : float;
+   tr_end        : float;
+   tr_msg        : string;
+   tr_filename   : string;
+   tr_linenum    : string;
+   tr_has_weight : bool
+}
+
+
+(* A record for an individual untimed reminder, as read from
+ * the output of 'remind -s'. *)
+type untimed_rem_t = {
+   ur_start      : float;
+   ur_msg        : string;
+   ur_filename   : string;
+   ur_linenum    : string;
+   ur_has_weight : bool
+}
+
+
 (* Storage for a three-month window of reminders and
  * the calendar for the current month.
  * Makes it possible to handle edge effects of moving
  * from month to month without constantly calling 
- * rem(1) and regenerating calendar layouts. *)
+ * rem(1) and regenerating calendar layouts. 
+ *
+ * Timed reminders are stored in an array of lists,
+ * with each element of the array representing a different
+ * indentation level on the timetable.  Untimed reminders
+ * have no indentation, so they are simply stored in
+ * lists. *)
 type three_month_rem_t = {
    curr_timestamp : float;
-   prev_timed     : (float * float * string * string * string * bool) list array;
-   curr_timed     : (float * float * string * string * string * bool) list array;
-   next_timed     : (float * float * string * string * string * bool) list array;
-   all_timed      : (float * float * string * string * string * bool) list array;
-   prev_untimed   : (float * string * string * string * bool) list;
-   curr_untimed   : (float * string * string * string * bool) list;
-   next_untimed   : (float * string * string * string * bool) list;
-   all_untimed    : (float * string * string * string * bool) list;
+   prev_timed     : timed_rem_t list array;
+   curr_timed     : timed_rem_t list array;
+   next_timed     : timed_rem_t list array;
+   all_timed      : timed_rem_t list array;
+   prev_untimed   : untimed_rem_t list;
+   curr_untimed   : untimed_rem_t list;
+   next_untimed   : untimed_rem_t list;
+   all_untimed    : untimed_rem_t list;
    curr_counts    : int array;
    curr_cal       : Cal.t;
    remind_error   : string
@@ -132,7 +161,14 @@ let month_reminders timestamp =
                   let has_weight = not (Str.string_match noweight_regex tag 0) in
                   if min_s = "*" then
                      let (f_rem_ts, _) = Unix.mktime temp in
-                     build_lists ((f_rem_ts, msg, filename, line_num_s, has_weight) :: untimed)
+                     let ur = {
+                        ur_start       = f_rem_ts;
+                        ur_msg        = msg;
+                        ur_filename   = filename;
+                        ur_linenum    = line_num_s;
+                        ur_has_weight = has_weight
+                     } in
+                     build_lists (ur :: untimed)
                   else begin
                      let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
                      let (f_rem_ts, _) = Unix.mktime temp_with_min in
@@ -189,8 +225,15 @@ let month_reminders timestamp =
                            pred (Array.length indentations.(0))
                      in
                      let indent = find_indent 0 in
-                     timed.(indent) <- (f_rem_ts, f_rem_ts +. (duration *. 60.), msg, 
-                                       filename, line_num_s, has_weight) :: timed.(indent);
+                     let tr = {
+                        tr_start      = f_rem_ts;
+                        tr_end        = f_rem_ts +. (duration *. 60.);
+                        tr_msg        = msg;
+                        tr_filename   = filename;
+                        tr_linenum    = line_num_s;
+                        tr_has_weight = has_weight
+                     } in
+                     timed.(indent) <- tr :: timed.(indent);
                      build_lists untimed
                   end
                end else
@@ -232,11 +275,11 @@ let count_reminders month_start_tm timed untimed =
       else
          ()
    in
-   let count_timed (start, _, _, _, _, has_weight) =
-      count_rems start has_weight
+   let count_timed rem =
+      count_rems rem.tr_start rem.tr_has_weight
    in
-   let count_untimed (start, _, _, _, has_weight) =
-      count_rems start has_weight
+   let count_untimed rem =
+      count_rems rem.ur_start rem.ur_has_weight
    in
    Array.iter (List.iter count_timed) timed;
    List.iter count_untimed untimed;
@@ -279,12 +322,12 @@ let count_busy_hours month_start_tm timed untimed =
       else
          ()
    in
-   let count_timed (start, stop, _, _, _, has_weight) =
-      count_hours start stop has_weight
+   let count_timed rem =
+      count_hours rem.tr_start rem.tr_end rem.tr_has_weight
    in
-   let count_untimed (start, _, _, _, has_weight) =
-      let stop = start +. (!Rcfile.untimed_duration *. 60.) in
-      count_hours start stop has_weight
+   let count_untimed rem =
+      let stop = rem.ur_start +. (!Rcfile.untimed_duration *. 60.) in
+      count_hours rem.ur_start stop rem.ur_has_weight
    in
    Array.iter (List.iter count_timed) timed;
    List.iter count_untimed untimed;
@@ -307,14 +350,10 @@ let count_busy month_tm timed untimed =
 
 (* comparison functions for sorting reminders chronologically *)
 let cmp_timed rem_a rem_b =
-   let (ts_a, _, _, _, _, _) = rem_a
-   and (ts_b, _, _, _, _, _) = rem_b in
-   compare ts_a ts_b
+   compare rem_a.tr_start rem_b.tr_start
 
 let cmp_untimed rem_a rem_b =
-   let (ts_a, _, _, _, _) = rem_a
-   and (ts_b, _, _, _, _) = rem_b in
-   compare ts_a ts_b
+   compare rem_a.ur_start rem_b.ur_start
 
 
 (* take an array of timed reminder lists and merge them into
