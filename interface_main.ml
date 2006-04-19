@@ -1160,7 +1160,7 @@ let handle_copy_reminder_aux iface reminders copy_only =
                merge_chunks tail (s ^ "ATREPLACE") found_rem
             | (Str.Delim "AT")  :: tail ->
                merge_chunks tail (s ^ "ATREPLACE") found_rem
-            | (Str.Delim x)      :: tail ->
+            | (Str.Delim x)     :: tail ->
                merge_chunks tail (s ^ x) found_rem
             | (Str.Text x)      :: tail ->
                merge_chunks tail (s ^ x) found_rem
@@ -1252,8 +1252,6 @@ let handle_paste_reminder (iface : interface_state_t) reminders remfile =
 
 (* handle cutting a reminder and dropping it in the clipboard *)
 let handle_cut_reminder iface reminders =
-   (* yes, there's some redundant code here... maybe cut and copy
-    * should be merged into one function? *)
    let (iface, fl) = handle_copy_reminder_aux iface reminders false in
    begin match fl with
    |None ->
