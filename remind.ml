@@ -580,16 +580,11 @@ let find_next msg_regex timestamp =
             and tag   = Str.matched_group 4 line
             and min_s = Str.matched_group 5 line
             and msg   = Str.matched_group 6 line in
-            let temp = {
-               Unix.tm_sec   = 0;
+            let temp = {empty_tm with
                Unix.tm_min   = if min_s = "*" then 0 else (int_of_string min_s);
-               Unix.tm_hour  = 0;
                Unix.tm_mday  = day;
                Unix.tm_mon   = pred month;
                Unix.tm_year  = year - 1900;
-               Unix.tm_wday  = 0;
-               Unix.tm_yday  = 0;
-               Unix.tm_isdst = false
             } in
             let (ts, _) = Unix.mktime temp in
             if ts > timestamp then
