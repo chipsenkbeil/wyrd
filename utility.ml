@@ -186,4 +186,21 @@ let full_string_of_tm_wday i =
 
 
 
+(* it's useful to have an empty date record to save some typing *)
+let empty_tm = {
+   Unix.tm_sec   = 0;
+   Unix.tm_min   = 0;
+   Unix.tm_hour  = 0;
+   Unix.tm_mday  = 1;
+   Unix.tm_mon   = 0;
+   Unix.tm_year  = 1900;
+   Unix.tm_wday  = 0;
+   Unix.tm_yday  = 0;
+   Unix.tm_isdst = false
+}
+
+
+
+
+
 (* arch-tag: DO_NOT_CHANGE_a87790db-2dd0-496c-9620-ed968f3253fd *)

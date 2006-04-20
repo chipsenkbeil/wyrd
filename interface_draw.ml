@@ -553,6 +553,27 @@ let draw_calendar (iface : interface_state_t)
          draw_week tail (succ line)
    in
    draw_week cal.Cal.days (vspacer + 2);
+   (* draw the week numbers *)
+   if !Rcfile.number_weeks then begin
+      let weeknum_col = hspacer + (String.length cal.Cal.weekdays) + 2 in
+      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_labels;
+      assert (wmove iface.scr.calendar_win (vspacer + 1) weeknum_col);
+      assert (waddch iface.scr.calendar_win acs.Acs.vline);
+      assert (waddstr iface.scr.calendar_win "Wk#");
+      Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_labels;
+      let rec print_weeknum weeknums line =
+         match weeknums with
+         | [] -> 
+            ()
+         | weeknum :: tail ->
+            assert (wmove iface.scr.calendar_win (vspacer + line) weeknum_col);
+            assert (waddch iface.scr.calendar_win acs.Acs.vline);
+            assert (waddstr iface.scr.calendar_win weeknum);
+            print_weeknum tail (succ line);
+      in
+      print_weeknum cal.Cal.weeknums 2;
+   end else
+      ();
    assert (wnoutrefresh iface.scr.calendar_win)
 
 

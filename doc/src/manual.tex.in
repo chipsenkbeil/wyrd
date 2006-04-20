@@ -673,6 +673,12 @@ CONFIGURATION VARIABLES section.
       parse dates.  When set to \texttt{"true"}, date specifiers should be in
       ISO 8601 (YYYYMMDD) format.  When set to \texttt{"false"}, date specifiers
       should be in European style DDMMYYYY format.
+   \item \texttt{number\_weeks} \\
+      A boolean value that determines whether or not weeks should be numbered
+      within the month calendar window.  Weeks are numbered according to the ISO
+      8601 standard.  The ISO standard week begins on Monday, so to avoid
+      confusion it is recommended that \texttt{week\_starts\_monday} be set to 
+      \texttt{true} when week numbering is enabled.
 \end{itemize}
 For maximum usefulness, \texttt{busy\_level1} $<$ \texttt{busy\_level2} $<$ 
 \texttt{busy\_level3} $<$ \texttt{busy\_level4}.

@@ -77,19 +77,6 @@ type three_month_rem_t = {
 }
 
 
-let empty_tm = {
-   Unix.tm_sec   = 0;
-   Unix.tm_min   = 0;
-   Unix.tm_hour  = 0;
-   Unix.tm_mday  = 1;
-   Unix.tm_mon   = 0;
-   Unix.tm_year  = 1900;
-   Unix.tm_wday  = 0;
-   Unix.tm_yday  = 0;
-   Unix.tm_isdst = false
-}
-
-
 (* Get the starting timestamp and time record for a given month *)
 let month_start_of_tm tm =
    let month_start_tm = {empty_tm with

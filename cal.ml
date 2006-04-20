@@ -29,8 +29,24 @@ open Utility
 type t = {
    title    : string;
    weekdays : string;
-   days     : string list
+   days     : string list;
+   weeknums : string list
 }
+
+
+(* compute the ISO-8601 week number for the given day *)
+let weeknum_of_tm day =
+   let (_, normalized_day) = Unix.mktime day in
+   (* iso weeks start on Monday *)
+   let iso_wday = (normalized_day.Unix.tm_wday + 6) mod 7 in
+   (* find Thursday of the same week *)
+   let thurs = {normalized_day with
+      Unix.tm_mday = normalized_day.Unix.tm_mday + 3 - iso_wday
+   } in
+   let (_, normalized_thurs) = Unix.mktime thurs in
+   (* which Thursday of the year is it? *)
+   (normalized_thurs.Unix.tm_yday / 7) + 1
+
 
 
 (* Create a Cal.t data structure for the desired timestamp.  If
@@ -39,7 +55,7 @@ type t = {
 let make timestamp start_monday =
    let tm = Unix.localtime timestamp in
    (* compute the weekday of the first day of the month *)
-   let first_weekday = 
+   let first_weekday =
       let temp = {tm with Unix.tm_mday = 1} in
       let (_, first) = Unix.mktime temp in
       first.Unix.tm_wday
@@ -68,16 +84,26 @@ let make timestamp start_monday =
        ((succ week_start_day) mod 7) 2
    in
    (* generate the days of the month *)
-   let rec build_monthdays weeks_list week_str mday wday =
+   let rec build_monthdays weeks_list week_str weeknum_list mday wday =
       if mday > last_day then
-         List.rev (week_str :: weeks_list)
+         let weeknum_str = 
+            let last_weekday = {tm with Unix.tm_mday = pred mday} in
+            let weeknum = weeknum_of_tm last_weekday in
+            Printf.sprintf "%2d" weeknum
+         in
+         (List.rev (week_str :: weeks_list), List.rev (weeknum_str :: weeknum_list))
       else
          if wday = week_start_day then
+            let weeknum_str = 
+               let last_weekday = {tm with Unix.tm_mday = pred mday} in
+               let weeknum = weeknum_of_tm last_weekday in
+               Printf.sprintf "%2d" weeknum
+            in
             build_monthdays (week_str :: weeks_list) (Printf.sprintf "%2d" mday)
-               (succ mday) ((succ wday) mod 7)
+               (weeknum_str :: weeknum_list) (succ mday) ((succ wday) mod 7)
          else
             build_monthdays weeks_list (week_str ^ (Printf.sprintf " %2d" mday))
-               (succ mday) ((succ wday) mod 7)
+               weeknum_list (succ mday) ((succ wday) mod 7)
    in
    (* create the padding for the first few empty days of the calendar *)
    let padding =
@@ -86,12 +112,13 @@ let make timestamp start_monday =
       else
          String.make ((first_weekday + 7 - week_start_day) * 3) ' '
    in
-   let cal_monthdays = 
-      build_monthdays [] (padding ^ " 1") 2 ((succ first_weekday) mod 7)
+   let (cal_monthdays, cal_weeknums) = 
+      build_monthdays [] (padding ^ " 1") [] 2 ((succ first_weekday) mod 7)
    in {
       title    = cal_title;
       weekdays = cal_weekdays;
-      days     = cal_monthdays
+      days     = cal_monthdays;
+      weeknums = cal_weeknums
    }
 
 

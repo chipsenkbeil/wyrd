@@ -59,6 +59,9 @@ set center_cursor="false"
 # date syntax for the 'go to date' command can be big or little endian
 set goto_big_endian="true"
 
+# whether or not to number weeks within the month calendar
+set number_weeks="false"
+
 
 # key bindings
 bind "j"                 scroll_down

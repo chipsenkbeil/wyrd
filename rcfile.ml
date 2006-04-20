@@ -115,6 +115,8 @@ let description_12_hour = ref true
 let center_cursor = ref false
 (* "jump to" date syntax is big-endian? *)
 let goto_big_endian = ref true
+(* print week numbers? *)
+let number_weeks = ref false
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -534,6 +536,8 @@ let parse_line line_stream =
          parse_set "center_cursor" center_cursor bool_of_string "Expected a boolean string after "
       | [< 'Ident "goto_big_endian" >] ->
          parse_set "goto_big_endian" goto_big_endian bool_of_string "Expected a boolean string after "
+      | [< 'Ident "number_weeks" >] ->
+         parse_set "number_weeks" number_weeks bool_of_string "Expected a boolean string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end
