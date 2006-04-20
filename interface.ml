@@ -56,6 +56,27 @@ type screen_t = {
 type zoom_t = Hour | HalfHour | QuarterHour
 type side_t = Left | Right
 
+
+(* keep track of information needed for a line of
+ * the timed reminders window *)
+type timed_lineinfo_t = {
+   tl_filename : string;
+   tl_linenum  : string;
+   tl_timestr  : string;
+   tl_msg      : string;
+   tl_start    : float
+}
+
+
+(* keep track of information needed for a line of
+ * the untimed reminders window *)
+type untimed_lineinfo_t = {
+   ul_filename : string;
+   ul_linenum  : string;
+   ul_msg      : string
+}
+
+
 (* everything you need to know about the interface state goes in this variable *)
 type interface_state_t = {
    version           : string;              (* program version string *)
@@ -68,9 +89,8 @@ type interface_state_t = {
    left_selection    : int;                 (* controls which element of the left window is selected *)
    right_selection   : int;                 (* controls which element of the right window is selected *)
    zoom_level        : zoom_t;              (* controls the resolution of the timed window *)
-   timed_lineinfo    : (string * string * string * string * float) list array;   (* keeps track of the filename, line number, message, and starting timestamp
-                                                                          * associated with each line of the timed reminders window *)
-   untimed_lineinfo  : (string * string * string) option array; (* same as above, for untimed window *)
+   timed_lineinfo    : timed_lineinfo_t list array;     (* information about the lines of the timed reminder window *)
+   untimed_lineinfo  : untimed_lineinfo_t option array; (* same as above, for untimed window *)
    len_untimed       : int;                 (* number of entries in the untimed reminders list *)
    search_regex      : Str.regexp;          (* most recent search string *)
    search_input      : string;              (* buffer to hold search string input *)

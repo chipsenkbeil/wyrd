@@ -649,11 +649,11 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
       let (day_start_ts, _) = Unix.mktime temp1 in
       let (day_end_ts, _)   = Unix.mktime temp2 in
       (* filter functions to determine reminders falling on the occurrence day *)
-      let is_current_untimed (rem_ts, msg, _, _, _) =
-         rem_ts >= day_start_ts && rem_ts < day_end_ts
+      let is_current_untimed rem =
+         rem.Remind.ur_start >= day_start_ts && rem.Remind.ur_start < day_end_ts
       in
-      let is_current_timed (rem_ts, msg, _, _, _, _) =
-         rem_ts >= day_start_ts && rem_ts < day_end_ts
+      let is_current_timed rem =
+         rem.Remind.tr_start >= day_start_ts && rem.Remind.tr_start < day_end_ts
       in
       (* test the untimed reminders list for entries that match the regex *)
       let rec check_untimed untimed n timed_match =
@@ -668,11 +668,11 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
             |Some (timed_match_ts, timed_match_iface) ->
                handle_selection_change timed_match_iface new_reminders
             end
-         |(ts, msg, _, _, _) :: tail ->
+         |urem :: tail ->
             begin try
-               if ts > selected_ts then
-                  let _ = Str.search_forward search_regex msg 0 in
-                  let tm = Unix.localtime ts in
+               if urem.Remind.ur_start > selected_ts then
+                  let _ = Str.search_forward search_regex urem.Remind.ur_msg 0 in
+                  let tm = Unix.localtime urem.Remind.ur_start in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface =
                      (* take care of highlighting the correct untimed reminder *)
@@ -716,7 +716,7 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                   |None ->
                      handle_selection_change new_iface new_reminders
                   |Some (timed_match_ts, timed_match_iface) ->
-                     if timed_match_ts < ts then
+                     if timed_match_ts < urem.Remind.ur_start then
                         handle_selection_change timed_match_iface new_reminders
                      else
                         handle_selection_change new_iface new_reminders
@@ -735,11 +735,11 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                List.filter is_current_untimed new_reminders.Remind.curr_untimed
             in
             check_untimed today_untimed 1 None
-         |(ts, _, msg, _, _, _) :: tail ->
+         |trem :: tail ->
             begin try
-               if ts > selected_ts then
-                  let _ = Str.search_forward search_regex msg 0 in
-                  let tm = Unix.localtime ts in
+               if trem.Remind.tr_start > selected_ts then
+                  let _ = Str.search_forward search_regex trem.Remind.tr_msg 0 in
+                  let tm = Unix.localtime trem.Remind.tr_start in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface = 
                      if !Rcfile.center_cursor then {
@@ -761,7 +761,7 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                   let today_untimed = 
                      List.filter is_current_untimed new_reminders.Remind.curr_untimed
                   in
-                  check_untimed today_untimed 1 (Some (ts, new_iface))
+                  check_untimed today_untimed 1 (Some (trem.Remind.tr_start, new_iface))
                else
                   raise Not_found
             with Not_found ->
@@ -972,21 +972,25 @@ let handle_edit (iface : interface_state_t) reminders =
          begin match iface.timed_lineinfo.(iface.left_selection) with
          | [] -> 
             None
-         | (f, l, t, m, s) :: [] -> 
-            Some (f, l, m)
+         | tline :: [] -> 
+            Some (tline.tl_filename, tline.tl_linenum, tline.tl_msg)
          | rem_list -> 
               let sorted_rem_list = List.fast_sort sort_lineinfo rem_list in
-              let get_msg (_, _, time, msg, _) = (adjust_s 16 time) ^ msg in
+              let get_msg tline = (adjust_s 16 tline.tl_timestr) ^ tline.tl_msg in
               let msg_list = List.rev_map get_msg sorted_rem_list in
               let selected_msg =
                  do_selection_dialog iface "Choose a reminder to edit" msg_list
               in
-              let test_msg_match (_, _, time, msg, _) = 
-                 ((adjust_s 16 time) ^ msg) = selected_msg in
-              let (f, l, t, m, s) = (List.find test_msg_match sorted_rem_list) in
-              Some (f, l, m)
+              let test_msg_match tline = 
+                 ((adjust_s 16 tline.tl_timestr) ^ tline.tl_msg) = selected_msg in
+              let tline = (List.find test_msg_match sorted_rem_list) in
+              Some (tline.tl_filename, tline.tl_linenum, tline.tl_msg)
          end
-      |Right -> iface.untimed_lineinfo.(iface.right_selection)
+      |Right ->
+         begin match iface.untimed_lineinfo.(iface.right_selection) with
+         | Some uline -> Some (uline.ul_filename, uline.ul_linenum, uline.ul_msg)
+         | None -> None
+         end
    in
    begin match fl with
    |None ->
@@ -1087,11 +1091,11 @@ let handle_copy_reminder_aux iface reminders copy_only =
          begin match iface.timed_lineinfo.(iface.left_selection) with
          | [] -> 
             None
-         | (f, l, t, m, s) :: [] -> 
-            Some (f, l)
+         | tline :: [] -> 
+            Some (tline.tl_filename, tline.tl_linenum)
          | rem_list -> 
               let sorted_rem_list = List.fast_sort sort_lineinfo rem_list in
-              let get_msg (_, _, time, msg, _) = (adjust_s 16 time) ^ msg in
+              let get_msg tline = (adjust_s 16 tline.tl_timestr) ^ tline.tl_msg in
               let msg_list = List.rev_map get_msg sorted_rem_list in
               let selected_msg =
                  let dialog_msg =
@@ -1103,14 +1107,14 @@ let handle_copy_reminder_aux iface reminders copy_only =
                  do_selection_dialog iface dialog_msg msg_list
               in
               let _ = handle_refresh iface reminders in
-              let test_msg_match (_, _, time, msg, _) = 
-                 ((adjust_s 16 time) ^ msg) = selected_msg in
-              let (f, l, t, m, s) = (List.find test_msg_match sorted_rem_list) in
-              Some (f, l)
+              let test_msg_match tline = 
+                 ((adjust_s 16 tline.tl_timestr) ^ tline.tl_msg) = selected_msg in
+              let tline = (List.find test_msg_match sorted_rem_list) in
+              Some (tline.tl_filename, tline.tl_linenum)
          end
       |Right ->
          begin match iface.untimed_lineinfo.(iface.right_selection) with
-         |Some (f, l, m) -> Some (f, l)
+         |Some uline -> Some (uline.ul_filename, uline.ul_linenum)
          |None -> None
          end
    in
@@ -1156,7 +1160,7 @@ let handle_copy_reminder_aux iface reminders copy_only =
                merge_chunks tail (s ^ "ATREPLACE") found_rem
             | (Str.Delim "AT")  :: tail ->
                merge_chunks tail (s ^ "ATREPLACE") found_rem
-            | (Str.Delim x)      :: tail ->
+            | (Str.Delim x)     :: tail ->
                merge_chunks tail (s ^ x) found_rem
             | (Str.Text x)      :: tail ->
                merge_chunks tail (s ^ x) found_rem
@@ -1248,8 +1252,6 @@ let handle_paste_reminder (iface : interface_state_t) reminders remfile =
 
 (* handle cutting a reminder and dropping it in the clipboard *)
 let handle_cut_reminder iface reminders =
-   (* yes, there's some redundant code here... maybe cut and copy
-    * should be merged into one function? *)
    let (iface, fl) = handle_copy_reminder_aux iface reminders false in
    begin match fl with
    |None ->

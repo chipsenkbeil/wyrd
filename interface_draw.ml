@@ -30,8 +30,8 @@ open Utility
 
 
 (* sort timed lineinfo entries by starting timestamp *)
-let sort_lineinfo (_, _, _, _, a) (_, _, _, _, b) =
-   ~- (Pervasives.compare a b)
+let sort_lineinfo line1 line2 =
+   ~- (Pervasives.compare line1.tl_start line2.tl_start)
 
 
 (* Word-wrap a string--split the string at whitespace boundaries
@@ -334,16 +334,16 @@ let draw_timed_window iface reminders top lines =
       begin match rem_list with
       |[] ->
          ()
-      |(start, finish, msg, filename, line_num, has_weight) :: tail ->
+      |rem :: tail ->
          let rem_top_line =
-            round_down ((start -. iface.top_timestamp) /. (time_inc iface))
+            round_down ((rem.tr_start -. iface.top_timestamp) /. (time_inc iface))
          in
          let get_time_str () =
-            if finish > start then
-               (desc_string_of_tm1 (Unix.localtime start)) ^ "-" ^
-               (desc_string_of_tm2 (Unix.localtime finish)) ^ " "
+            if rem.tr_end > rem.tr_start then
+               (desc_string_of_tm1 (Unix.localtime rem.tr_start)) ^ "-" ^
+               (desc_string_of_tm2 (Unix.localtime rem.tr_end)) ^ " "
             else
-               (desc_string_of_tm1 (Unix.localtime start)) ^ " "
+               (desc_string_of_tm1 (Unix.localtime rem.tr_start)) ^ " "
          in
          (* draw the top line of a reminder *)
          let clock_pad = if !Rcfile.schedule_12_hour then 10 else 8 in
@@ -360,10 +360,17 @@ let draw_timed_window iface reminders top lines =
                wattron iface.scr.timed_win A.underline
             else
                wattroff iface.scr.timed_win A.underline;
+            let curr_lineinfo = {
+               tl_filename = rem.tr_filename;
+               tl_linenum  = rem.tr_linenum;
+               tl_timestr  = time_str;
+               tl_msg      = rem.tr_msg;
+               tl_start    = rem.tr_start
+            } in
             iface.timed_lineinfo.(rem_top_line) <- 
-               (filename, line_num, time_str, msg, start) :: iface.timed_lineinfo.(rem_top_line);
+               (curr_lineinfo :: iface.timed_lineinfo.(rem_top_line));
             trunc_mvwaddstr iface.scr.timed_win rem_top_line (clock_pad + (9 * indent)) 
-               (iface.scr.tw_cols - clock_pad - (9 * indent)) ("  " ^ msg);
+               (iface.scr.tw_cols - clock_pad - (9 * indent)) ("  " ^ rem.tr_msg);
             assert (mvwaddch iface.scr.timed_win rem_top_line 
                (clock_pad + (9 * indent)) acs.Acs.vline)
          end else
@@ -371,7 +378,7 @@ let draw_timed_window iface reminders top lines =
          (* draw any remaining lines of this reminder, as determined by the duration *)
          let count = ref 1 in
          while 
-            ((timestamp_of_line iface (rem_top_line + !count)) < finish) &&
+            ((timestamp_of_line iface (rem_top_line + !count)) < rem.tr_end) &&
             (rem_top_line + !count < top + lines)
          do
             if rem_top_line + !count >= top then begin
@@ -388,9 +395,15 @@ let draw_timed_window iface reminders top lines =
                   wattron iface.scr.timed_win A.underline
                else
                   wattroff iface.scr.timed_win A.underline;
+               let curr_lineinfo = {
+                  tl_filename = rem.tr_filename;
+                  tl_linenum  = rem.tr_linenum;
+                  tl_timestr  = time_str;
+                  tl_msg      = rem.tr_msg;
+                  tl_start    = rem.tr_start
+               } in
                iface.timed_lineinfo.(rem_top_line + !count) <- 
-                  (filename, line_num, time_str, msg, start) :: 
-                  iface.timed_lineinfo.(rem_top_line + !count);
+                  (curr_lineinfo :: iface.timed_lineinfo.(rem_top_line + !count));
                trunc_mvwaddstr iface.scr.timed_win (rem_top_line + !count) 
                   (clock_pad + (9 * indent)) (iface.scr.tw_cols - clock_pad - (9 * indent)) " ";
                assert (mvwaddch iface.scr.timed_win (rem_top_line + !count) 
@@ -572,8 +585,8 @@ let draw_untimed (iface : interface_state_t) reminders =
    Rcfile.color_on iface.scr.untimed_win Rcfile.Untimed_reminder;
    (* Filter the reminders list to find only those corresponding to the
     * selected day *)
-   let is_current (rem_ts, msg, filename, line_num, has_weight) =
-      rem_ts >= day_start_ts && rem_ts < day_end_ts
+   let is_current rem =
+      rem.ur_start >= day_start_ts && rem.ur_start < day_end_ts
    in
    let today_reminders = List.filter is_current reminders in
    (* make sure the cursor doesn't unexpectedly disappear *)
@@ -597,7 +610,7 @@ let draw_untimed (iface : interface_state_t) reminders =
             wattroff iface.scr.untimed_win A.reverse
          end else
             ()
-      |(rem_ts, msg, filename, line_num, has_weight) :: tail ->
+      |rem :: tail ->
          if line < iface.scr.uw_lines then
             if n >= iface.top_untimed then begin
                if line = iface.right_selection && iface.selected_side = Right then
@@ -605,8 +618,13 @@ let draw_untimed (iface : interface_state_t) reminders =
                else
                   wattroff iface.scr.untimed_win A.reverse;
                trunc_mvwaddstr iface.scr.untimed_win line 2 (iface.scr.uw_cols - 3) 
-                  ("* " ^ msg);
-               lineinfo.(line) <- Some (filename, line_num, msg);
+                  ("* " ^ rem.ur_msg);
+               let curr_lineinfo = {
+                  ul_filename = rem.ur_filename;
+                  ul_linenum  = rem.ur_linenum;
+                  ul_msg      = rem.ur_msg
+               } in
+               lineinfo.(line) <- Some curr_lineinfo;
                render_lines tail (succ n) (succ line)
             end else
                render_lines tail (succ n) line
@@ -712,16 +730,16 @@ let draw_msg iface =
             ([""], [["(no reminder selected)"]])
          |rem_list -> 
               let sorted_rem_list = List.fast_sort sort_lineinfo rem_list in
-              let get_times (_, _, time_str, msg, start) = time_str in
-              let get_lines (_, _, time_str, msg, start) = 
-                 word_wrap msg (iface.scr.mw_cols - 24)
+              let get_times tline = tline.tl_timestr in
+              let get_lines tline = 
+                 word_wrap tline.tl_msg (iface.scr.mw_cols - 24)
               in
               (List.rev_map get_times sorted_rem_list, List.rev_map get_lines sorted_rem_list)
          end
       |Right ->
          begin match iface.untimed_lineinfo.(iface.right_selection) with
-         |None             -> ([""], [["(no reminder selected)"]])
-         |Some (_, _, msg) -> ([""], [word_wrap msg (iface.scr.mw_cols - 24)])
+         |None       -> ([""], [["(no reminder selected)"]])
+         |Some uline -> ([""], [word_wrap uline.ul_msg (iface.scr.mw_cols - 24)])
          end
    in
    let desc_lines = render_desc times descriptions [] in
