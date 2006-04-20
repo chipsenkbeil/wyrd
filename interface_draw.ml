@@ -296,8 +296,8 @@ let draw_timed_window iface reminders top lines =
       else
          (twentyfour_hour_string, twentyfour_hour_string)
    in
-   (* draw in the blank timeslots *)
    Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
+   (* draw in the blank timeslots *)
    for i = top to pred (top + lines) do
       iface.timed_lineinfo.(i) <- [];
       if i = iface.left_selection && iface.selected_side = Left then
@@ -322,6 +322,7 @@ let draw_timed_window iface reminders top lines =
       assert (mvwaddstr iface.scr.timed_win i 2 ts_str);
       Rcfile.color_off iface.scr.timed_win Rcfile.Timed_current;
       wattroff iface.scr.timed_win A.bold;
+      Rcfile.color_on iface.scr.timed_win Rcfile.Timed_default;
       let s = Str.string_before blank (iface.scr.tw_cols - 7) in
       assert (mvwaddstr iface.scr.timed_win i 7 s)
    done;
