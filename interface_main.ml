@@ -1723,9 +1723,21 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
       endwin () (* exit main loop *)
 
 
-
 (* initialize the interface and begin the main loop *)
 let run (iface : interface_state_t) =
+   let set_bkgd win obj =
+      try
+         let color_index = Hashtbl.find Rcfile.object_palette obj in
+         wbkgd win ((A.color_pair color_index) lor (int_of_char ' '))
+      with Not_found ->
+         ()
+   in
+   (* set up the proper background colors for all the windows *)
+   set_bkgd iface.scr.help_win Rcfile.Help;
+   set_bkgd iface.scr.timed_win Rcfile.Timed_default;
+   set_bkgd iface.scr.calendar_win Rcfile.Calendar_labels;
+   set_bkgd iface.scr.untimed_win Rcfile.Untimed_reminder;
+   set_bkgd iface.scr.msg_win Rcfile.Description; 
    scrollok iface.scr.timed_win true;
    let reminders = Remind.create_three_month (iface.top_timestamp) in
    assert (keypad iface.scr.help_win true);
