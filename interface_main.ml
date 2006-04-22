@@ -265,15 +265,23 @@ let handle_scrolldown_timed_nocenter (iface : interface_state_t) reminders =
 
 (* handle a "scroll down" event when the timed window is focused *)
 let handle_scrolldown_timed (iface : interface_state_t) reminders =
-   let iface = {
-      iface with top_untimed = 0;
-                 top_desc = 0;
-                 right_selection = 1
-   } in
-   if !Rcfile.center_cursor then
-      handle_scrolldown_timed_center iface reminders
-   else
-      handle_scrolldown_timed_nocenter iface reminders
+   (* watch out for y2k38 *)
+   let selected_day = Unix.localtime (iface.top_timestamp +.
+   (float_of_int (succ iface.left_selection)) *. (time_inc iface)) in
+   if (selected_day.Unix.tm_year + 1900) > 2037 then begin
+      draw_error iface "requested year is out of range." false;
+      assert (doupdate ());
+      (iface, reminders)
+   end else
+      let iface = {
+         iface with top_untimed = 0;
+                    top_desc = 0;
+                    right_selection = 1
+      } in
+      if !Rcfile.center_cursor then
+         handle_scrolldown_timed_center iface reminders
+      else
+         handle_scrolldown_timed_nocenter iface reminders
 
 
 
@@ -366,15 +374,22 @@ let handle_scrollup_timed_nocenter (iface : interface_state_t) reminders =
 
 (* handle a "scroll up" event when the timed window is focused *)
 let handle_scrollup_timed (iface : interface_state_t) reminders =
-   let iface = {
-      iface with top_untimed = 0;
-                 top_desc = 0;
-                 right_selection = 1
-   } in
-   if !Rcfile.center_cursor then
-      handle_scrollup_timed_center iface reminders
-   else
-      handle_scrollup_timed_nocenter iface reminders
+   (* watch out for scrolling out of Remind date range *)
+   let selected_day = Unix.localtime iface.top_timestamp in
+   if (selected_day.Unix.tm_year + 1900) < 1991 then begin
+      draw_error iface "requested year is out of range." false;
+      assert (doupdate ());
+      (iface, reminders)
+   end else
+      let iface = {
+         iface with top_untimed = 0;
+                    top_desc = 0;
+                    right_selection = 1
+      } in
+      if !Rcfile.center_cursor then
+         handle_scrollup_timed_center iface reminders
+      else
+         handle_scrollup_timed_nocenter iface reminders
 
 
 (* handle a "scroll up" event when the untimed window is focused *)
@@ -395,14 +410,27 @@ let handle_scrollup_untimed (iface : interface_state_t) reminders =
 
 (* handle a jump to a different day *)
 let handle_jump (iface : interface_state_t) reminders jump_func =
+   (* new timestamp for top line of screen *)
    let temp    = Unix.localtime iface.top_timestamp in
    let next_tm = jump_func temp in
-   let (next_ts, _) = Unix.mktime next_tm in
-   let new_iface = {
-      iface with top_timestamp = next_ts;
-                 top_desc = 0
-   } in
-   handle_selection_change new_iface reminders
+   let (next_ts, normalized_tm) = Unix.mktime next_tm in
+   (* new timestamp for bottom line of screen *)
+   let temp2   = Unix.localtime (iface.top_timestamp +.
+   (float_of_int (succ iface.left_selection)) *. (time_inc iface)) in
+   let next_tm2 = jump_func temp2 in
+   let (_, normalized_tm2) = Unix.mktime next_tm2 in
+   (* check that the date range is OK for both Remind and *nix *)
+   if (normalized_tm.Unix.tm_year + 1900) < 1991 || 
+   (normalized_tm2.Unix.tm_year + 1900) > 2037 then begin
+      draw_error iface "requested year is out of range." false;
+      assert (doupdate ());
+      (iface, reminders)
+   end else
+      let new_iface = {
+         iface with top_timestamp = next_ts;
+                    top_desc = 0
+      } in
+      handle_selection_change new_iface reminders
 
 
 (* handle a zoom keypress *)
@@ -1337,12 +1365,12 @@ let handle_goto (iface : interface_state_t) reminders =
          with _ ->
             failwith "requested date is out of range."
       in
-      if rt.Unix.tm_mday <> jump_time.Unix.tm_mday then
-         failwith "requested day of the month is out of range."
+      if (rt.Unix.tm_year + 1900) < 1991 || (rt.Unix.tm_year + 1900) > 2037 then
+         failwith "requested year is out of range."
       else if rt.Unix.tm_mon <> jump_time.Unix.tm_mon then
          failwith "requested month is out of range."
-      else if (rt.Unix.tm_year + 1900) < 1991 || (rt.Unix.tm_year + 1900) > 2074 then
-         failwith "requested year is out of range."
+      else if rt.Unix.tm_mday <> jump_time.Unix.tm_mday then
+         failwith "requested day of the month is out of range."
       else
          ();
       let new_iface = {
