@@ -395,40 +395,12 @@ let handle_scrollup_untimed (iface : interface_state_t) reminders =
 
 (* handle a jump to a different day *)
 let handle_jump (iface : interface_state_t) reminders jump_func =
-   let temp = Unix.localtime iface.top_timestamp in
-   let next_tm = {
-      temp with Unix.tm_mday = jump_func temp.Unix.tm_mday
-   } in
+   let temp    = Unix.localtime iface.top_timestamp in
+   let next_tm = jump_func temp in
    let (next_ts, _) = Unix.mktime next_tm in
    let new_iface = {
       iface with top_timestamp = next_ts;
                  top_desc = 0
-   } in
-   handle_selection_change new_iface reminders
-
-
-(* handle a jump to the previous month *)
-let handle_prev_month (iface : interface_state_t) reminders =
-   let top = Unix.localtime iface.top_timestamp in
-   let temp = {
-      top with Unix.tm_mon = pred top.Unix.tm_mon
-   } in
-   let (prev_mon_ts, _) = Unix.mktime temp in
-   let new_iface = {
-      iface with top_timestamp = prev_mon_ts
-   } in
-   handle_selection_change new_iface reminders
-
-
-(* handle a jump to the next month *)
-let handle_next_month (iface : interface_state_t) reminders =
-   let top = Unix.localtime iface.top_timestamp in
-   let temp = {
-      top with Unix.tm_mon = succ top.Unix.tm_mon
-   } in
-   let (next_mon_ts, _) = Unix.mktime temp in
-   let new_iface = {
-      iface with top_timestamp = next_mon_ts
    } in
    handle_selection_change new_iface reminders
 
@@ -1419,19 +1391,23 @@ let handle_keypress key (iface : interface_state_t) reminders =
             |Right -> handle_scrollup_untimed iface reminders
             end
          |Rcfile.NextDay ->
-            handle_jump iface reminders succ
+            let jump_func day = {day with Unix.tm_mday = succ day.Unix.tm_mday} in
+            handle_jump iface reminders jump_func
          |Rcfile.PrevDay ->
-            handle_jump iface reminders pred
+            let jump_func day = {day with Unix.tm_mday = pred day.Unix.tm_mday} in
+            handle_jump iface reminders jump_func
          |Rcfile.NextWeek ->
-            let next_week i = i + 7 in
-            handle_jump iface reminders next_week
+            let jump_func day = {day with Unix.tm_mday = day.Unix.tm_mday + 7} in
+            handle_jump iface reminders jump_func
          |Rcfile.PrevWeek ->
-            let prev_week i = i - 7 in
-            handle_jump iface reminders prev_week
+            let jump_func day = {day with Unix.tm_mday = day.Unix.tm_mday - 7} in
+            handle_jump iface reminders jump_func
          |Rcfile.NextMonth ->
-            handle_next_month iface reminders
+            let jump_func day = {day with Unix.tm_mon = succ day.Unix.tm_mon} in
+            handle_jump iface reminders jump_func
          |Rcfile.PrevMonth ->
-            handle_prev_month iface reminders
+            let jump_func day = {day with Unix.tm_mon = pred day.Unix.tm_mon} in
+            handle_jump iface reminders jump_func
          |Rcfile.Zoom ->
             handle_zoom iface reminders
          |Rcfile.SwitchWindow ->
