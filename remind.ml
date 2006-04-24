@@ -414,7 +414,7 @@ let create_three_month timestamp =
       else
          nre
    in
-   let au = safe_append cu (safe_append pu nu) in {
+   let au = safe_append pu (safe_append cu nu) in {
       curr_timestamp = curr_ts;
       prev_timed     = pt;
       curr_timed     = ct;
