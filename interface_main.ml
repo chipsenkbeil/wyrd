@@ -515,12 +515,14 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
             substitute_aux tail new_s
       in
       substitute_aux [
-         (Str.regexp "%M", Utility.string_of_tm_mon tm.Unix.tm_mon);
-         (Str.regexp "%d", string_of_int tm.Unix.tm_mday);
-         (Str.regexp "%y", string_of_int (tm.Unix.tm_year + 1900));
-         (Str.regexp "%h", Printf.sprintf "%.2d" tm.Unix.tm_hour);
-         (Str.regexp "%m", Printf.sprintf "%.2d" tm.Unix.tm_min);
-         (Str.regexp "%w", Utility.string_of_tm_wday tm.Unix.tm_wday)
+         (Str.regexp "%monname%", Utility.string_of_tm_mon tm.Unix.tm_mon);
+         (Str.regexp "%mon%", string_of_int (succ tm.Unix.tm_mon));
+         (Str.regexp "%mday%", string_of_int tm.Unix.tm_mday);
+         (Str.regexp "%year%", string_of_int (tm.Unix.tm_year + 1900));
+         (Str.regexp "%hour%", Printf.sprintf "%.2d" tm.Unix.tm_hour);
+         (Str.regexp "%min%", Printf.sprintf "%.2d" tm.Unix.tm_min);
+         (Str.regexp "%wdayname%", Utility.string_of_tm_wday tm.Unix.tm_wday);
+         (Str.regexp "%wday%", string_of_int tm.Unix.tm_wday)
       ] template
    in
    try
@@ -556,7 +558,7 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
       output_string remfile_channel remline;
       close_out remfile_channel;
       (* open the reminders file in an editor *)
-      let filename_sub = Str.regexp "%f" in
+      let filename_sub = Str.regexp "%file%" in
       let command = 
          Str.global_replace filename_sub remfile
             !Rcfile.edit_new_command
@@ -1001,8 +1003,8 @@ let handle_edit (iface : interface_state_t) reminders =
          handle_new_reminder iface reminders Untimed
          (Utility.expand_file !Rcfile.reminders_file)
    |Some (filename, line_num, msg) -> 
-      let filename_sub = Str.regexp "%f" in
-      let lineno_sub   = Str.regexp "%n" in
+      let filename_sub = Str.regexp "%file%" in
+      let lineno_sub   = Str.regexp "%line%" in
       let command_partial = 
          Str.global_replace filename_sub filename !Rcfile.edit_old_command
       in
@@ -1036,7 +1038,7 @@ let handle_edit (iface : interface_state_t) reminders =
 
 (* handle free editing of the reminders file *)
 let handle_edit_any (iface : interface_state_t) reminders remfile =
-   let filename_sub = Str.regexp "%f" in
+   let filename_sub = Str.regexp "%file%" in
    let command = 
       Str.global_replace filename_sub remfile !Rcfile.edit_any_command
    in
@@ -1220,7 +1222,7 @@ let handle_paste_reminder (iface : interface_state_t) reminders remfile =
    output_string remfile_channel new_remline;
    close_out remfile_channel;
    (* open reminders file in editor *)
-   let filename_sub = Str.regexp "%f" in
+   let filename_sub = Str.regexp "%file%" in
    let command = 
       Str.global_replace filename_sub remfile
          !Rcfile.edit_new_command

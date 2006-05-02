@@ -591,23 +591,24 @@ CONFIGURATION VARIABLES section.
       %@% END-IF %@%
    \item \texttt{edit\_old\_command} \\
       Controls the command used to edit a pre-existing reminder.  The special
-      characters \texttt{'\%f'} and \texttt{'\%n'} will be substituted with a
+      strings \texttt{'\%file\%'} and \texttt{'\%line\%'} will be replaced with a
       filename to edit and a line number to navigate to within that file.
    \item \texttt{edit\_new\_command} \\
       Controls the command used to edit a new reminder.  The special character
-      \texttt{'\%f'} will be substituted with a filename to edit.  Ideally, this
+      \texttt{'\%file\%'} will be replaced with a filename to edit.  Ideally, this
       command should move the cursor to the last line of the file, where the new
       reminder template is created.
    \item \texttt{edit\_any\_command} \\
       Controls the command used for editing a reminder file without selecting
-      any particular reminder.  The special character \texttt{'\%f'} will be
-      substituted with a filename to edit.
+      any particular reminder.  The special character \texttt{'\%file\%'} will be
+      replaced with a filename to edit.
    \item \texttt{timed\_template} \\
       Controls the format of the \texttt{REM} line created when editing a new
-      timed reminder.  The following character substitutions will be made:
-      \texttt{'\%M'} - month name, \texttt{'\%d'} - day of the month,
-      \texttt{'\%y'} - year, \texttt{'\%h'} - hour, \texttt{'\%m'} - minute,
-      \texttt{'\%w'} - weekday name.
+      timed reminder.  The following string substitutions will be made:
+      \texttt{'\%monname\%'} - month name, \texttt{'\%mon\%'} - month number,
+      \texttt{'\%mday\%'} - day of the month, \texttt{'\%year\%'} - year, 
+      \texttt{'\%hour\%'} - hour, \texttt{'\%min\%'} - minute,
+      \texttt{'\%wdayname\%'} - weekday name, \texttt{'\%wday\%'} - weekday number.
    \item \texttt{untimed\_template} \\
       Controls the format of the \texttt{REM} line created when editing a new
       untimed reminder.  The substitution syntax is the same as for

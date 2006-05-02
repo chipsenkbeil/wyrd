@@ -4,26 +4,26 @@
 set remind_command="remind"
 # the default reminder file to display
 set reminders_file="~/.reminders"
-# command for editing an old appointment, given a line number %n and filename %f
-set edit_old_command="$EDITOR +%n %f"
+# command for editing an old appointment, given a line number %line% and filename %file%
+set edit_old_command="$EDITOR +%line% %file%"
 # command for editing a new appointment, given a filename %f
-set edit_new_command="$EDITOR +999999 %f"
+set edit_new_command="$EDITOR +999999 %file%"
 # command for free editing of the reminders file, given a filename %f
-set edit_any_command="$EDITOR %f"
+set edit_any_command="$EDITOR %file%"
 
 
 # templates for creating new appointments
 # %M -> month, %d -> day, %y -> year, %h -> hour, %m -> min, %w -> weekday
-set timed_template="REM %M %d %y AT %h:%m DURATION 1:00 MSG "
-set untimed_template="REM %M %d %y MSG "
+set timed_template="REM %mon% %mday% %year% AT %hour%:%min% DURATION 1:00 MSG "
+set untimed_template="REM %mon% %day% %year% MSG "
 
 # weekly recurrence
-set template0="REM %w AT %h:%m DURATION 1:00 MSG "
-set template1="REM %w MSG "
+set template0="REM %wdayname% AT %hour%:%min% DURATION 1:00 MSG "
+set template1="REM %wdayname% MSG "
 
 # monthly recurrence
-set template2="REM %d AT %h:%m DURATION 1:00 MSG "
-set template3="REM %d MSG "
+set template2="REM %mday AT %hour%:%min% DURATION 1:00 MSG "
+set template3="REM %mday MSG "
 
 
 # algorithm to use for determining busy level
