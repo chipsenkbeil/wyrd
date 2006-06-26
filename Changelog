@@ -1,7 +1,12 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2006-06-26     Reduced the minimum terminal height to 23 lines, so screen(1)
+2006-06-26     Added the 'default' color specifier, which accesses the default
+               terminal foreground and background colors.  (A 'default'
+               background color also enables background transparency on
+               terminal emulators which support it.)
+               
+               Reduced the minimum terminal height to 23 lines, so screen(1)
                users should always be able to use a status bar.
 
                Implemented "quick reminder" command, allowing the user to
