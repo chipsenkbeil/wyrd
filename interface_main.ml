@@ -55,7 +55,7 @@ let create_windows screen =
    and timed_width    = width - cal_width
    and untimed_height = height - 1 - msg_height - err_height - cal_height
    and untimed_width  = cal_width in
-   if height >= 24 then 
+   if height >= 23 then 
       if width >= 80 then {
          stdscr       = screen;
          lines        = height;
@@ -84,7 +84,7 @@ let create_windows screen =
          failwith "Wyrd requires at least an 80 column window.")
    else
       (endwin (); 
-      failwith "Wyrd requires at least a 24 line window.")
+      failwith "Wyrd requires at least a 23 line window.")
 
 
 (* wresize all the child windows via wresize and mvwin *)
@@ -99,7 +99,7 @@ let resize_subwins iface =
    and untimed_height = height - 1 - msg_height - err_height - cal_height
    and untimed_width  = cal_width in
    let new_scr = 
-      if height >= 24 then 
+      if height >= 23 then 
          if width >= 80 then {iface.scr with
             lines        = height;
             cols         = width;
@@ -120,7 +120,7 @@ let resize_subwins iface =
             failwith "Wyrd requires at least an 80 column window.")
       else
          (endwin (); 
-         failwith "Wyrd requires at least a 24 line window.")
+         failwith "Wyrd requires at least a 23 line window.")
    in
    assert (wresize new_scr.help_win 2 width);
    assert (wresize new_scr.timed_win (succ timed_height) timed_width);
