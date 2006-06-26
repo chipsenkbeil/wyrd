@@ -11,6 +11,8 @@ Wyrd ChangeLog
                Reduced the minimum terminal height to 23 lines, so screen(1)
                users should always be able to use a status bar.
 
+               Fixed a bug that caused events with zero duration to overlap.
+
                Implemented "quick reminder" command, allowing the user to
                quickly describe an event using natural language (USA English,
                at least).
