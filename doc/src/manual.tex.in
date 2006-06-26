@@ -588,7 +588,10 @@ Section \ref{colorable objects}.
 the section on COLORABLE OBJECTS.
 %@% END-IF %@%
 Wyrd will recognize the following color keywords: \texttt{black, red, green, yellow,
-blue, magenta, cyan, white}.
+blue, magenta, cyan, white, default}.  The \texttt{default} keyword allows you to
+choose the default foreground or background colors.  If you use
+\texttt{default} for your background color, this will access the transparent
+background on terminal emulators which support it.
 
 
 %@% IF LATEX %@%
