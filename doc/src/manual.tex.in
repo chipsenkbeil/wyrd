@@ -285,6 +285,27 @@ is selected).
 Finally, pressing \texttt{'e'} will open the reminder file in your editor without
 attempting to select any particular reminder.
 
+\subsection{Quick Reminders}
+Wyrd offers an additional mode for entering simple reminders quickly.  Press
+\texttt{'q'}, and you will be prompted for an event description.  Simply enter
+a description for the event using natural language, then press
+\texttt{<return>}.  Examples:
+\begin{itemize}
+   \item meeting with Bob tomorrow at 11
+   \item drop off package at 3pm
+   \item wednesday 10am-11:30 go grocery shopping
+   \item Board game night 20:15 next Fri
+   \item 7/4 independence day
+   \item 7/4/2007 independence day (next year)
+   \item independence day (next year) on 2007-07-04
+\end{itemize}
+If your event description can be understood, Wyrd will immediately create the
+reminder and scroll the display to its location.
+
+Currently the quick reminder mode tends to favor USA English conventions, as
+generalizing the natural language parser would require some work.
+
+
 \subsection{Cutting and Pasting Reminders}
 Reminders can be easily duplicated or rescheduled through the use of Wyrd's
 cutting and pasting features.
@@ -731,6 +752,8 @@ The following is a list of every available operation.
       scroll the description window contents up (when possible)
    \item \texttt{scroll\_description\_down} \\
       scroll the description window contents down (when possible)
+   \item \texttt{quick\_add} \\
+      add a ``quick reminder''
    \item \texttt{new\_timed} \\
       create a new timed reminder
    \item \texttt{new\_timed\_dialog} \\
