@@ -406,6 +406,7 @@ let parse_line line_stream =
          | [< 'Ident "magenta" >] -> Color.magenta
          | [< 'Ident "cyan" >]    -> Color.cyan
          | [< 'Ident "white" >]   -> Color.white
+         | [< 'Ident "default" >] -> ~- 1
          | [< >] ->
             config_failwith ("Expected a foreground color after \"set " ^ obj_str)
          end
@@ -420,6 +421,7 @@ let parse_line line_stream =
          | [< 'Ident "magenta" >] -> Color.magenta
          | [< 'Ident "cyan" >]    -> Color.cyan
          | [< 'Ident "white" >]   -> Color.white
+         | [< 'Ident "default" >] -> ~- 1
          | [< >] ->
             config_failwith ("Expected a background color after \"set " ^ obj_str)
          end

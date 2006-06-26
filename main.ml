@@ -52,6 +52,7 @@ let initialize_screen () =
    let std = initscr () in
    begin try
       assert (start_color ());
+      assert (use_default_colors ());
       Rcfile.validate_colors ()
    with _ ->
       endwin ();
