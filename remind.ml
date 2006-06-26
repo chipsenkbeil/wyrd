@@ -102,7 +102,7 @@ let process_timed tm duration_s month_start_ts indentations partial_trem
 timed =
    let (f_rem_ts, _) = Unix.mktime tm in
    let duration =
-      if duration_s = "*" then 0.0
+      if duration_s = "*" then 1.0
       else float_of_string duration_s
    in
    (* compute the indentation level *)
