@@ -52,9 +52,9 @@ let weekdays =
    "\\(wednesday\\|wed\\)\\|\\(thursday\\|thu\\|thur\\|thurs\\)\\|" ^
    "\\(friday\\|fri\\)\\|\\(saturday\\|sat\\)\\)\\)"
 (* typical US dates, like 6/1 or 6/1/2006 *)
-let us_numeric_date = "\\(\\([0-9]+\\)/\\([0-9]+\\)\\(/\\([0-9]+\\)\\)?\\)"
+let us_numeric_date = "\\(\\([0-9]+\\)/\\([0-9]+\\)\\(/\\([0-9][0-9][0-9][0-9]\\)\\)?\\)"
 (* ISO standard dates, like 2006-06-01 *)
-let iso_date = "\\(\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\)\\)"
+let iso_date = "\\(\\([0-9][0-9][0-9][0-9]\\)-\\([0-9]+\\)-\\([0-9]+\\)\\)"
 let numeric_date = "\\(\\(on[ \t]+\\)?\\(" ^ us_numeric_date ^ "\\|" ^ iso_date ^ "\\)\\)"
 let short_date =
    "\\(\\(today\\)\\|\\(tomorrow\\)\\|" ^
@@ -64,7 +64,7 @@ let date_spec =
 
 (* 5, or 5:30, or 5pm, or 5:30 pm *)
 let time_spec = 
-   "\\(\\(\\([0-9]+\\)\\(:\\([0-9][0-9]\\)\\)?[ \t]*\\(am\\|pm\\)?\\)\\|" ^
+   "\\(\\(\\([0-9][0-9]?\\)\\(:\\([0-9][0-9]\\)\\)?[ \t]*\\(am\\|pm\\)?\\)\\|" ^
    "\\(noon\\|midnight\\)\\)"
 (* either match a single time spec, or match a pair formatted as a range:
  * 5-7 or 5:30pm-7 or 5 until 7 or 5:30 to 7pm ... *)
