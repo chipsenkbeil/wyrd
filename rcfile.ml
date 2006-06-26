@@ -311,7 +311,7 @@ let commands_list = [
    ("paste_dialog"            , CommandOp PasteReminderDialog);
    ("scroll_description_up"   , CommandOp ScrollDescUp);
    ("scroll_description_down" , CommandOp ScrollDescDown);
-   ("quick_event"             , CommandOp QuickEvent);
+   ("quick_add"               , CommandOp QuickEvent);
    ("new_timed"               , CommandOp NewTimed);
    ("new_timed_dialog"        , CommandOp NewTimedDialog);
    ("new_untimed"             , CommandOp NewUntimed);
