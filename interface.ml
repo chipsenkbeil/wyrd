@@ -77,6 +77,9 @@ type untimed_lineinfo_t = {
 }
 
 
+type extended_mode_t = ExtendedSearch | ExtendedGoto | ExtendedQuick
+type entry_mode_t = Normal | Extended of extended_mode_t
+
 (* everything you need to know about the interface state goes in this variable *)
 type interface_state_t = {
    version           : string;              (* program version string *)
@@ -93,12 +96,8 @@ type interface_state_t = {
    untimed_lineinfo  : untimed_lineinfo_t option array; (* same as above, for untimed window *)
    len_untimed       : int;                 (* number of entries in the untimed reminders list *)
    search_regex      : Str.regexp;          (* most recent search string *)
-   search_input      : string;              (* buffer to hold search string input *)
-   goto_input        : string;              (* buffer to hold 'go to date' input *)
-   quick_input       : string;              (* buffer to hold 'quick event' input *)
-   is_entering_search: bool;                (* whether or not the user is entering a search string *)
-   is_entering_goto  : bool;                (* whether or not the user is entering a date to navigate to *)
-   is_entering_quick : bool;                (* whether or not the user is entering a "quick event" *)
+   extended_input    : string;              (* buffer to hold search/goto/quick event info *)
+   entry_mode        : entry_mode_t;        (* decides which mode the interface is in *)
    last_timed_refresh: float;               (* the last time the timed window had a complete refresh *)
    rem_buffer        : string               (* buffer that acts as a clipboard for REM strings *)
 }
@@ -146,12 +145,8 @@ let make (std : screen_t) =
       untimed_lineinfo   = Array.make std.uw_lines None;
       len_untimed        = 0;
       search_regex       = Str.regexp "";
-      search_input       = "";
-      goto_input         = "";
-      quick_input        = "";
-      is_entering_search = false;
-      is_entering_goto   = false;
-      is_entering_quick  = false;
+      extended_input     = "";
+      entry_mode         = Normal;
       last_timed_refresh = 0.0;
       rem_buffer         = ""
    }
