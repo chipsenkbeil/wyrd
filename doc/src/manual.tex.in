@@ -24,9 +24,9 @@
 
 \begin{document}
 %@% IF LATEX %@%
-\title{Wyrd v1.3 User Manual}
+\title{Wyrd v1.4 User Manual}
 \author{Paul J. Pelzl}
-\date{February 24, 2006}
+\date{June 24, 2006}
 \maketitle
 
 \begin{center}
@@ -158,9 +158,11 @@ Aside from reading the Remind manpage, you may get some useful pointers by readi
 %BEGIN LATEX
 Mike Harris's article on 43 Folders\footnote{http://www.43folders.com/2005/02/guest\_mike\_harr.html}
 or David Skoll's writeup on Linux Journal\footnote{http://www.linuxjournal.com/article/3529}.
+The 43 Folders Wiki also has a nice section on Remind\footnote{http://wiki.43folders.com/index.php/Remind}.
 %END LATEX
 %HEVEA \begin{rawhtml} <a href="http://www.43folders.com/2005/02/guest_mike_harr.html">Mike Harris's article on 43 folders</a> \end{rawhtml}
 %HEVEA \begin{rawhtml} or <a href="http://www.linuxjournal.com/article/3529">David Skoll's writeup on Linux Journal</a>.\end{rawhtml}
+%HEVEA \begin{rawhtml} The 43 Folders Wiki also has a <a href="http://wiki.43folders.com/index.php/Remind">nice section on Remind</a>.\end{rawhtml}
 
 You can launch Wyrd using the default reminder file by executing
 \texttt{wyrd}.  If desired, a different reminder file may be selected by
@@ -408,16 +410,47 @@ the \Cmd{wyrdrc}{5} manpage.
 
 \subsection{Miscellaneous}
 
-Remind's \texttt{TAG} specifier may be used to cause Wyrd to give special treatment
-to certain reminders.  If a reminder line includes the clause \texttt{"TAG noweight"},
-then Wyrd will not give that reminder any weight when determining the ``busy level''
-colorations applied to the month calendar.  If a reminder line includes the clause
-\texttt{"TAG nodisplay"}, then Wyrd will neither display that reminder nor give it any
-weight when determining the month calendar colorations.  The tag parameters are
-case insensitive.
+\begin{itemize}
+   \item Remind's \texttt{TAG} specifier may be used to cause Wyrd to give special treatment
+   to certain reminders.  If a reminder line includes the clause \texttt{"TAG noweight"},
+   then Wyrd will not give that reminder any weight when determining the ``busy level''
+   colorations applied to the month calendar.  If a reminder line includes the clause
+   \texttt{"TAG nodisplay"}, then Wyrd will neither display that reminder nor give it any
+   weight when determining the month calendar colorations.  The tag parameters are
+   case insensitive.
 
-WARNING: These tag parameters are not guaranteed to interact well with other
-Remind front-ends such as tkremind.
+   WARNING: These tag parameters are not guaranteed to interact well with other
+   Remind front-ends such as tkremind.
+
+   \item Wyrd fills in sensible defaults for the fields of a \texttt{REM} statement, but
+      you will inevitably need to make some small edits to achieve the behavior
+      you want. If you use Vim, you can make your life easier by installing the
+      Vim-Latex Suite and then modifying your \texttt{~/.wyrdrc to} use 
+      \texttt{REM} templates like this:
+
+%@% IF LATEX %@%
+      \texttt{set timed\_template="REM \%monname\% \%mday\% \%year\% <++>AT \%hour\%:\%min\%<++> DURATION 1:00<++> MSG \%$\backslash$"<++>\%$\backslash$" \%b"} \\
+      \texttt{set untimed\_template="REM \%monname\% \%mday\% \%year\% <++>MSG \%$\backslash$"<++>\%$\backslash$" \%b"}
+%@% ELSE %@%
+      \texttt{set timed\_template="REM \%monname\% \%mday\% \%year\% <++>AT \%hour\%:\%min\%<++> DURATION 1:00<++> MSG \%\Bs"<++>\%\Bs" \,\%b"} \\
+      \texttt{set untimed\_template="REM \%monname\% \%mday\% \%year\% <++>MSG \%\Bs"<++>\%\Bs" \,\%b"}
+%@% END-IF %@%
+
+      With this change, hitting Ctrl-J inside Vim (in insert mode) will cause your
+      cursor to jump directly to the \texttt{<++>} markers, enabling you to quickly add any
+      desired Remind delta and message parameters.
+
+%@% IF LATEX %@%
+   \item The 43 Folders Wiki
+%BEGIN LATEX
+has a page on Wyrd\footnote{http://wiki.43folders.com/index.php/Wyrd}.
+%END LATEX
+%HEVEA \begin{rawhtml} <a href="http://wiki.43folders.com/index.php/Wyrd">has a page on Wyrd</a>. \end{rawhtml}
+This is a good place to look for other usage tips.
+%@% END-IF %@%
+
+\end{itemize}
+
 
 %@% END-IF %@%
 % (!WYRDRC)

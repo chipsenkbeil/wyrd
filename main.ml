@@ -1,5 +1,5 @@
 (*  Wyrd -- a curses-based front-end for Remind
- *  Copyright (C) 2005 Paul Pelzl
+ *  Copyright (C) 2005, 2006 Paul Pelzl
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License, Version 2,
@@ -34,7 +34,7 @@ let usage =
 in
 let show_version () =
    print_endline ("Wyrd v" ^ Version.version);
-   print_endline "Copyright (C) 2005 Paul Pelzl";
+   print_endline "Copyright (C) 2005, 2006 Paul Pelzl";
    print_endline "";
    print_endline "Wyrd comes with ABSOLUTELY NO WARRANTY.  This is Free Software,";
    print_endline "and you are welcome to redistribute it under certain conditions;";

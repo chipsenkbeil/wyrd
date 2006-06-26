@@ -1,7 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
-2006-06-26     Added the 'default' color specifier, which accesses the default
+2006-06-26     Released 1.4.0.
+
+               Added the 'default' color specifier, which accesses the default
                terminal foreground and background colors.  (A 'default'
                background color also enables background transparency on
                terminal emulators which support it.)
