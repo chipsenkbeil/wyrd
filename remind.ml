@@ -102,7 +102,7 @@ let process_timed tm duration_s month_start_ts indentations partial_trem
 timed =
    let (f_rem_ts, _) = Unix.mktime tm in
    let duration =
-      if duration_s = "*" then 1.0
+      if duration_s = "*" then 0.0
       else float_of_string duration_s
    in
    (* compute the indentation level *)
@@ -115,7 +115,12 @@ timed =
    let bottom_index = 
       try
          let real_bottom_index =
-            let shift = (f_rem_ts +. (duration *. 60.0) -. month_start_ts) /. 3600.0 in
+            let shift = 
+               if duration > 0.0 then
+                  (f_rem_ts +. (duration *. 60.0) -. month_start_ts) /. 3600.0
+               else
+                  (f_rem_ts +. (duration +. 60.0) -. month_start_ts) /. 3600.0
+            in
             (* catch the edge effects when reminders end on hour boundaries *)
             if shift = float_of_int (int_of_float shift) then
                pred (int_of_float shift)
