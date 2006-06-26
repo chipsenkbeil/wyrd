@@ -22,8 +22,6 @@
  *
  * miscellaneous helper functions that don't really fit elsewhere *)
 
-(* for some reason this is unrecognized if I leave it in txtin_parser.mly *)
-exception Txtin_error of string
 
 exception String_of_tm_mon_failure of string
 exception String_of_tm_wday_failure of string
@@ -198,6 +196,16 @@ let empty_tm = {
    Unix.tm_yday  = 0;
    Unix.tm_isdst = false
 }
+
+
+
+(* strip whitespace *)
+let strip s =
+   (* any amount of whitespace, followed by a non-whitespace char, 
+    * followed by any number of chars, followed by a non-whitespace char, 
+    * followed by any amount of whitespace *)
+   let re = Str.regexp "^[ \t]*\\([^ \t].*[^ \t]\\)[ \t]*$" in
+   Str.replace_first re "\\1" s
 
 
 

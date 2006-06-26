@@ -47,7 +47,7 @@ type command_t = | ScrollUp | ScrollDown | NextDay | PrevDay
                  | ViewAllReminders | ViewWeek | ViewMonth
                  | NextReminder | ViewKeybindings | CopyReminder
                  | PasteReminder | PasteReminderDialog 
-                 | CutReminder | Goto
+                 | CutReminder | Goto | QuickEvent
                  | NewGenReminder of int | NewGenReminderDialog of int
 
 type entry_operation_t = | EntryComplete | EntryBackspace | EntryExit
@@ -311,6 +311,7 @@ let commands_list = [
    ("paste_dialog"            , CommandOp PasteReminderDialog);
    ("scroll_description_up"   , CommandOp ScrollDescUp);
    ("scroll_description_down" , CommandOp ScrollDescDown);
+   ("quick_event"             , CommandOp QuickEvent);
    ("new_timed"               , CommandOp NewTimed);
    ("new_timed_dialog"        , CommandOp NewTimedDialog);
    ("new_untimed"             , CommandOp NewUntimed);
@@ -442,8 +443,12 @@ let parse_line line_stream =
       let bind_key key = 
          begin match line_stream with parser
          | [< 'Ident command_str >] ->
-            let command = operation_of_string command_str in
-            register_binding key command
+            begin try
+               let command = operation_of_string command_str in
+               register_binding key command
+            with Not_found ->
+               config_failwith ("Unrecognized command name \"" ^ command_str ^ "\"")
+            end
          | [< >] ->
             config_failwith ("Expected a command name after \"bind \"" ^ key ^ "\"")
          end

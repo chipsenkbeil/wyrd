@@ -102,6 +102,7 @@ bind "p"                 paste
 bind "P"                 paste_dialog
 bind "d"                 scroll_description_up
 bind "D"                 scroll_description_down
+bind "q"                 quick_event
 bind "t"                 new_timed
 bind "T"                 new_timed_dialog
 bind "u"                 new_untimed

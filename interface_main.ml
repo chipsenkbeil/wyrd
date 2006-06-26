@@ -1404,10 +1404,94 @@ let handle_begin_goto (iface : interface_state_t) reminders =
    (new_iface, reminders)
 
 
+(* Handle creation of a quick event *)
+let handle_quick_event (iface : interface_state_t) reminders remfile =
+   try
+      let (rem_spec, description) = 
+         Time_lang.parse_natural_language_event iface.quick_input
+      in
+      let remline =
+         begin match rem_spec with
+         | Time_lang.Timed (start, finish) ->
+            let date_s = 
+               Printf.sprintf "REM %s %d %d " (Utility.string_of_tm_mon start.Unix.tm_mon)
+               start.Unix.tm_mday (start.Unix.tm_year + 1900)
+            in
+            let start_s = 
+               Printf.sprintf "AT %.2d:%.2d " start.Unix.tm_hour start.Unix.tm_min
+            in
+            let duration_s =
+               if start <> finish then
+                  let (start_ts, _)  = Unix.mktime start
+                  and (finish_ts, _) = Unix.mktime finish in
+                  let dur = int_of_float ((finish_ts -. start_ts) /. 60.0) in
+                  Printf.sprintf "DURATION %d:%.2d " (dur / 60) (dur mod 60)
+               else
+                  ""
+            in
+            date_s ^ start_s ^ duration_s ^ "MSG " ^ description ^ "\n"
+         | Time_lang.Untimed timespec ->
+            let date_s = 
+               Printf.sprintf "REM %s %d %d " (Utility.string_of_tm_mon timespec.Unix.tm_mon)
+               timespec.Unix.tm_mday (timespec.Unix.tm_year + 1900)
+            in
+            date_s ^ "MSG " ^ description ^ "\n"
+         end
+      in
+      (* append the remline to the reminders file *)
+      let remfile_channel = 
+         open_out_gen [Open_append; Open_creat; Open_text] 416 remfile
+      in
+      output_string remfile_channel remline;
+      close_out remfile_channel;
+      (* navigate to the new reminder *)
+      let (is_timed, start) =
+         match rem_spec with
+         | Time_lang.Timed (x, _) -> (true, x)
+         | Time_lang.Untimed x    -> (false, x)
+      in
+      let rounded_time =
+         let rt_shift = 
+            if is_timed then
+               let (x, _) = Unix.mktime (round_time iface.zoom_level start) in x
+            else
+               let (x, _) = Unix.mktime (round_time iface.zoom_level {start with Unix.tm_hour = 8}) in x
+         in
+         rt_shift -. (time_inc iface)
+      in
+      let r = Remind.create_three_month iface.top_timestamp in
+      let new_iface = {
+         iface with top_timestamp = 
+                       if !Rcfile.center_cursor then
+                          rounded_time -. (time_inc iface) *. (float_of_int ((iface.scr.tw_lines / 2) - 2))
+                       else
+                          rounded_time -. (time_inc iface) *. 1.;
+                    top_desc        = 0;
+                    selected_side   = if is_timed then Left else Right;
+                    left_selection  = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 2;
+                    right_selection = 1;
+                    is_entering_quick = false;
+                    quick_input     = ""
+      } in
+      handle_selection_change new_iface r
+   with Time_lang.Event_parse_error s ->
+      failwith s
+
+
+
+(* Begin entry of a quick event *) 
+let handle_begin_quick_event (iface : interface_state_t) reminders =
+   let new_iface = {
+      iface with is_entering_quick = true
+   } in
+   draw_error iface "event description: " true;
+   (new_iface, reminders)
+
+
 
 (* handle keyboard input and update the display appropriately *)
 let handle_keypress key (iface : interface_state_t) reminders =
-   if not (iface.is_entering_search || iface.is_entering_goto) then begin
+   if not (iface.is_entering_search || iface.is_entering_goto || iface.is_entering_quick) then begin
       try
          match Rcfile.command_of_key key with
          |Rcfile.ScrollDown ->
@@ -1497,6 +1581,8 @@ let handle_keypress key (iface : interface_state_t) reminders =
             handle_scroll_desc_up iface reminders
          |Rcfile.ScrollDescDown ->
             handle_scroll_desc_down iface reminders
+         |Rcfile.QuickEvent ->
+            handle_begin_quick_event iface reminders
          |Rcfile.NewTimed ->
             handle_new_reminder iface reminders Timed
             (Utility.expand_file !Rcfile.reminders_file)
@@ -1563,7 +1649,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
          assert (doupdate ());
          (iface, reminders)
    end else begin
-      (* user is entering a search string *)
+      (* user is entering a search string, 'goto' date spec, or quick event *)
       try
          begin match Rcfile.entry_of_key key with
          |Rcfile.EntryComplete ->
@@ -1585,7 +1671,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
                   assert (doupdate ());
                   (new_iface, reminders)
                end
-            else
+            else if iface.is_entering_goto then
                begin try
                   handle_goto iface reminders
                with Failure err ->
@@ -1598,25 +1684,40 @@ let handle_keypress key (iface : interface_state_t) reminders =
                   assert (doupdate ());
                   (new_iface, reminders)
                end
+            else
+               (* must be entering quick event *)
+               begin try
+                  handle_quick_event iface reminders
+                  (Utility.expand_file !Rcfile.reminders_file)
+               with Failure err ->
+                  let new_iface = {
+                     iface with is_entering_quick = false;
+                                quick_input = ""
+                  } in
+                  let _ = beep () in
+                  draw_error new_iface ("syntax error in event description: " ^ err) false;
+                  assert (doupdate ());
+                  (new_iface, reminders)
+               end
          |Rcfile.EntryBackspace ->
             if iface.is_entering_search then
                let len = String.length iface.search_input in
                if len > 0 then 
                   let new_iface = {
                      iface with search_input = 
-                                 Str.string_before iface.search_input (pred len)
+                                Str.string_before iface.search_input (pred len)
                   } in
                   draw_error iface ("search expression: " ^ new_iface.search_input) true;
                   (new_iface, reminders)
                else
                   let _ = beep () in
                   (iface, reminders)
-            else
+            else if iface.is_entering_goto then
                let len = String.length iface.goto_input in
                if len > 0 then begin
                   let new_iface = {
                      iface with goto_input = 
-                                 Str.string_before iface.goto_input (pred len)
+                                Str.string_before iface.goto_input (pred len)
                   } in
                   if !Rcfile.goto_big_endian then
                      draw_error iface ("go to date [[YYYY]MM]DD: " ^ new_iface.goto_input) true
@@ -1626,6 +1727,20 @@ let handle_keypress key (iface : interface_state_t) reminders =
                end else
                   let _ = beep () in
                   (iface, reminders)
+            else
+               (* must be entering quick event *)
+               let len = String.length iface.quick_input in
+               if len > 0 then 
+                  let new_iface = {
+                     iface with quick_input = 
+                                Str.string_before iface.quick_input (pred len)
+                  } in
+                  draw_error iface ("event description: " ^ new_iface.quick_input) true;
+                  (new_iface, reminders)
+               else
+                  let _ = beep () in
+                  (iface, reminders)
+
          |Rcfile.EntryExit ->
             if iface.is_entering_search then begin
                let new_iface = {
@@ -1634,12 +1749,20 @@ let handle_keypress key (iface : interface_state_t) reminders =
                } in
                draw_error new_iface "search cancelled." false;
                (new_iface, reminders)
-            end else begin
+            end else if iface.is_entering_goto then begin
                let new_iface = {
                   iface with goto_input = "";
                              is_entering_goto = false
                } in
                draw_error new_iface "date entry cancelled." false;
+               (new_iface, reminders)
+            end else begin
+               (* must be entering quick event *)
+               let new_iface = {
+                  iface with quick_input = "";
+                             is_entering_quick = false
+               } in
+               draw_error new_iface "quick event cancelled." false;
                (new_iface, reminders)
             end
          end
@@ -1659,7 +1782,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
             with Failure _ ->
                let _ = beep () in
                (iface, reminders)
-         end else begin
+         end else if iface.is_entering_goto then begin
             try
                (* only digits are accepted for goto dates *)
                if key >= 48 && key <= 57 && (String.length iface.goto_input < 8) then begin
@@ -1677,9 +1800,24 @@ let handle_keypress key (iface : interface_state_t) reminders =
             with Failure _ ->
                let _ = beep () in
                (iface, reminders)
+         end else begin 
+            (* must be entering quick event *)
+            try
+               (* only printable characters are accepted for quick events *)
+               if key >= 32 && key <= 126 then begin
+                  let c = char_of_int key in
+                  let new_iface = {
+                     iface with quick_input = iface.quick_input ^ (String.make 1 c)
+                  } in
+                  draw_error new_iface ("event description: " ^ new_iface.quick_input) true;
+                  (new_iface, reminders)
+               end else
+                  failwith "events cannot contain unprintable characters"
+            with Failure _ ->
+               let _ = beep () in
+               (iface, reminders)
          end
    end
-
 
 
 

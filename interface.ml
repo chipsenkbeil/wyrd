@@ -95,8 +95,10 @@ type interface_state_t = {
    search_regex      : Str.regexp;          (* most recent search string *)
    search_input      : string;              (* buffer to hold search string input *)
    goto_input        : string;              (* buffer to hold 'go to date' input *)
+   quick_input       : string;              (* buffer to hold 'quick event' input *)
    is_entering_search: bool;                (* whether or not the user is entering a search string *)
    is_entering_goto  : bool;                (* whether or not the user is entering a date to navigate to *)
+   is_entering_quick : bool;                (* whether or not the user is entering a "quick event" *)
    last_timed_refresh: float;               (* the last time the timed window had a complete refresh *)
    rem_buffer        : string               (* buffer that acts as a clipboard for REM strings *)
 }
@@ -146,8 +148,10 @@ let make (std : screen_t) =
       search_regex       = Str.regexp "";
       search_input       = "";
       goto_input         = "";
+      quick_input        = "";
       is_entering_search = false;
       is_entering_goto   = false;
+      is_entering_quick  = false;
       last_timed_refresh = 0.0;
       rem_buffer         = ""
    }
