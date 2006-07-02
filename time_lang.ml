@@ -51,11 +51,11 @@ let weekdays =
    "\\(\\(sunday\\|sun\\)\\|\\(monday\\|mon\\)\\|\\(tuesday\\|tue\\|tues\\)\\|" ^
    "\\(wednesday\\|wed\\)\\|\\(thursday\\|thu\\|thur\\|thurs\\)\\|" ^
    "\\(friday\\|fri\\)\\|\\(saturday\\|sat\\)\\)\\)"
-(* typical US dates, like 6/1 or 6/1/2006 *)
-let us_numeric_date = "\\(\\([0-9]+\\)/\\([0-9]+\\)\\(/\\([0-9][0-9][0-9][0-9]\\)\\)?\\)"
+(* typical US-style dates, like 6/1 or 6/1/2006 *)
+let numeric_slash_date = "\\(\\([0-9]+\\)/\\([0-9]+\\)\\(/\\([0-9][0-9][0-9][0-9]\\)\\)?\\)"
 (* ISO standard dates, like 2006-06-01 *)
 let iso_date = "\\(\\([0-9][0-9][0-9][0-9]\\)-\\([0-9]+\\)-\\([0-9]+\\)\\)"
-let numeric_date = "\\(\\(on[ \t]+\\)?\\(" ^ us_numeric_date ^ "\\|" ^ iso_date ^ "\\)\\)"
+let numeric_date = "\\(\\(on[ \t]+\\)?\\(" ^ numeric_slash_date ^ "\\|" ^ iso_date ^ "\\)\\)"
 let short_date =
    "\\(\\(today\\)\\|\\(tomorrow\\)\\|" ^
    "\\(in[ \t]+\\([0-9]+\\)[ \t]+day\\(s\\|s' time\\)?\\)\\)"
@@ -270,19 +270,27 @@ let parse_natural_language_date date_str =
             parse_failwith "please submit a bug report for \"unreachable case 3\"."
       in
 
-      let handle_us_numeric () = 
+      let handle_numeric_slash () = 
          try
-            (* us-style numeric date specified with slashes *)
+            (* US-style numeric date specified with slashes *)
             let first  = int_of_string (get_field 17) in
             let second = int_of_string (get_field 18) in
-            if first >= 1 && first <= 12 && second >= 1 && second <= 31 then
+            let (month, monthday) =
+               if !Rcfile.quick_date_US then
+                  (* assume US conventions (month first, then day of month) *)
+                  (first, second)
+               else
+                  (* assume non-US conventions (day of month first, then month) *)
+                  (second, first)
+            in
+            if month >= 1 && month <= 12 && monthday >= 1 && monthday <= 31 then
                begin try
                   let third = int_of_string (get_field 20) in
                   if third >= 1991 && third <= 2037 then
                      let temp = {
                         current_tm with Unix.tm_year = third - 1900;
-                                        Unix.tm_mon = pred first;
-                                        Unix.tm_mday = second;
+                                        Unix.tm_mon = pred month;
+                                        Unix.tm_mday = monthday;
                                         Unix.tm_hour = 0;
                                         Unix.tm_min = 0;
                                         Unix.tm_sec = 0
@@ -292,7 +300,7 @@ let parse_natural_language_date date_str =
                   else
                      parse_fail_default ()
                with Not_found ->
-                  find_next_mon_mday current_tm (pred first) second
+                  find_next_mon_mday current_tm (pred month) monthday
                end
             else
                parse_fail_default ()
@@ -373,7 +381,7 @@ let parse_natural_language_date date_str =
          try
             (* a numeric date specifier with slashes *)
             let _ = get_field 16 in
-            handle_us_numeric ()
+            handle_numeric_slash ()
          with Not_found ->
          try
             (* a numeric date specifier with dashes *)

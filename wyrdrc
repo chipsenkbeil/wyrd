@@ -60,6 +60,9 @@ set center_cursor="false"
 
 # date syntax for the 'go to date' command can be big or little endian
 set goto_big_endian="true"
+# date syntax for the "quick reminder" command can be US style
+# (6/1 -> June 1) or non-US style (6/1 -> January 6)
+set quick_date_US="true"
 
 # whether or not to number weeks within the month calendar
 set number_weeks="false"

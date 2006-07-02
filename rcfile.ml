@@ -115,6 +115,8 @@ let description_12_hour = ref true
 let center_cursor = ref false
 (* "jump to" date syntax is big-endian? *)
 let goto_big_endian = ref true
+(* "quick add" date syntax uses US conventions? *)
+let quick_date_US = ref true
 (* print week numbers? *)
 let number_weeks = ref false
 (* List of included rc files *)
@@ -543,6 +545,8 @@ let parse_line line_stream =
          parse_set "center_cursor" center_cursor bool_of_string "Expected a boolean string after "
       | [< 'Ident "goto_big_endian" >] ->
          parse_set "goto_big_endian" goto_big_endian bool_of_string "Expected a boolean string after "
+      | [< 'Ident "quick_date_US" >] ->
+         parse_set "quick_date_US" quick_date_US bool_of_string "Expected a boolean string after "
       | [< 'Ident "number_weeks" >] ->
          parse_set "number_weeks" number_weeks bool_of_string "Expected a boolean string after "
       | [< >] ->
