@@ -702,6 +702,12 @@ CONFIGURATION VARIABLES section.
       parse dates.  When set to \texttt{"true"}, date specifiers should be in
       ISO 8601 (YYYYMMDD) format.  When set to \texttt{"false"}, date specifiers
       should be in European style DDMMYYYY format.
+   \item \texttt{quick\_date\_US} \\
+      A boolean value that determines how the \texttt{quick\_add} operation
+      will parse numeric dates with slashes, e.g. 6/1 (or 6/1/2006).  When set
+      to \texttt{"true"}, the first number is a month and the second is the day
+      of the month (June 1).  When set to \texttt{"false"}, these meanings of
+      these two fields are switched (January 6).
    \item \texttt{number\_weeks} \\
       A boolean value that determines whether or not weeks should be numbered
       within the month calendar window.  Weeks are numbered according to the ISO
