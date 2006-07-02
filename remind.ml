@@ -189,7 +189,7 @@ let month_reminders timestamp =
                       (string_of_int (tm.Unix.tm_year + 1900)) in
    let (remind_channel, remind_in_channel, remind_err_channel) = 
       Unix.open_process_full (!Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
-      !Rcfile.reminders_file ^ " " ^ rem_date_str) [||] 
+      !Rcfile.reminders_file ^ " " ^ rem_date_str) (Unix.environment ())
    in
    (* check for Remind errors *)
    let remind_err =
@@ -559,7 +559,7 @@ let find_next msg_regex timestamp =
       Unix.open_process_full (!Rcfile.remind_command ^ " -n -s -b1 " ^ 
       !Rcfile.reminders_file ^ " " ^ rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && " ^
       !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ 
-      Rcfile.tmpfile ^ " - | sort") [||]
+      Rcfile.tmpfile ^ " - | sort") (Unix.environment ())
    in
    let rec check_messages () =
       try
