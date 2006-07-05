@@ -428,11 +428,7 @@ let parse_line line_stream =
             config_failwith ("Expected a background color after \"set " ^ obj_str)
          end
       in
-      (* do not register (white, black) color pair, as this is the default *)
-      if foreground <> Color.white || background <> Color.black then 
-         Hashtbl.replace color_table obj (foreground, background)
-      else
-         ()
+      Hashtbl.replace color_table obj (foreground, background)
    in
    (* Parsing begins here *)
    match line_stream with parser
