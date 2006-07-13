@@ -209,6 +209,68 @@ let strip s =
 
 
 
+(* Use the shell to open a process, read all output from both stdout and stderr, 
+ * and close the pipes to the process again.  Returns a list of lines from
+ * stdout, and a list of lines from stderr.
+ *
+ * Uses select(), so it should be robust to I/O buffering synchronization
+ * issues. *)
+let read_all_shell_command_output shell_command =
+   let (in_read, in_write)   = Unix.pipe ()
+   and (out_read, out_write) = Unix.pipe ()
+   and (err_read, err_write) = Unix.pipe () in
+   let rec read_output out_str err_str out_done err_done =
+      if out_done && err_done then
+         (out_str, err_str)
+      else begin
+         let out_lst = if out_done then [] else [out_read]
+         and err_lst = if err_done then [] else [err_read] in
+         (* find some output to read *)
+         let (read_list, _, _) = Unix.select (out_lst @ err_lst) [] [] (10.0) in
+         if List.length read_list > 0 then begin
+            let chan = List.hd read_list in
+            let buf = String.make 256 ' ' in
+            let chars_read = Unix.read chan buf 0 256 in
+            if chars_read = 0 then
+               (* no chars read indicates EOF *)
+               if chan = out_read then
+                  read_output out_str err_str true err_done
+               else
+                  read_output out_str err_str out_done true
+            else
+               (* if 1-256 characters are read, append them to the proper
+                * buffer and continue *)
+               let s = String.sub buf 0 chars_read in
+               if chan = out_read then
+                  read_output (out_str ^ s) err_str out_done err_done
+               else
+                  read_output out_str (err_str ^ s) out_done err_done
+         end else
+            (out_str, err_str)
+      end
+   in
+   (* launch the shell process *)
+   let pid = 
+      Unix.create_process "/bin/sh" [| "/bin/sh"; "-c"; shell_command |] 
+      in_read out_write err_write 
+   in
+   (* these belong to remind, so close them off *)
+   Unix.close in_read;
+   Unix.close out_write;
+   Unix.close err_write;
+   let (out_str, err_str) = read_output "" "" false false in
+   (* clean up remind zombie *)
+   let _ = Unix.waitpid [] pid in
+   (* close off our end of the IPC pipes *)
+   Unix.close in_write;
+   Unix.close out_read;
+   Unix.close err_read;
+   let newline_regex = Str.regexp "\n" in
+   let out_lines = Str.split newline_regex out_str
+   and err_lines = Str.split newline_regex err_str in
+   (out_lines, err_lines)
+
+
 
 
 (* arch-tag: DO_NOT_CHANGE_a87790db-2dd0-496c-9620-ed968f3253fd *)
