@@ -115,6 +115,8 @@ let description_12_hour = ref true
 let center_cursor = ref false
 (* "jump to" date syntax is big-endian? *)
 let goto_big_endian = ref true
+(* "quick add" date syntax uses US conventions? *)
+let quick_date_US = ref true
 (* print week numbers? *)
 let number_weeks = ref false
 (* List of included rc files *)
@@ -426,11 +428,7 @@ let parse_line line_stream =
             config_failwith ("Expected a background color after \"set " ^ obj_str)
          end
       in
-      (* do not register (white, black) color pair, as this is the default *)
-      if foreground <> Color.white || background <> Color.black then 
-         Hashtbl.replace color_table obj (foreground, background)
-      else
-         ()
+      Hashtbl.replace color_table obj (foreground, background)
    in
    (* Parsing begins here *)
    match line_stream with parser
@@ -543,6 +541,8 @@ let parse_line line_stream =
          parse_set "center_cursor" center_cursor bool_of_string "Expected a boolean string after "
       | [< 'Ident "goto_big_endian" >] ->
          parse_set "goto_big_endian" goto_big_endian bool_of_string "Expected a boolean string after "
+      | [< 'Ident "quick_date_US" >] ->
+         parse_set "quick_date_US" quick_date_US bool_of_string "Expected a boolean string after "
       | [< 'Ident "number_weeks" >] ->
          parse_set "number_weeks" number_weeks bool_of_string "Expected a boolean string after "
       | [< >] ->

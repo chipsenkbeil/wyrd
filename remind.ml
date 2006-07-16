@@ -187,96 +187,95 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
-   let (remind_channel, remind_in_channel, remind_err_channel) = 
-      Unix.open_process_full (!Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
-      !Rcfile.reminders_file ^ " " ^ rem_date_str) [||] 
+   let full_remind_command =
+      !Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
+      !Rcfile.reminders_file ^ " " ^ rem_date_str
    in
+   let (out_lines, err_lines) = Utility.read_all_shell_command_output full_remind_command in
    (* check for Remind errors *)
-   let remind_err =
-      try input_line remind_err_channel
-      with End_of_file -> ""
-   in
+   let remind_err = if List.length err_lines > 0 then List.hd err_lines else "" in
    let num_indentations = 4 in
    let indentations = Array.make_matrix (24 * 31) num_indentations false in
    let (month_start_ts, _) = month_start_of_tm tm in
    let timed = Array.make num_indentations [] in
-   let rec build_lists untimed =
-      try
-         let line = input_line remind_channel in
-         if Str.string_match comment_regex line 0 then begin
-            let line_num_s = Str.matched_group 1 line
-            and filename   = Str.matched_group 2 line in
-            let rem_line   = input_line remind_channel in
-            if Str.string_match rem_regex rem_line 0 then begin
-               let date_s     = Str.matched_group 1 rem_line
-               and tag        = Str.matched_group 2 rem_line
-               and duration_s = Str.matched_group 3 rem_line
-               and min_s      = Str.matched_group 4 rem_line
-               and msg        = Str.matched_group 5 rem_line in
-               (* further subdivide the date string *)
-               let date_arr = Array.of_list (Str.split (Str.regexp "/") date_s) in
-               let year     = int_of_string date_arr.(0)
-               and month    = int_of_string date_arr.(1)
-               and day      = int_of_string date_arr.(2) in
-               let temp = {empty_tm with
-                  Unix.tm_mday  = day;
-                  Unix.tm_mon   = pred month;
-                  Unix.tm_year  = year - 1900;
-               } in
-               (* check whether this reminder is tagged 'nodisplay' *)
-               if (Str.string_match nodisplay_regex tag 0) then
-                  (* skip this reminder due to a 'nodisplay' tag *)
-                  build_lists untimed
-               else begin
-                  let has_weight = not (Str.string_match noweight_regex tag 0) in
-                  if min_s = "*" then
-                     (* if minutes are not provided, this must be an untimed reminder *)
-                     let (f_rem_ts, _) = Unix.mktime temp in
-                     let urem = {
-                        ur_start      = f_rem_ts;
-                        ur_msg        = msg;
-                        ur_filename   = filename;
-                        ur_linenum    = line_num_s;
-                        ur_has_weight = has_weight
-                     } in
-                     build_lists (urem :: untimed)
+   let rec build_lists lines untimed =
+      begin match lines with
+      | [] ->
+         for i = 0 to pred (Array.length timed) do
+            timed.(i) <- List.rev timed.(i)
+         done;
+         (remind_err, timed, List.rev untimed)
+      | comment_line :: rem_line :: lines_tail ->
+         begin try
+            if Str.string_match comment_regex comment_line 0 then begin
+               let line_num_s = Str.matched_group 1 comment_line
+               and filename   = Str.matched_group 2 comment_line in
+               if Str.string_match rem_regex rem_line 0 then begin
+                  let date_s     = Str.matched_group 1 rem_line
+                  and tag        = Str.matched_group 2 rem_line
+                  and duration_s = Str.matched_group 3 rem_line
+                  and min_s      = Str.matched_group 4 rem_line
+                  and msg        = Str.matched_group 5 rem_line in
+                  (* further subdivide the date string *)
+                  let date_arr = Array.of_list (Str.split (Str.regexp "/") date_s) in
+                  let year     = int_of_string date_arr.(0)
+                  and month    = int_of_string date_arr.(1)
+                  and day      = int_of_string date_arr.(2) in
+                  let temp = {empty_tm with
+                     Unix.tm_mday  = day;
+                     Unix.tm_mon   = pred month;
+                     Unix.tm_year  = year - 1900;
+                  } in
+                  (* check whether this reminder is tagged 'nodisplay' *)
+                  if (Str.string_match nodisplay_regex tag 0) then
+                     (* skip this reminder due to a 'nodisplay' tag *)
+                     build_lists lines_tail untimed
                   else begin
-                     (* if minutes are provided, this must be a timed reminder *)
-                     let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
-                     let partial_trem = {
-                        tr_start      = 0.0;  (* still needs to be filled in *)
-                        tr_end        = 0.0;  (* still needs to be filled in *)
-                        tr_msg        = msg;
-                        tr_filename   = filename;
-                        tr_linenum    = line_num_s;
-                        tr_has_weight = has_weight
-                     } in
-                     process_timed temp_with_min duration_s month_start_ts indentations
-                     partial_trem timed;
-                     build_lists untimed
+                     let has_weight = not (Str.string_match noweight_regex tag 0) in
+                     if min_s = "*" then
+                        (* if minutes are not provided, this must be an untimed reminder *)
+                        let (f_rem_ts, _) = Unix.mktime temp in
+                        let urem = {
+                           ur_start      = f_rem_ts;
+                           ur_msg        = msg;
+                           ur_filename   = filename;
+                           ur_linenum    = line_num_s;
+                           ur_has_weight = has_weight
+                        } in
+                        build_lists lines_tail (urem :: untimed)
+                     else begin
+                        (* if minutes are provided, this must be a timed reminder *)
+                        let temp_with_min = {temp with Unix.tm_min = int_of_string min_s} in
+                        let partial_trem = {
+                           tr_start      = 0.0;  (* still needs to be filled in *)
+                           tr_end        = 0.0;  (* still needs to be filled in *)
+                           tr_msg        = msg;
+                           tr_filename   = filename;
+                           tr_linenum    = line_num_s;
+                           tr_has_weight = has_weight
+                        } in
+                        process_timed temp_with_min duration_s month_start_ts indentations
+                        partial_trem timed;
+                        build_lists lines_tail untimed
+                     end
                   end
-               end
+               end else
+                  (* if there was no rem_regex match, continue with next line *)
+                  build_lists (rem_line :: lines_tail) untimed
             end else
-               (* if there was no rem_regex match, continue with next line *)
-               build_lists untimed
-         end else
-            (* if there was no comment_regex match, continue with next line *)
-            build_lists untimed
-      with
-      | End_of_file ->
-           let _ = Unix.close_process_full (remind_channel, 
-              remind_in_channel, remind_err_channel) 
-           in
-           for i = 0 to pred (Array.length timed) do
-              timed.(i) <- List.rev timed.(i)
-           done;
-           (remind_err, timed, List.rev untimed)
-      | _ ->
-           (* if there's an error in regexp matching or string coersion,
-            * just drop that reminder and go to the next line *)
-           build_lists untimed
+               (* if there was no comment_regex match, continue with next line *)
+               build_lists (rem_line :: lines_tail) untimed
+         with _ ->
+            (* if there's an error in regexp matching or string coersion,
+             * just drop that reminder and go to the next line *)
+            build_lists (rem_line :: lines_tail) untimed
+         end
+      | comment_line :: [] ->
+         (* this line doesn't conform to the spec, so throw it out *)
+         build_lists [] untimed
+      end
    in
-   build_lists []
+   build_lists out_lines []
 
 
 (* generate a count of how many reminders fall on any given day of
@@ -555,62 +554,62 @@ let find_next msg_regex timestamp =
    let rem_date_str2 = (string_of_tm_mon tm2.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm2.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
-   let (remind_channel, remind_in_channel, remind_err_channel) = 
-      Unix.open_process_full (!Rcfile.remind_command ^ " -n -s -b1 " ^ 
-      !Rcfile.reminders_file ^ " " ^ rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && " ^
-      !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ 
-      Rcfile.tmpfile ^ " - | sort") [||]
+   let full_remind_command =
+      !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ 
+      rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && " ^ !Rcfile.remind_command ^ 
+      " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ 
+      Rcfile.tmpfile ^ " - | sort"
    in
-   let rec check_messages () =
-      try
-         let line = input_line remind_channel in
-         if Str.string_match rem_regex line 0 then begin
-            (* go here if this line is a timed reminder *)
-            let year  = int_of_string (Str.matched_group 1 line)
-            and month = int_of_string (Str.matched_group 2 line)
-            and day   = int_of_string (Str.matched_group 3 line)
-            and tag   = Str.matched_group 4 line
-            and min_s = Str.matched_group 5 line
-            and msg   = Str.matched_group 6 line in
-            let temp = {empty_tm with
-               Unix.tm_min   = if min_s = "*" then 0 else (int_of_string min_s);
-               Unix.tm_mday  = day;
-               Unix.tm_mon   = pred month;
-               Unix.tm_year  = year - 1900;
-            } in
-            let (ts, _) = Unix.mktime temp in
-            if ts > timestamp then
-               begin try
-                  let _ = Str.search_forward msg_regex msg 0 in
-                  (* only return the match if this value is not tagged 'nodisplay' *)
-                  if not (Str.string_match nodisplay_regex tag 0) then
-                     let _ = Unix.close_process_full (remind_channel,
-                        remind_in_channel, remind_err_channel)
-                     in
-                     ts
-                  else
-                     check_messages ()
-               with Not_found ->
-                  check_messages ()
-               end
-            else begin
-               check_messages ()
-            end
-         end else
-            (* if there was no regexp match, continue with next line *)
-            check_messages ()
-      with
-      | End_of_file ->
-         let _ = Unix.close_process_full (remind_channel, 
-            remind_in_channel, remind_err_channel) 
-         in
+   let (out_lines, err_lines) = 
+      Utility.read_all_shell_command_output full_remind_command 
+   in
+   let rec check_messages lines =
+      begin match lines with
+      | [] ->
          raise Occurrence_not_found
-      | Failure s ->
-        (* if there's an error in string coersion, just drop that reminder and go
-         * to the next line *)
-        check_messages ()
+      | line :: lines_tail ->
+         begin try
+            if Str.string_match rem_regex line 0 then begin
+               (* go here if this line is a timed reminder *)
+               let year  = int_of_string (Str.matched_group 1 line)
+               and month = int_of_string (Str.matched_group 2 line)
+               and day   = int_of_string (Str.matched_group 3 line)
+               and tag   = Str.matched_group 4 line
+               and min_s = Str.matched_group 5 line
+               and msg   = Str.matched_group 6 line in
+               let temp = {empty_tm with
+                  Unix.tm_min   = if min_s = "*" then 0 else (int_of_string min_s);
+                  Unix.tm_mday  = day;
+                  Unix.tm_mon   = pred month;
+                  Unix.tm_year  = year - 1900;
+               } in
+               let (ts, _) = Unix.mktime temp in
+               if ts > timestamp then
+                  begin try
+                     let _ = Str.search_forward msg_regex msg 0 in
+                     (* only return the match if this value is not tagged 'nodisplay' *)
+                     if not (Str.string_match nodisplay_regex tag 0) then
+                        ts
+                     else
+                        check_messages lines_tail
+                  with Not_found ->
+                     check_messages lines_tail
+                  end
+               else begin
+                  check_messages lines_tail
+               end
+            end else
+               (* if there was no regexp match, continue with next line *)
+               check_messages lines_tail
+         with
+         | Failure s ->
+           (* if there's an error in string coersion, just drop that reminder and go
+            * to the next line *)
+           check_messages lines_tail
+         end
+      end
    in
-   check_messages ()
+   check_messages out_lines
 
 
 (* get a list of the main remfile and all INCLUDEd reminder files *)
