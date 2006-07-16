@@ -1,6 +1,19 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2006-07-16     Released 1.4.1.
+
+2006-07-13     Fixed the "blank screen" bug that resulted from I/O buffering
+               synchronization issues.
+
+2006-07-05     Fixed an error with registering certain color schemes.
+
+2006-07-03     Corrected typo in the word "July".
+
+2006-07-02     Added the 'quick_date_US' option, allowing users to choose
+               between "month first" or "day first" conventions when entering
+               quick reminders with numeric dates.
+
 2006-06-26     Released 1.4.0.
 
                Added the 'default' color specifier, which accesses the default
