@@ -1,0 +1,11 @@
+curses
+*.cmi
+*.cmx
+*.opt
+install.ml
+version.ml
+configure
+config.log
+config.status
+Makefile
+autom4te.cache
