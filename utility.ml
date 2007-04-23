@@ -39,12 +39,15 @@ let join_path dirname filename =
       dirname ^ filename
 
 
-(* If the filename starts with "~", substitute $HOME *)
+(* If the filename starts with "~" or $HOME, substitute the value of $HOME *)
 let expand_file filename =
-   if Str.string_before filename 2 = "~/" then
-      let homedir = Sys.getenv "HOME" in
+	let homedir = Sys.getenv "HOME" in
+   if String.length filename >= 2 && Str.string_before filename 2 = "~/" then
       homedir ^ Str.string_after filename 1
-   else
+   else if String.length filename >= 6 && 
+	Str.string_before filename 6 = "$HOME/" then
+      homedir ^ Str.string_after filename 5
+	else
       filename
 
 
@@ -100,7 +103,7 @@ let open_or_create_out_ascii filename =
 
 
 
-(* open a filename, with tilde expansion *)
+(* open a filename, with tilde/$HOME expansion *)
 let expand_open_in_gen is_binary filename =
    (* If the filename starts with "~", substitute $HOME *)
    if is_binary then

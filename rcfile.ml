@@ -77,7 +77,7 @@ let table_command_commandstr = Hashtbl.create 30
 (* Default Remind command *)
 let remind_command = ref "remind"
 (* Default reminders file *)
-let reminders_file = ref "~/.reminders"
+let reminders_file = ref "$HOME/.reminders"
 (* Default editing command strings *)
 let edit_old_command = ref "vim +%n %f"
 let edit_new_command = ref "vim -c '$' %f"
