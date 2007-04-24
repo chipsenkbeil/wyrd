@@ -25,6 +25,7 @@
 
 exception String_of_tm_mon_failure of string
 exception String_of_tm_wday_failure of string
+exception Unicode_length_failure of string
 
 (* append a file to a directory, with the proper number
  * of slashes *)
@@ -273,6 +274,35 @@ let read_all_shell_command_output shell_command =
    and err_lines = Str.split newline_regex err_str in
    (out_lines, err_lines)
 
+
+
+(* Compute the number of UTF-8 characters contained in an ocaml String. *)
+let utf8_len s =
+   let s_len = String.length s in
+   let rec len_aux byte_pos char_count =
+      if byte_pos >= s_len then
+         char_count
+      else
+         let c = Char.code s.[byte_pos] in
+         let num_bytes =
+            if      c < 0x80 then 1
+            else if c < 0xc0 then raise (Unicode_length_failure "illegal byte")
+            else if c < 0xe0 then 2
+            else if c < 0xf0 then 3
+            else if c < 0xf8 then 4
+            else if c < 0xfc then 5
+            else if c < 0xfe then 6
+            else
+               raise (Unicode_length_failure "illegal byte")
+         in
+         len_aux (byte_pos + num_bytes) (succ char_count)
+   in
+   if Install.wide_ncurses then
+      len_aux 0 0
+   else
+      (* If build process does not detect ncursesw, then fall back
+       * on standard string behavior. *)
+      s_len
 
 
 

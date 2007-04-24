@@ -164,6 +164,9 @@ else
    fi
 fi
 
+# FIXME: do some meaningful detection here
+WIDECURSES=true
+
 # substitutions to perform
 AC_SUBST(OCAMLC)
 AC_SUBST(OCAMLOPT)
@@ -181,6 +184,7 @@ AC_SUBST(CC)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(WIDECURSES)
 
 # Finally create the Makefile from Makefile.in
 AC_OUTPUT(Makefile install.ml)
