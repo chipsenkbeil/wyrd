@@ -34,7 +34,7 @@ let usage =
 in
 let show_version () =
    print_endline ("Wyrd v" ^ Version.version);
-   print_endline "Copyright (C) 2005, 2006 Paul Pelzl";
+   print_endline "Copyright (C) 2005, 2006, 2007 Paul Pelzl";
    print_endline "";
    print_endline "Wyrd comes with ABSOLUTELY NO WARRANTY.  This is Free Software,";
    print_endline "and you are welcome to redistribute it under certain conditions;";
@@ -42,10 +42,32 @@ let show_version () =
    print_endline "";
    exit 0;
 in
+let event_desc_opt = ref None in
+let do_quick_event event_desc =
+   event_desc_opt := Some event_desc
+in
 let parse_definition = [
-   ("--version", Arg.Unit show_version, " Display version information and exit")
+   ("--version", Arg.Unit show_version, " Display version information and exit");
+   ("-a", Arg.String do_quick_event, " Add given event to reminders file and exit");
+   ("--add", Arg.String do_quick_event, " Add given event to reminders file and exit");
 ] in
-Arg.parse (Arg.align parse_definition) parse_anonymous_opt usage;;
+Arg.parse (Arg.align parse_definition) parse_anonymous_opt usage;
+
+(* After parsing all arguments, handle quick reminders.  We have to
+ * do it in this order so that the filename (anonymous option) gets
+ * set prior to creating the new event. *)
+begin match !event_desc_opt with
+| Some event_desc ->
+   begin try
+      let _ = Interface_main.append_quick_event event_desc !Rcfile.reminders_file in
+      exit 0
+   with Time_lang.Event_parse_error s ->
+      Printf.fprintf stderr "Error: %s\n" s;
+      exit 1
+   end
+| None ->
+   ()
+end;;
 
 
 let initialize_screen () =

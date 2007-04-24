@@ -135,6 +135,49 @@ let resize_subwins iface =
    new_scr
 
 
+(* Parse a natural language event description and append
+ * the result to the specified reminders file. *)
+let append_quick_event event_spec remfile =
+   let (rem_spec, description) = 
+      Time_lang.parse_natural_language_event event_spec
+   in
+   let remline =
+      begin match rem_spec with
+      | Time_lang.Timed (start, finish) ->
+         let date_s = 
+            Printf.sprintf "REM %s %d %d " (Utility.string_of_tm_mon start.Unix.tm_mon)
+            start.Unix.tm_mday (start.Unix.tm_year + 1900)
+         in
+         let start_s = 
+            Printf.sprintf "AT %.2d:%.2d " start.Unix.tm_hour start.Unix.tm_min
+         in
+         let duration_s =
+            if start <> finish then
+               let (start_ts, _)  = Unix.mktime start
+               and (finish_ts, _) = Unix.mktime finish in
+               let dur = int_of_float ((finish_ts -. start_ts) /. 60.0) in
+               Printf.sprintf "DURATION %d:%.2d " (dur / 60) (dur mod 60)
+            else
+               ""
+         in
+         date_s ^ start_s ^ duration_s ^ "MSG " ^ description ^ "\n"
+      | Time_lang.Untimed timespec ->
+         let date_s = 
+            Printf.sprintf "REM %s %d %d " (Utility.string_of_tm_mon timespec.Unix.tm_mon)
+            timespec.Unix.tm_mday (timespec.Unix.tm_year + 1900)
+         in
+         date_s ^ "MSG " ^ description ^ "\n"
+      end
+   in
+   (* append the remline to the reminders file *)
+   let remfile_channel = 
+      open_out_gen [Open_append; Open_creat; Open_text] 416 (Utility.expand_file remfile)
+   in
+   output_string remfile_channel remline;
+   close_out remfile_channel;
+   (rem_spec, remline)
+
+
 (* refresh the screen *)
 let handle_refresh (iface : interface_state_t) reminders =
    let _ = wtouchln iface.scr.help_win 0 1 true in
@@ -1411,43 +1454,7 @@ let handle_begin_goto (iface : interface_state_t) reminders =
 (* Handle creation of a quick event *)
 let handle_quick_event (iface : interface_state_t) reminders remfile =
    try
-      let (rem_spec, description) = 
-         Time_lang.parse_natural_language_event iface.extended_input
-      in
-      let remline =
-         begin match rem_spec with
-         | Time_lang.Timed (start, finish) ->
-            let date_s = 
-               Printf.sprintf "REM %s %d %d " (Utility.string_of_tm_mon start.Unix.tm_mon)
-               start.Unix.tm_mday (start.Unix.tm_year + 1900)
-            in
-            let start_s = 
-               Printf.sprintf "AT %.2d:%.2d " start.Unix.tm_hour start.Unix.tm_min
-            in
-            let duration_s =
-               if start <> finish then
-                  let (start_ts, _)  = Unix.mktime start
-                  and (finish_ts, _) = Unix.mktime finish in
-                  let dur = int_of_float ((finish_ts -. start_ts) /. 60.0) in
-                  Printf.sprintf "DURATION %d:%.2d " (dur / 60) (dur mod 60)
-               else
-                  ""
-            in
-            date_s ^ start_s ^ duration_s ^ "MSG " ^ description ^ "\n"
-         | Time_lang.Untimed timespec ->
-            let date_s = 
-               Printf.sprintf "REM %s %d %d " (Utility.string_of_tm_mon timespec.Unix.tm_mon)
-               timespec.Unix.tm_mday (timespec.Unix.tm_year + 1900)
-            in
-            date_s ^ "MSG " ^ description ^ "\n"
-         end
-      in
-      (* append the remline to the reminders file *)
-      let remfile_channel = 
-         open_out_gen [Open_append; Open_creat; Open_text] 416 remfile
-      in
-      output_string remfile_channel remline;
-      close_out remfile_channel;
+      let (rem_spec, remline) = append_quick_event iface.extended_input remfile in
       (* navigate to the new reminder *)
       let (is_timed, start) =
          match rem_spec with
