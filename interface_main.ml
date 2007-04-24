@@ -176,7 +176,7 @@ let handle_resize (iface : interface_state_t) reminders =
 
 (* Any time a new item is selected, the reminders
  * record needs updating and the screen need redrawing *)
-let handle_selection_change iface reminders =
+let handle_selection_change iface reminders track_home_setting =
    let new_reminders = Remind.update_reminders reminders 
    (timestamp_of_line iface iface.left_selection) in
    let new_iface = draw_untimed iface new_reminders.Remind.curr_untimed in
@@ -184,18 +184,18 @@ let handle_selection_change iface reminders =
    draw_date_strip new_iface;
    draw_calendar new_iface new_reminders;
    draw_error new_iface "" false;
-   (new_iface, new_reminders)
+   ({new_iface with track_home = track_home_setting}, new_reminders)
 
 
 (* Same as previous, but without calling draw_timed () or
  * draw_date_strip ().  Optimization for the scrolling case. *)
-let handle_selection_change_scroll iface reminders =
+let handle_selection_change_scroll iface reminders track_home_setting =
    let new_reminders = Remind.update_reminders reminders 
    (timestamp_of_line iface iface.left_selection) in
    draw_calendar iface new_reminders;
    let new_iface = draw_untimed iface new_reminders.Remind.curr_untimed in
    draw_error new_iface "" false;
-   (new_iface, new_reminders)
+   ({new_iface with track_home = track_home_setting}, new_reminders)
 
 
 (* handle a "scroll down" event when the timed window is focused
@@ -206,7 +206,7 @@ let handle_scrolldown_timed_center (iface : interface_state_t) reminders =
       iface with top_timestamp = second_timestamp
    } in
    let (new_iface, new_reminders) =
-      handle_selection_change_scroll iface2 reminders
+      handle_selection_change_scroll iface2 reminders false
    in
    (* use a curses scroll operation to shift up the timed window *)
    assert (wscrl new_iface.scr.timed_win 1);
@@ -233,7 +233,7 @@ let handle_scrolldown_timed_nocenter (iface : interface_state_t) reminders =
          iface with left_selection = succ iface.left_selection
       } in
       let (new_iface, new_reminders) = 
-         handle_selection_change_scroll iface2 reminders
+         handle_selection_change_scroll iface2 reminders false
       in
       (* make a two-line update to erase and redraw the cursor *)
       let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed 
@@ -246,7 +246,7 @@ let handle_scrolldown_timed_nocenter (iface : interface_state_t) reminders =
          iface with top_timestamp = second_timestamp
       } in
       let (new_iface, new_reminders) = 
-         handle_selection_change_scroll iface2 reminders
+         handle_selection_change_scroll iface2 reminders false
       in
       (* use a curses scroll operation to shift up the timed window *)
       assert (wscrl new_iface.scr.timed_win 1);
@@ -293,7 +293,7 @@ let handle_scrolldown_untimed (iface : interface_state_t) reminders =
          let new_iface = {
             iface with right_selection = succ iface.right_selection
          } in
-         handle_selection_change new_iface reminders
+         handle_selection_change new_iface reminders false
       end else
          (iface, reminders)
    end else begin
@@ -302,7 +302,7 @@ let handle_scrolldown_untimed (iface : interface_state_t) reminders =
          let new_iface = {
             iface with top_untimed = succ iface.top_untimed
          } in
-         handle_selection_change new_iface reminders
+         handle_selection_change new_iface reminders false
       end else
          (iface, reminders)
    end
@@ -317,7 +317,7 @@ let handle_scrollup_timed_center (iface : interface_state_t) reminders =
       iface with top_timestamp = prev_timestamp
    } in
    let (new_iface, new_reminders) = 
-      handle_selection_change_scroll iface2 reminders
+      handle_selection_change_scroll iface2 reminders false
    in
    (* use a curses scroll operation to shift up the timed window *)
    assert (wscrl new_iface.scr.timed_win (-1));
@@ -343,7 +343,7 @@ let handle_scrollup_timed_nocenter (iface : interface_state_t) reminders =
          iface with left_selection = pred iface.left_selection
       } in
       let (new_iface, new_reminders) = 
-         handle_selection_change_scroll iface2 reminders
+         handle_selection_change_scroll iface2 reminders false
       in
       (* make a two-line update to erase and redraw the cursor *)
       let new_iface = draw_timed_try_window new_iface new_reminders.Remind.all_timed 
@@ -356,7 +356,7 @@ let handle_scrollup_timed_nocenter (iface : interface_state_t) reminders =
          iface with top_timestamp = prev_timestamp
       } in
       let (new_iface, new_reminders) = 
-         handle_selection_change_scroll iface2 reminders
+         handle_selection_change_scroll iface2 reminders false
       in
       (* use a curses scroll operation to shift up the timed window *)
       assert (wscrl new_iface.scr.timed_win (-1));
@@ -398,12 +398,12 @@ let handle_scrollup_untimed (iface : interface_state_t) reminders =
       let new_iface = {
          iface with right_selection = pred iface.right_selection
       } in
-      handle_selection_change new_iface reminders
+      handle_selection_change new_iface reminders new_iface.track_home
    else if iface.top_untimed > 0 then
       let new_iface = {
          iface with top_untimed = pred iface.top_untimed
       } in
-      handle_selection_change new_iface reminders
+      handle_selection_change new_iface reminders new_iface.track_home
    else
       (iface, reminders)
 
@@ -430,7 +430,35 @@ let handle_jump (iface : interface_state_t) reminders jump_func =
          iface with top_timestamp = next_ts;
                     top_desc = 0
       } in
-      handle_selection_change new_iface reminders
+      handle_selection_change new_iface reminders false
+
+
+(* handle switching window focus *)
+let handle_switch_focus (iface : interface_state_t) reminders =
+   let new_iface = 
+      match iface.selected_side with
+      |Left  -> {iface with selected_side = Right}
+      |Right -> {iface with selected_side = Left}
+   in
+   handle_selection_change new_iface reminders new_iface.track_home
+
+
+(* handle switching to the current timeslot *)
+let handle_home (iface : interface_state_t) reminders =
+   let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
+   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
+   let new_iface = {
+      iface with top_timestamp = 
+                    if !Rcfile.center_cursor then
+                       rounded_time -. (time_inc iface) *. (float_of_int ((iface.scr.tw_lines / 2) - 2))
+                    else
+                       rounded_time -. (time_inc iface) *. 1.;
+                 top_desc        = 0;
+                 selected_side   = Left;
+                 left_selection  = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 2;
+                 right_selection = 1 
+   } in
+   handle_selection_change new_iface reminders true
 
 
 (* handle a zoom keypress *)
@@ -466,37 +494,13 @@ let handle_zoom (iface : interface_state_t) reminders =
                        zoom_level    = Hour
          }
    in
-   let new_iface = draw_timed new_iface reminders.Remind.all_timed in
-   draw_date_strip new_iface;
-   (new_iface, reminders)
+   if new_iface.track_home then
+      handle_home new_iface reminders
+   else 
+      let new_iface = draw_timed new_iface reminders.Remind.all_timed in
+      draw_date_strip new_iface;
+      (new_iface, reminders)
 
-
-(* handle switching window focus *)
-let handle_switch_focus (iface : interface_state_t) reminders =
-   let new_iface = 
-      match iface.selected_side with
-      |Left  -> {iface with selected_side = Right}
-      |Right -> {iface with selected_side = Left}
-   in
-   handle_selection_change new_iface reminders
-
-
-(* handle switching to the current timeslot *)
-let handle_home (iface : interface_state_t) reminders =
-   let curr_time = Unix.localtime ((Unix.time ()) -. (time_inc iface)) in
-   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level curr_time) in
-   let new_iface = {
-      iface with top_timestamp = 
-                    if !Rcfile.center_cursor then
-                       rounded_time -. (time_inc iface) *. (float_of_int ((iface.scr.tw_lines / 2) - 2))
-                    else
-                       rounded_time -. (time_inc iface) *. 1.;
-                 top_desc        = 0;
-                 selected_side   = Left;
-                 left_selection  = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 2;
-                 right_selection = 1
-   } in
-   handle_selection_change new_iface reminders
 
 
 (* handle creation of a new timed or untimed reminder *)
@@ -668,7 +672,7 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                assert (doupdate ());
                (iface, reminders)
             |Some (timed_match_ts, timed_match_iface) ->
-               handle_selection_change timed_match_iface new_reminders
+               handle_selection_change timed_match_iface new_reminders false
             end
          |urem :: tail ->
             begin try
@@ -716,12 +720,12 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                   (* choose between the timed reminder match and the untimed reminder match *)
                   begin match timed_match with
                   |None ->
-                     handle_selection_change new_iface new_reminders
+                     handle_selection_change new_iface new_reminders false
                   |Some (timed_match_ts, timed_match_iface) ->
                      if timed_match_ts < urem.Remind.ur_start then
-                        handle_selection_change timed_match_iface new_reminders
+                        handle_selection_change timed_match_iface new_reminders false
                      else
-                        handle_selection_change new_iface new_reminders
+                        handle_selection_change new_iface new_reminders false
                   end
                else
                   raise Not_found
@@ -1388,7 +1392,7 @@ let handle_goto (iface : interface_state_t) reminders =
                     entry_mode       = Normal;
                     extended_input   = ""
       } in
-      handle_selection_change new_iface reminders
+      handle_selection_change new_iface reminders false
    end
          
 
@@ -1473,7 +1477,7 @@ let handle_quick_event (iface : interface_state_t) reminders remfile =
                     entry_mode      = Normal;
                     extended_input  = ""
       } in
-      handle_selection_change new_iface r
+      handle_selection_change new_iface r false
    with Time_lang.Event_parse_error s ->
       failwith s
 
@@ -1817,6 +1821,9 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
                handle_resize iface reminders
             else
                handle_keypress key iface reminders
+         else if iface.track_home then
+            (* cursor tracks the current time if requested *)
+            handle_home iface reminders
          else
             (iface, reminders)
       in

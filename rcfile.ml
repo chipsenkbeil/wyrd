@@ -119,6 +119,8 @@ let goto_big_endian = ref true
 let quick_date_US = ref true
 (* print week numbers? *)
 let number_weeks = ref false
+(* home is "sticky"? *)
+let home_sticky = ref true
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -545,6 +547,8 @@ let parse_line line_stream =
          parse_set "quick_date_US" quick_date_US bool_of_string "Expected a boolean string after "
       | [< 'Ident "number_weeks" >] ->
          parse_set "number_weeks" number_weeks bool_of_string "Expected a boolean string after "
+      | [< 'Ident "home_sticky" >] ->
+         parse_set "home_sticky" home_sticky bool_of_string "Expected a boolean string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end

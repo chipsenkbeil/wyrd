@@ -67,6 +67,9 @@ set quick_date_US="true"
 # whether or not to number weeks within the month calendar
 set number_weeks="false"
 
+# whether or not the cursor should follow the current time
+# after pressing the "home" key
+set home_sticky="true"
 
 # key bindings
 bind "j"                 scroll_down
