@@ -63,10 +63,12 @@ all: $(OCAMLBEST)
 ######################################
 
 CMO = install.cmo version.cmo utility.cmo rcfile.cmo time_lang.cmo interface.cmo cal.cmo \
-		remind.cmo interface_draw.cmo interface_main.cmo main.cmo
+		remind.cmo interface_draw.cmo interface_main.cmo locale.cmo main.cmo
 CMX = $(CMO:.cmo=.cmx)
 CMA = str.cma unix.cma
 CMXA = $(CMA:.cma=.cmxa)
+
+COBJS = locale_wrap.o
 
 CURSES_CMO = curses/curses.cmo
 CURSES_CMX = curses/curses.cmx
@@ -80,16 +82,16 @@ byte: $(NAME).byte
 opt: $(NAME).opt
 static: $(NAME).static-opt
 
-$(NAME).byte: $(CURSES_BOBJS) $(CMO)
-	$(OCAMLC) $(BFLAGS) $(BLFLAGS) -o $@ $(CURSES_BOBJS) $(CMA) $(CMO) 
+$(NAME).byte: $(COBJS) $(CURSES_BOBJS) $(CMO)
+	$(OCAMLC) $(BFLAGS) $(BLFLAGS) -o $@ $(CURSES_BOBJS) $(COBJS) $(CMA) $(CMO) 
 
-$(NAME).opt: $(CURSES_OOBJS) $(CMX)
-	$(OCAMLOPT) $(OFLAGS) -o $@ $(CURSES_OOBJS) $(CMXA) $(CMX) $(OLFLAGS)
+$(NAME).opt: $(COBJS) $(CURSES_OOBJS) $(CMX)
+	$(OCAMLOPT) $(OFLAGS) -o $@ $(CURSES_OOBJS) $(COBJS) $(CMXA) $(CMX) $(OLFLAGS)
 
 # static build seems to require mashing all the C objects into a library
-$(NAME).static-opt: $(CMX) $(CURSES_OOBJS) my-static-libs
-	$(OCAMLOPT) $(OFLAGS) -I . -ccopt -static -cclib '-lmycurses $(CURSES_LIB) -lm' -o $@ $(CMXA) \
-	curses.cmx $(CMX)
+$(NAME).static-opt: $(COBJS) $(CMX) $(CURSES_OOBJS) my-static-libs
+	$(OCAMLOPT) $(OFLAGS) -I . -ccopt -static -cclib '-lmycurses $(CURSES_LIB) -lm' -o $@ \
+   $(COBJS) $(CMXA) curses.cmx $(CMX)
 	strip $(NAME).static-opt
 
 my-static-libs:
@@ -196,6 +198,8 @@ curses/%.o : curses/%.c
 %.mli : %.mly
 	$(OCAMLYACC) -v $<
 
+%.o : %.c
+	$(OCAMLC) -c $<
 
 
 # Emacs tags
