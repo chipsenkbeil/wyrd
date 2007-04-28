@@ -12,3 +12,7 @@ autom4te.cache
 *.cmo
 *.cma
 *.byte
+doc/*.html
+doc/*.pdf
+doc/*.1
+doc/*.5
