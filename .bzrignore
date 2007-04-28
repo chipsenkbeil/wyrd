@@ -9,3 +9,6 @@ config.log
 config.status
 Makefile
 autom4te.cache
+*.cmo
+*.cma
+*.byte
