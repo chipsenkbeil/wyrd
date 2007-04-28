@@ -71,8 +71,11 @@ end;;
 
 
 let initialize_screen () =
-   (* ncursesw doesn't render non-ASCII without the setlocale() call *)
-   let _ = Locale.setlocale Locale.lc_all "" in
+   if Install.wide_ncurses then
+      (* ncursesw doesn't render non-ASCII without the setlocale() call *)
+      let _ = Locale.setlocale Locale.lc_all "" in ()
+   else
+      ();
    let std = initscr () in
    begin try
       assert (start_color ());

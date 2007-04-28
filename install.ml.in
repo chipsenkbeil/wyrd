@@ -3,7 +3,7 @@ let prefix     = "@prefix@";;
 let sysconfdir = "@sysconfdir@";;
 
 (* Did we compile with ncurses wide char support? *)
-let wide_ncurses = @WIDECURSES@;;
+let wide_ncurses = @BOOL_WIDE_CURSES@;;
 
 
 (* arch-tag: DO_NOT_CHANGE_b0af51b9-3cf0-479c-a33a-f9221e29ed48 *)
