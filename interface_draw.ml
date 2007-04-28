@@ -45,12 +45,12 @@ let word_wrap (s : string) (len : int) =
       |[] ->
          List.rev lines
       |word :: remaining_words ->
-         let word_len = Utility.utf8_len word in
+         let word_len = utf8_len word in
          begin match lines with
          |[] ->
             process_words words [""]
          |line :: remaining_lines ->
-            let line_len = Utility.utf8_len line in
+            let line_len = utf8_len line in
             if word_len + line_len + 1 <= len then
                if line_len = 0 then
                   process_words remaining_words (word :: remaining_lines)
@@ -59,8 +59,9 @@ let word_wrap (s : string) (len : int) =
             else if word_len <= len then
                process_words remaining_words (word :: line :: remaining_lines)
             else
-               let front = Str.string_before word len
-               and back  = Str.string_after  word len in
+               (* No choice but to break the word apart *)
+               let front = utf8_string_before word len
+               and back  = utf8_string_after  word len in
                process_words (back :: remaining_words) 
                   (front :: line :: remaining_lines)
          end
@@ -106,14 +107,14 @@ let twentyfour_hour_string tm = Printf.sprintf "%.2d:%.2d" tm.Unix.tm_hour tm.Un
  * characters and truncating with ellipses if necessary. *)
 let trunc_mvwaddstr win line col len s =
    let fixed_s =
-      let s_len = Utility.utf8_len s in
+      let s_len = utf8_len s in
       if s_len <= len then
          let pad = String.make (len - s_len) ' ' in
          s ^ pad
       else if len >= 3 then
-         (Str.string_before s (len - 3)) ^ "..."
+         (utf8_string_before s (len - 3)) ^ "..."
       else if len >= 0 then
-         Str.string_before s len
+         utf8_string_before s len
       else
          ""
    in
@@ -556,7 +557,7 @@ let draw_calendar (iface : interface_state_t)
    draw_week cal.Cal.days (vspacer + 2);
    (* draw the week numbers *)
    if !Rcfile.number_weeks then begin
-      let weeknum_col = hspacer + (Utility.utf8_len cal.Cal.weekdays) + 2 in
+      let weeknum_col = hspacer + (utf8_len cal.Cal.weekdays) + 2 in
       Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_labels;
       assert (wmove iface.scr.calendar_win (vspacer + 1) weeknum_col);
       assert (waddch iface.scr.calendar_win acs.Acs.vline);
@@ -808,7 +809,7 @@ let draw_msg iface =
 let draw_error iface err draw_cursor =
    werase iface.scr.err_win;
    trunc_mvwaddstr iface.scr.err_win 0 0 iface.scr.ew_cols err;
-   let len = Utility.utf8_len err in
+   let len = utf8_len err in
    if draw_cursor && len <= pred iface.scr.ew_cols then begin
       wattron iface.scr.err_win A.blink;
       assert (mvwaddch iface.scr.err_win 0 len (int_of_char '_'));

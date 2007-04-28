@@ -275,6 +275,20 @@ let read_all_shell_command_output shell_command =
    (out_lines, err_lines)
 
 
+(* Compute the number of bytes required to store a utf-8 character.
+ * Input is the first byte of the character. *)
+let utf8_width (byte : char) =
+   let c = Char.code byte in
+   if      c < 0x80 then 1
+   else if c < 0xc0 then raise (Unicode_length_failure "illegal byte")
+   else if c < 0xe0 then 2
+   else if c < 0xf0 then 3
+   else if c < 0xf8 then 4
+   else if c < 0xfc then 5
+   else if c < 0xfe then 6
+   else
+      raise (Unicode_length_failure "illegal byte")
+   
 
 (* Compute the number of UTF-8 characters contained in an ocaml String. *)
 let utf8_len s =
@@ -283,18 +297,7 @@ let utf8_len s =
       if byte_pos >= s_len then
          char_count
       else
-         let c = Char.code s.[byte_pos] in
-         let num_bytes =
-            if      c < 0x80 then 1
-            else if c < 0xc0 then raise (Unicode_length_failure "illegal byte")
-            else if c < 0xe0 then 2
-            else if c < 0xf0 then 3
-            else if c < 0xf8 then 4
-            else if c < 0xfc then 5
-            else if c < 0xfe then 6
-            else
-               raise (Unicode_length_failure "illegal byte")
-         in
+         let num_bytes = utf8_width s.[byte_pos] in
          len_aux (byte_pos + num_bytes) (succ char_count)
    in
    if Install.wide_ncurses then
@@ -303,6 +306,44 @@ let utf8_len s =
       (* If build process does not detect ncursesw, then fall back
        * on standard string behavior. *)
       s_len
+
+
+(* Form the substring of all characters from 's' in positions before 'n',
+ * where 'n' may be measured in characters rather than bytes.  Does the right
+ * thing for utf-8 wide characters. *)
+let utf8_string_before s n =
+   let rec build_substr substr utf8_pos byte_pos =
+      if utf8_pos >= n then
+         substr
+      else
+         let num_new_bytes = utf8_width s.[byte_pos] in
+         let new_bytes = String.make num_new_bytes s.[byte_pos] in
+         for i = 1 to pred num_new_bytes do
+            new_bytes.[i] <- s.[byte_pos + i]
+         done;
+         build_substr (substr ^ new_bytes) (succ utf8_pos) 
+            (byte_pos + num_new_bytes)
+   in
+   if Install.wide_ncurses then
+      build_substr "" 0 0
+   else
+      (* If we're not using utf-8, fall back on standard string behavior. *)
+      Str.string_before s n
+
+
+(* Form the substring of all characters from 's' in positions 'n' or greater,
+ * where 'n' may be measured in characters rather than bytes.  Does the right
+ * thing for utf-8 wide characters. *)
+let utf8_string_after s n =
+   if Install.wide_ncurses then begin
+      let starting_byte = ref 0 in
+      for utf8_char = 0 to pred n do
+         starting_byte := !starting_byte + (utf8_width s.[!starting_byte])
+      done;
+      Str.string_after s !starting_byte
+   end else
+      (* If we're not using utf-8, fall back on standard string behavior. *)
+      Str.string_after s n
 
 
 

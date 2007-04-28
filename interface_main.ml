@@ -1013,7 +1013,7 @@ let do_selection_dialog (iface : interface_state_t) (title : string)
 let handle_edit (iface : interface_state_t) reminders =
    let adjust_s len s =
       let pad = s ^ (String.make len ' ') in
-      Str.string_before pad len
+      Utility.utf8_string_before pad len
    in
    let fl =
       match iface.selected_side with
@@ -1132,7 +1132,7 @@ let handle_scroll_desc_down iface reminders =
 let handle_copy_reminder_aux iface reminders copy_only =
    let adjust_s len s =
       let pad = s ^ (String.make len ' ') in
-      Str.string_before pad len
+      Utility.utf8_string_before pad len
    in
    let fl =
       match iface.selected_side with
@@ -1718,11 +1718,11 @@ let handle_keypress key (iface : interface_state_t) reminders =
                end
             end
          |Rcfile.EntryBackspace ->
-            let len = String.length iface.extended_input in
+            let len = Utility.utf8_len iface.extended_input in
             if len > 0 then begin
                let new_iface = {
                   iface with extended_input =
-                             Str.string_before iface.extended_input (pred len)
+                             Utility.utf8_string_before iface.extended_input (pred len)
                } in
                let prompt =
                   match ext_mode with
