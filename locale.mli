@@ -21,14 +21,12 @@
 (* OCaml binding for setlocale(), required to kick ncurses into
  * properly rendering non-ASCII chars. *)
 
-val lc_all      : int
-val lc_collate  : int
-val lc_ctype    : int
-val lc_monetary : int
-val lc_numeric  : int
-val lc_time     : int
-val lc_messages : int
+type t = LC_ALL | LC_COLLATE | LC_CTYPE | LC_MONETARY |
+         LC_NUMERIC | LC_TIME | LC_MESSAGES |
+         LC_UNDEFINED of int
 
-external setlocale : int -> string -> string = "ml_setlocale"
+external setlocale_int : int -> string -> string = "ml_setlocale"
+
+val setlocale : t -> string -> string
 
 

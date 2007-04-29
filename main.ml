@@ -73,7 +73,7 @@ end;;
 let initialize_screen () =
    if Install.wide_ncurses then
       (* ncursesw doesn't render non-ASCII without the setlocale() call *)
-      let _ = Locale.setlocale Locale.lc_all "" in ()
+      let _ = Locale.setlocale Locale.LC_ALL "" in ()
    else
       ();
    let std = initscr () in
