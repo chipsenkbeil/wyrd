@@ -100,7 +100,8 @@ type interface_state_t = {
    entry_mode        : entry_mode_t;        (* decides which mode the interface is in *)
    last_timed_refresh: float;               (* the last time the timed window had a complete refresh *)
    rem_buffer        : string;              (* buffer that acts as a clipboard for REM strings *)
-   track_home        : bool                 (* true if cursor position should "stick" to current time *)
+   track_home        : bool;                (* true if cursor position should "stick" to current time *)
+   resize_failed_win : window option        (* if a resize fails, this holds a window pointer for an error msg. *)
 }
    
 
@@ -150,7 +151,8 @@ let make (std : screen_t) =
       entry_mode         = Normal;
       last_timed_refresh = 0.0;
       rem_buffer         = "";
-      track_home         = !Rcfile.home_sticky
+      track_home         = !Rcfile.home_sticky;
+      resize_failed_win  = None
    }
                                                
 

@@ -201,20 +201,39 @@ let handle_refresh (iface : interface_state_t) reminders =
 (* handle a curses resize *)
 let handle_resize (iface : interface_state_t) reminders =
    endwin ();
-   let new_scr = resize_subwins iface in
-   let resized_iface = {
-      iface with scr = new_scr;
-                 top_untimed = 0;
-                 left_selection = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 1;
-                 right_selection = 1;
-                 timed_lineinfo = Array.make new_scr.tw_lines []
-   } in
-   begin try
-      assert (curs_set 0)
-   with _ ->
-      ()
+   begin match iface.resize_failed_win with
+   | None -> ()
+   | Some w -> let _ = delwin w in ()
    end;
-   handle_refresh resized_iface reminders
+   begin try
+      let new_scr = resize_subwins iface in
+      let resized_iface = {
+         iface with scr               = new_scr;
+                    top_untimed       = 0;
+                    left_selection    = if !Rcfile.center_cursor then (iface.scr.tw_lines / 2) - 1 else 1;
+                    right_selection   = 1;
+                    timed_lineinfo    = Array.make new_scr.tw_lines [];
+                    resize_failed_win = None
+      } in
+      begin try
+         assert (curs_set 0)
+      with _ ->
+         ()
+      end;
+      clear ();
+      assert (refresh ());
+      handle_refresh resized_iface reminders
+   with Failure s ->
+      (* Create a new full-screen window where we can
+       * paint an error message. *)
+      let w = newwin 0 0 0 0 in
+      erase ();
+      assert (mvwaddstr w 0 0 s);
+      assert (wnoutrefresh w);
+      assert (doupdate ());
+      ({iface with resize_failed_win = Some w}, reminders)
+   end
+      
    
 
 (* Any time a new item is selected, the reminders
@@ -1819,15 +1838,21 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
       (* refresh the msg window (which contains a clock)
        * every wgetch timeout cycle *)
       let iface = draw_msg iface in
-      assert (doupdate ());
+      begin match iface.resize_failed_win with
+      | None   -> assert (doupdate ())
+      | Some w -> ()
+      end;
       let key = wgetch iface.scr.help_win in
       let new_iface, new_reminders = 
          (* key = -1 is ncurses wgetch timeout error *)
          if key <> ~- 1 then
             if key = Key.resize then
                handle_resize iface reminders
-            else
-               handle_keypress key iface reminders
+            else 
+               begin match iface.resize_failed_win with
+               | None   -> handle_keypress key iface reminders
+               | Some w -> let _ = beep () in (iface, reminders)
+               end
          else if iface.track_home then
             (* cursor tracks the current time if requested *)
             handle_home iface reminders
