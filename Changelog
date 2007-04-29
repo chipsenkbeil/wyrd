@@ -1,6 +1,24 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2007-04-28     Added the untimed_window_width rcfile option, which lets the
+               user set the width of the windows on the right side of the
+               display.
+               
+               Tweaked the resize handler so Wyrd does not completely die
+               when the terminal is resized too small.
+               
+               Made modifications to support rendering UTF-8 reminders
+               (requires ncurses built with wide char support)
+
+2007-04-23     Added the home_sticky option, allowing the cursor position
+               to automatically track the current time.
+
+               Added command-line option to append reminders using the
+               natural language parser.
+
+2007-04-22     Eliminated dependence on Bash-style tilde expansion.
+
 2006-07-16     Released 1.4.1.
 
 2006-07-13     Fixed the "blank screen" bug that resulted from I/O buffering
