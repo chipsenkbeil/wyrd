@@ -71,6 +71,10 @@ set number_weeks="false"
 # after pressing the "home" key
 set home_sticky="true"
 
+# width of the untimed reminders window
+set untimed_window_width="40"
+
+
 # key bindings
 bind "j"                 scroll_down
 bind "<down>"            scroll_down

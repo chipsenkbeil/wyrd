@@ -48,7 +48,10 @@ type reminder_type_t = Timed | Untimed | General of int
 let create_windows screen =
    let height, width  = get_size () in
    let cal_height     = 10
-   and cal_width      = 40 in
+   and cal_width      = if !Rcfile.untimed_window_width < 34 then 34
+                        else if !Rcfile.untimed_window_width > width - 40 then width - 40
+                        else !Rcfile.untimed_window_width
+                        in
    let msg_height     = 6 in
    let err_height     = 1 in
    let timed_height   = height - 1 - msg_height - err_height
@@ -91,7 +94,10 @@ let create_windows screen =
 let resize_subwins iface =
    let height, width  = get_size () in
    let cal_height     = 10
-   and cal_width      = 40 in
+   and cal_width      = if !Rcfile.untimed_window_width < 34 then 34
+                        else if !Rcfile.untimed_window_width > width - 40 then width - 40
+                        else 40
+                        in
    let msg_height     = 6 in
    let err_height     = 1 in
    let timed_height   = height - 1 - msg_height - err_height

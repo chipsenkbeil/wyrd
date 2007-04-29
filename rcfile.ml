@@ -121,6 +121,8 @@ let quick_date_US = ref true
 let number_weeks = ref false
 (* home is "sticky"? *)
 let home_sticky = ref true
+(* width of calendar/untimed reminder windows *)
+let untimed_window_width = ref 40
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -549,6 +551,8 @@ let parse_line line_stream =
          parse_set "number_weeks" number_weeks bool_of_string "Expected a boolean string after "
       | [< 'Ident "home_sticky" >] ->
          parse_set "home_sticky" home_sticky bool_of_string "Expected a boolean string after "
+      | [< 'Ident "untimed_window_width" >] ->
+         parse_set "untimed_window_width" untimed_window_width int_of_string "Expected an integral string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end
