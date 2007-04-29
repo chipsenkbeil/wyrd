@@ -236,18 +236,25 @@ LIBS="$ORIG_LIBS"
 
 
 # check Remind version
-REMINDVERSION=`strings \`which remind\` | grep 03\.0`
-echo "remind version is $REMINDVERSION"
-REMMAJORVERSION=`echo $REMINDVERSION | cut -d '.' -f 1`
-REMMINORVERSION=`echo $REMINDVERSION | cut -d '.' -f 2`
-REMFIXVERSION=`echo $REMINDVERSION | cut -d '.' -f 3`
-if test $REMMAJORVERSION -lt 3 ; then
-   AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
-else
-   if test $REMFIXVERSION -lt 24 ; then
-   AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
+AC_PATH_PROG(REMINDPATH, remind, not found)
+if test x"$REMINDPATH" != x"not found"; then
+   AC_MSG_CHECKING(remind version)
+   REMINDVERSION=`strings $REMINDPATH | grep 03\.0`
+   AC_MSG_RESULT($REMINDVERSION)
+   REMMAJORVERSION=`echo $REMINDVERSION | cut -d '.' -f 1`
+   REMMINORVERSION=`echo $REMINDVERSION | cut -d '.' -f 2`
+   REMFIXVERSION=`echo $REMINDVERSION | cut -d '.' -f 3`
+   if test $REMMAJORVERSION -lt 3 ; then
+      AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
+   else
+      if test $REMFIXVERSION -lt 24 ; then
+      AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
+      fi
    fi
+else
+   AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
 fi
+
 
 # substitutions to perform
 AC_SUBST(OCAMLC)
