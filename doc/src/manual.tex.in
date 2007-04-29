@@ -16,7 +16,7 @@
 \usepackage{fullpage}
 %@% ELSE %@%
 \usepackage{latex2man}
-\setVersion{1.3}
+\setVersion{1.4}
 %@% END-IF %@%
 
 % End preamble
@@ -26,7 +26,7 @@
 %@% IF LATEX %@%
 \title{Wyrd v1.4 User Manual}
 \author{Paul J. Pelzl}
-\date{June 24, 2006}
+\date{April 28, 2007}
 \maketitle
 
 \begin{center}
@@ -106,6 +106,13 @@ make install
 \end{verbatim}
 to complete the installation process.  The \texttt{make} command here should correspond to GNU make; on some
 systems (particularly *BSD), you may need to use \texttt{gmake}.
+
+If your ncurses library was built with wide character support, Wyrd can be configured
+to render UTF-8 encoded reminders.  To enable this option, use the command
+\begin{verbatim}
+./configure --enable-utf8
+\end{verbatim}
+when configuring the sources.
 
 %@% ELSE %@%
    %@% IF WYRDRC %@%
@@ -713,7 +720,18 @@ CONFIGURATION VARIABLES section.
       within the month calendar window.  Weeks are numbered according to the ISO
       8601 standard.  The ISO standard week begins on Monday, so to avoid
       confusion it is recommended that \texttt{week\_starts\_monday} be set to 
-      \texttt{true} when week numbering is enabled.
+      \texttt{"true"} when week numbering is enabled.
+   \item \texttt{home\_sticky} \\
+      A boolean value that determines whether or not the cursor should
+      "stick" to the "home" position.  When this option is set to 
+      \texttt{"true"}, then after pressing the \texttt{<home>} key the
+      cursor will automatically follow the current date and time.  The
+      effect is cancelled by pressing any of the navigation keys.
+   \item \texttt{untimed\_window\_width} \\
+      An integer value that determines the target width of the month-calendar
+      window and the untimed reminders window.  The allowable range is
+      34 to (\texttt{\$COLUMNS} - 40) characters, and Wyrd will silently
+      disregard any setting outside this range.
 \end{itemize}
 For maximum usefulness, \texttt{busy\_level1} $<$ \texttt{busy\_level2} $<$ 
 \texttt{busy\_level3} $<$ \texttt{busy\_level4}.
@@ -956,28 +974,24 @@ Wyrd website: \URL{http://www.eecs.umich.edu/\Tilde pelzlpj/wyrd} \\
 Feel free to contact me if you have bugs, feature requests, patches, etc.  I 
 would also welcome volunteers interested in packaging Wyrd for various platforms.
 
-Wyrd is developed with the aid of the excellent 
+Wyrd is developed with the aid of the excellent
 %@% IF LATEX %@%
 %BEGIN LATEX
-GNU Arch RCS\footnote{http://www.gnu.org/software/gnu-arch/}.
+Bazaar VCS\footnote{http://www.bazaar-vcs.org/}.
 %END LATEX  
-%HEVEA \begin{rawhtml} <a href="http://www.gnu.org/software/gnu-arch/">GNU Arch RCS</a>. \end{rawhtml}
+%HEVEA \begin{rawhtml} <a href="http://www.bazaar-vcs.org/">Bazaar VCS</a>. \end{rawhtml}
 %@% ELSE %@%
-GNU Arch RCS [1].
+Bazaar VCS [1].
 %@% END-IF %@%
 Interested developers are advised to track Wyrd development via my public
-archive: \\
+repository: \\
 %@% IF LATEX %@%
-\hspace*{2cm}\texttt{pelzlpj@eecs.umich.edu--2005 $\backslash$ \\
-\hspace*{4cm} http://www-personal.engin.umich.edu/\~{}pelzlpj/tla/2005} \\
+\hspace*{2cm} \texttt{http://www.eecs.umich.edu/\~{}pelzlpj/wyrd/bzr-repo/} \\
 %@% ELSE %@%
-pelzlpj@eecs.umich.edu--2005 http://www-personal.engin.umich.edu/\Tilde pelzlpj/tla/2005 \\
+http://www.eecs.umich.edu/\Tilde pelzlpj/wyrd/bzr-repo/ \\
 %@% END-IF %@%
-Primary development may be found on branch \texttt{wyrd--main} .
+Primary development may be found on branch \texttt{wyrd-1.4-dev} .
 
-Wyrd uses tla's ``configs'' support.  After getting a copy of the source, run \\
-\texttt{"tla build-config dist.arch"} in the project tree root to grab the 
-extra packages that Wyrd depends on.
 %@% END-IF %@%
 
 \section{Miscellaneous}
