@@ -245,10 +245,10 @@ if test x"$REMINDPATH" != x"not found"; then
    REMMINORVERSION=`echo $REMINDVERSION | cut -d '.' -f 2`
    REMFIXVERSION=`echo $REMINDVERSION | cut -d '.' -f 3`
    if test $REMMAJORVERSION -lt 3 ; then
-      AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
+      AC_MSG_WARN(Wyrd requires Remind version 03.01.00 or greater.)
    else
-      if test $REMFIXVERSION -lt 24 ; then
-      AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
+      if test $REMMINORVERSION -lt 1 ; then
+         AC_MSG_WARN(Wyrd requires Remind version 03.01.00 or greater.)
       fi
    fi
 else
