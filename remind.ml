@@ -217,7 +217,7 @@ let month_reminders timestamp =
                   and min_s      = Str.matched_group 4 rem_line
                   and msg        = Str.matched_group 5 rem_line in
                   (* further subdivide the date string *)
-                  let date_arr = Array.of_list (Str.split (Str.regexp "/") date_s) in
+                  let date_arr = Array.of_list (Str.split (Str.regexp "[/-]") date_s) in
                   let year     = int_of_string date_arr.(0)
                   and month    = int_of_string date_arr.(1)
                   and day      = int_of_string date_arr.(2) in
@@ -542,7 +542,7 @@ let update_reminders rem timestamp =
  * should not be able to match them. *)
 let find_next msg_regex timestamp =
    let rem_regex = 
-      Str.regexp "^\\([^ ]+\\)/\\([^ ]+\\)/\\([^ ]+\\) [^ ]+ \\([^ ]+\\) [^ ]+ \\([^ ]+\\) \\([^ ]+.*\\)$"
+      Str.regexp "^\\([^ ]+\\)[/-]\\([^ ]+\\)[/-]\\([^ ]+\\) [^ ]+ \\([^ ]+\\) [^ ]+ \\([^ ]+\\) \\([^ ]+.*\\)$"
    in
    let nodisplay_regex = Str.regexp_case_fold ".*nodisplay" in
    let tm1 = Unix.localtime timestamp in
