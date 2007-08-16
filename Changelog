@@ -1,6 +1,8 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2007-05-25     Released 1.4.2.
+
 2007-04-28     Added the untimed_window_width rcfile option, which lets the
                user set the width of the windows on the right side of the
                display.
