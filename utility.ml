@@ -40,16 +40,39 @@ let join_path dirname filename =
       dirname ^ filename
 
 
-(* If the filename starts with "~" or $HOME, substitute the value of $HOME *)
+(* Perform shell expansion of environment variables. *)
+let shell_expand text =
+   let split_regex = Str.regexp "=" in
+   (* Get a list of all environment variable mappings *)
+   let add_mapping env_mapping mapping_list =
+      match Str.split split_regex env_mapping with
+      | key :: value :: [] -> 
+         (key, value) :: mapping_list 
+      | _ ->
+         mapping_list
+   in
+   let env_mappings = Array.fold_right add_mapping (Unix.environment ()) [] in
+   let rec apply_mappings mapping_list s =
+      match mapping_list with
+      | [] ->
+         s
+      | (var, expansion) :: tail ->
+         let var_regex = Str.regexp_string ("$" ^ var) in
+         apply_mappings tail (Str.global_replace var_regex expansion s)
+   in
+   apply_mappings env_mappings text
+
+   
+(* If the filename starts with "~", substitute $HOME.  Then do shell
+ * expansion on the resulting string. *)
 let expand_file filename =
-	let homedir = Sys.getenv "HOME" in
-   if String.length filename >= 2 && Str.string_before filename 2 = "~/" then
-      homedir ^ Str.string_after filename 1
-   else if String.length filename >= 6 && 
-	Str.string_before filename 6 = "$HOME/" then
-      homedir ^ Str.string_after filename 5
-	else
-      filename
+   let tilde_expansion = 
+      if String.length filename >= 2 && Str.string_before filename 2 = "~/" then
+         "$HOME" ^ Str.string_after filename 1
+      else
+         filename
+   in
+   shell_expand tilde_expansion
 
 
 (* Do whatever is necessary to open up a file for writing.  If it already exists,
