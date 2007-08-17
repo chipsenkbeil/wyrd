@@ -584,20 +584,8 @@ let draw_calendar (iface : interface_state_t)
 let draw_untimed (iface : interface_state_t) reminders =
    let lineinfo = Array.make iface.scr.uw_lines None in
    let blank = String.make iface.scr.uw_cols ' ' in
-   let curr_ts = Unix.localtime (timestamp_of_line iface iface.left_selection) in
-   let temp1 = {
-      curr_ts with Unix.tm_sec  = 0;
-                   Unix.tm_min  = 0;
-                   Unix.tm_hour = 0
-   } in
-   let temp2 = {
-      curr_ts with Unix.tm_sec  = 0;
-                   Unix.tm_min  = 0;
-                   Unix.tm_hour = 0;
-                   Unix.tm_mday = succ curr_ts.Unix.tm_mday 
-   } in
-   let (day_start_ts, _) = Unix.mktime temp1 in
-   let (day_end_ts, _)   = Unix.mktime temp2 in
+   let curr_ts = timestamp_of_line iface iface.left_selection in
+   let today_reminders = Remind.get_untimed_reminders_for_day reminders curr_ts in
    werase iface.scr.untimed_win;
    let acs = get_acs_codes () in
    Rcfile.color_on iface.scr.untimed_win Rcfile.Right_divider;
@@ -607,12 +595,6 @@ let draw_untimed (iface : interface_state_t) reminders =
    mvwvline iface.scr.untimed_win 1 0 acs.Acs.vline (pred iface.scr.uw_lines);
    Rcfile.color_off iface.scr.untimed_win Rcfile.Right_divider;
    Rcfile.color_on iface.scr.untimed_win Rcfile.Untimed_reminder;
-   (* Filter the reminders list to find only those corresponding to the
-    * selected day *)
-   let is_current rem =
-      rem.ur_start >= day_start_ts && rem.ur_start < day_end_ts
-   in
-   let today_reminders = List.filter is_current reminders in
    (* make sure the cursor doesn't unexpectedly disappear *)
    let iface =
       if iface.selected_side = Right && 

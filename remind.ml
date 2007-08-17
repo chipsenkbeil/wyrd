@@ -177,8 +177,11 @@ timed =
  * available.  Complexity is approximately
  * (number of reminders) * (average reminder duration).  Since indentation is
  * determined a month at a time, there may be some minor discrepancies at
- * month borders. *)
-let month_reminders timestamp =
+ * month borders.
+ *
+ * The optional argument 'suppress_advwarn', if true, will override
+ * the "advance_warning" rcfile option. *)
+let month_reminders ?(suppress_advwarn=false) timestamp =
    let comment_regex = Str.regexp "^#.*fileinfo \\([^ ]+\\) \\(.*\\)$" in
    let rem_regex = Str.regexp "\\([^ ]+\\) [^ ]+ \\([^ ]+\\) \\([^ ]+\\) \\([^ ]+\\) \\(.*\\)$" in
    let nodisplay_regex = Str.regexp_case_fold ".*nodisplay" in
@@ -187,8 +190,12 @@ let month_reminders timestamp =
    let rem_date_str = (string_of_tm_mon tm.Unix.tm_mon) ^ " " ^ 
                       (string_of_int tm.Unix.tm_mday) ^ " " ^
                       (string_of_int (tm.Unix.tm_year + 1900)) in
+   let remind_s_flag = 
+      if suppress_advwarn then " -s"
+      else if !Rcfile.advance_warning then " -sa"
+      else " -s" in
    let full_remind_command =
-      !Rcfile.remind_command ^ " -s -l -g -b2 " ^ 
+      !Rcfile.remind_command ^ remind_s_flag ^ " -l -g -b2 " ^ 
       !Rcfile.reminders_file ^ " " ^ rem_date_str
    in
    let (out_lines, err_lines) = Utility.read_all_shell_command_output full_remind_command in
@@ -387,7 +394,7 @@ let safe_append a b = List.rev_append (List.rev a) b
 
 
 (* initialize a new three-month reminder record *)
-let create_three_month timestamp =
+let create_three_month ?(suppress_advwarn=false) timestamp =
    let month_start_tm = {
       Unix.localtime timestamp with Unix.tm_sec  = 0;
                                     Unix.tm_min  = 0;
@@ -403,9 +410,9 @@ let create_three_month timestamp =
    } in
    let (prev_ts, _) = Unix.mktime temp_prev
    and (next_ts, _) = Unix.mktime temp_next in
-   let (pre, pt, pu) = month_reminders prev_ts in
-   let (cre, ct, cu) = month_reminders curr_ts in
-   let (nre, nt, nu) = month_reminders next_ts in 
+   let (pre, pt, pu) = month_reminders ~suppress_advwarn:suppress_advwarn prev_ts in
+   let (cre, ct, cu) = month_reminders ~suppress_advwarn:suppress_advwarn curr_ts in
+   let (nre, nt, nu) = month_reminders ~suppress_advwarn:suppress_advwarn next_ts in 
    let at = Array.make (Array.length pt) [] in
    for i = 0 to pred (Array.length at) do
       at.(i) <- safe_append pt.(i) (safe_append ct.(i) nt.(i))
@@ -612,7 +619,7 @@ let find_next msg_regex timestamp =
    check_messages out_lines
 
 
-(* get a list of the main remfile and all INCLUDEd reminder files *)
+(* Get a list of the main remfile and all INCLUDEd reminder files *)
 let get_included_remfiles () =   
    let main_remfile = Utility.expand_file !Rcfile.reminders_file in
    let remfile_channel = open_in main_remfile in
@@ -630,6 +637,30 @@ let get_included_remfiles () =
          List.rev files
    in
    build_filelist [main_remfile]
+
+
+(* Filter a list of untimed reminders, returning a list of those
+ * reminders falling on the same day as the timestamp. *)
+let get_untimed_reminders_for_day untimed_reminders timestamp =
+   let curr_tm = Unix.localtime timestamp in
+   let temp1 = {
+      curr_tm with Unix.tm_sec  = 0;
+                   Unix.tm_min  = 0;
+                   Unix.tm_hour = 0
+   } in
+   let temp2 = {
+      curr_tm with Unix.tm_sec  = 0;
+                   Unix.tm_min  = 0;
+                   Unix.tm_hour = 0;
+                   Unix.tm_mday = succ curr_tm.Unix.tm_mday 
+   } in
+   let (day_start_ts, _) = Unix.mktime temp1 in
+   let (day_end_ts, _)   = Unix.mktime temp2 in
+   let is_current rem =
+      rem.ur_start >= day_start_ts && rem.ur_start < day_end_ts
+   in
+   List.filter is_current untimed_reminders
+
 
 
 (* arch-tag: DO_NOT_CHANGE_6bb48a1c-2b0c-4254-ba3a-ee9b48007169 *)

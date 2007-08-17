@@ -32,7 +32,6 @@ open Interface_draw
 exception Interrupt_exception
 exception Template_undefined of string
 
-
 type reminder_type_t = Timed | Untimed | General of int
 
 
@@ -693,8 +692,17 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
  * return the one with the earlier timestamp.
  * Finally, reconfigure the iface record to highlight the matched entry.
  *
+ * If the user has advance_warning enabled, the algorithm becomes more complicated.
+ * After finding the correct search date, we have to locate reminders that are
+ * present when advance warnings are *suppressed*.  This is accomplished by
+ * searching through the reminders list with advanced warning suppressed, then
+ * searching for an *identical string* within the reminders list with advanced
+ * warning enabled.
+ *
  * The saved search regex can be ignored by providing Some regex as the
- * override_regex parameter. *)
+ * override_regex parameter. 
+ *
+ * FIXME: This function is about five times too large. *)
 let handle_find_next (iface : interface_state_t) reminders override_regex =
    let search_regex =
       match override_regex with
@@ -707,8 +715,21 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
        *       selection. *)
       let selected_ts     = (timestamp_of_line iface (succ iface.left_selection)) -. 1.0 in
       let occurrence_time = Remind.find_next search_regex selected_ts in
-      let new_reminders   = Remind.update_reminders reminders occurrence_time in
-      let occurrence_tm   = Unix.localtime occurrence_time in
+      (* Reminders with advance warning included *)
+      let no_advw_reminders= 
+         if !Rcfile.advance_warning then
+            Remind.create_three_month ~suppress_advwarn:true occurrence_time
+         else
+            Remind.update_reminders reminders occurrence_time
+      in
+      (* Reminders with advance warning suppressed *)
+      let advw_reminders = 
+         if !Rcfile.advance_warning then
+            Remind.update_reminders reminders occurrence_time
+         else
+            no_advw_reminders
+      in
+      let occurrence_tm = Unix.localtime occurrence_time in
       let temp1 = {
          occurrence_tm with Unix.tm_sec  = 0;
                             Unix.tm_min  = 0;
@@ -729,8 +750,9 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
       let is_current_timed rem =
          rem.Remind.tr_start >= day_start_ts && rem.Remind.tr_start < day_end_ts
       in
-      (* test the untimed reminders list for entries that match the regex *)
-      let rec check_untimed untimed n timed_match =
+      (* test the untimed reminders list, with advanced warnings enabled,
+       * for entries that match the specified string *)
+      let rec check_untimed_advw match_string untimed n timed_match =
          match untimed with
          |[] ->
             begin match timed_match with
@@ -740,12 +762,11 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                assert (doupdate ());
                (iface, reminders)
             |Some (timed_match_ts, timed_match_iface) ->
-               handle_selection_change timed_match_iface new_reminders false
+               handle_selection_change timed_match_iface advw_reminders false
             end
          |urem :: tail ->
             begin try
-               if urem.Remind.ur_start > selected_ts then
-                  let _ = Str.search_forward search_regex urem.Remind.ur_msg 0 in
+               if urem.Remind.ur_start > selected_ts && urem.Remind.ur_msg = match_string then
                   let tm = Unix.localtime urem.Remind.ur_start in
                   let (rounded_time, _) = Unix.mktime (round_time iface.zoom_level tm) in
                   let new_iface =
@@ -788,27 +809,57 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                   (* choose between the timed reminder match and the untimed reminder match *)
                   begin match timed_match with
                   |None ->
-                     handle_selection_change new_iface new_reminders false
+                     handle_selection_change new_iface advw_reminders false
                   |Some (timed_match_ts, timed_match_iface) ->
                      if timed_match_ts < urem.Remind.ur_start then
-                        handle_selection_change timed_match_iface new_reminders false
+                        handle_selection_change timed_match_iface advw_reminders false
                      else
-                        handle_selection_change new_iface new_reminders false
+                        handle_selection_change new_iface advw_reminders false
                   end
                else
                   raise Not_found
             with Not_found ->
-               check_untimed tail (succ n) timed_match
+               check_untimed_advw match_string tail (succ n) timed_match
+            end
+      in
+      (* test the untimed reminders list, with advanced warnings suppressed,
+       * for entries that match the regex *)
+      let rec check_untimed_no_advw untimed n timed_match =
+         match untimed with
+         |[] ->
+            begin match timed_match with
+            |None ->
+               let _ = beep () in
+               draw_error iface "search expression not found." false;
+               assert (doupdate ());
+               (iface, reminders)
+            |Some (timed_match_ts, timed_match_iface) ->
+               handle_selection_change timed_match_iface advw_reminders false
+            end
+         |urem :: tail ->
+            begin try
+               if urem.Remind.ur_start > selected_ts then
+                  (* If we find a match, then look for an identical string in
+                   * the list of untimed reminders with advance warning enabled *)
+                  let _ = Str.search_forward search_regex urem.Remind.ur_msg 0 in
+                  let today_untimed_advw = 
+                     List.filter is_current_untimed advw_reminders.Remind.curr_untimed
+                  in
+                  check_untimed_advw urem.Remind.ur_msg today_untimed_advw 1 timed_match
+               else
+                  raise Not_found
+            with Not_found ->
+               check_untimed_no_advw tail (succ n) timed_match
             end
       in
       (* test the timed reminders list for entries that match the regex *)
       let rec check_timed timed =
          match timed with
          |[] ->
-            let today_untimed = 
-               List.filter is_current_untimed new_reminders.Remind.curr_untimed
+            let today_untimed_no_advw = 
+               List.filter is_current_untimed no_advw_reminders.Remind.curr_untimed
             in
-            check_untimed today_untimed 1 None
+            check_untimed_no_advw today_untimed_no_advw 1 None
          |trem :: tail ->
             begin try
                if trem.Remind.tr_start > selected_ts then
@@ -832,17 +883,17 @@ let handle_find_next (iface : interface_state_t) reminders override_regex =
                                    selected_side   = Left
                      } 
                   in
-                  let today_untimed = 
-                     List.filter is_current_untimed new_reminders.Remind.curr_untimed
+                  let today_untimed_no_advw = 
+                     List.filter is_current_untimed no_advw_reminders.Remind.curr_untimed
                   in
-                  check_untimed today_untimed 1 (Some (trem.Remind.tr_start, new_iface))
+                  check_untimed_no_advw today_untimed_no_advw 1 (Some (trem.Remind.tr_start, new_iface))
                else
                   raise Not_found
             with Not_found ->
                check_timed tail
             end
       in
-      let merged_rem = Remind.merge_timed new_reminders.Remind.curr_timed in
+      let merged_rem = Remind.merge_timed no_advw_reminders.Remind.curr_timed in
       check_timed (List.filter is_current_timed merged_rem)
    with Remind.Occurrence_not_found ->
       let _ = beep () in
@@ -862,12 +913,71 @@ let handle_begin_search (iface : interface_state_t) reminders =
 (* Find the next reminder after the current selection.
  * This algorithm is a dirty hack, but actually seems to work:
  * 1) If an untimed reminder is selected, and if it is not the last
- *    untimed reminder in the list, then highlight the next untimed reminder
+ *    untimed reminder in the list, then highlight the next untimed reminder.
  * 2) Otherwise, run find_next with a regexp that matches anything. *)
 let handle_next_reminder (iface : interface_state_t) reminders =
    if iface.selected_side = Right && 
    iface.right_selection < iface.len_untimed - iface.top_untimed then 
-      handle_scrolldown_untimed iface reminders
+      if !Rcfile.advance_warning then begin
+         (* Compute the list of untimed reminders currently displayed to the user *)
+         let displayed_reminders = 
+            Remind.get_untimed_reminders_for_day reminders.Remind.curr_untimed 
+            (timestamp_of_line iface iface.left_selection)
+         in
+         (* Compute the same list, with advance warnings suppressed *)
+         let displayed_reminders_no_advw =
+            let reminders_no_advw = 
+               Remind.create_three_month ~suppress_advwarn:true 
+               (timestamp_of_line iface iface.left_selection)
+            in
+            Remind.get_untimed_reminders_for_day reminders_no_advw.Remind.curr_untimed
+            (timestamp_of_line iface iface.left_selection)
+         in
+         (* Index of currently selected reminder within displayed_reminders *)
+         let selection_index = iface.right_selection + iface.top_untimed in
+         (* Simultaneously iterate through the two lists until we reach
+          * the currently selected element.  Theoretically displayed_reminders is a 
+          * superset of displayed_reminders_no_advw with ordering preserved, so we 
+          * should be able to match identical elements as we go. *)
+         let rec iter_match superset subset n prev_iface prev_rem =
+            match superset with
+            | [] ->
+               (* Some sort of search failure.  Just skip over today's untimed
+                * reminders. *)
+               handle_find_next iface reminders (Some (Str.regexp ""))
+            | superset_head :: superset_tail ->
+               begin match subset with
+               | [] ->
+                  (* Ran out of reminders in the list with advance warning
+                   * suppressed.  Therefore we can skip over untimed reminders. *)
+                  handle_find_next iface reminders (Some (Str.regexp ""))
+               | subset_head :: subset_tail ->
+                  if n > selection_index then
+                     let (next_iface, next_rem) = 
+                        handle_scrolldown_untimed prev_iface prev_rem
+                     in
+                     if superset_head = subset_head then
+                        (* This should be the correct element.  End here. *)
+                        (next_iface, next_rem)
+                     else
+                        (* Keep searching forward through superset list
+                         * to try to locate this element. *)
+                        iter_match superset_tail subset (succ n) next_iface next_rem
+                  else
+                     if superset_head = subset_head then begin
+                        (* Iterate both... *)
+                        iter_match superset_tail subset_tail (succ n) prev_iface prev_rem
+                     end else begin
+                        (* Iterate superset only *)
+                        iter_match superset_tail subset (succ n) prev_iface prev_rem
+                     end
+               end
+         in
+         iter_match displayed_reminders displayed_reminders_no_advw 1 iface reminders
+      end else
+         (* Easy case.  If the user has not selected advance warning, we can just
+          * scroll down the untimed reminders window. *)
+         handle_scrolldown_untimed iface reminders
    else
       handle_find_next iface reminders (Some (Str.regexp ""))
 
