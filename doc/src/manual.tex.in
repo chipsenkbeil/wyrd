@@ -26,7 +26,7 @@
 %@% IF LATEX %@%
 \title{Wyrd v1.4 User Manual}
 \author{Paul J. Pelzl}
-\date{April 28, 2007}
+\date{August 17, 2007}
 \maketitle
 
 \begin{center}
@@ -744,6 +744,11 @@ CONFIGURATION VARIABLES section.
       window and the untimed reminders window.  The allowable range is
       34 to (\texttt{\$COLUMNS} - 40) characters, and Wyrd will silently
       disregard any setting outside this range.
+   \item \texttt{advance\_warning} \\
+      A boolean value that determines whether or not Wyrd should display
+      advance warning of reminders.  When set to \texttt{"true"}, Wyrd
+      will invoke Remind in a mode that generates advance warning of reminders
+      as specified in the reminder file.
 \end{itemize}
 For maximum usefulness, \texttt{busy\_level1} $<$ \texttt{busy\_level2} $<$ 
 \texttt{busy\_level3} $<$ \texttt{busy\_level4}.
@@ -835,7 +840,13 @@ The following is a list of every available operation.
    \item \texttt{search\_next} \\
       search for the next occurrence of the search string
    \item \texttt{next\_reminder} \\
+   %@% IF LATEX %@%
+      jump to the next reminder\footnote{The \texttt{next\_reminder} operation locates reminders at
+      the point they occur; if \texttt{advance\_warning} is enabled, \texttt{next\_reminder} will
+      skip over any displayed warnings of an event.}
+   %@% ELSE %@%
       jump to the next reminder
+   %@% END-IF %@%
    \item \texttt{view\_remind} \\
       view the output of \texttt{remind} for the selected date
    \item \texttt{view\_remind\_all} \\
