@@ -1,6 +1,33 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2007-08-17     Released 1.4.3.
+
+               Modified the configure script to support weird locations of
+               ncurses term.h .
+
+               Deprecated the 'calendar_selection' colorable object.  For
+               consistency with the rest of the Wyrd interface, the selected
+               calendar day is now rendered in reverse video.
+
+               Added the 'untimed_bold' configuration variable for selecting
+               between normal and boldface rendering of untimed reminders.
+
+               Added support for remind's 'filedir()' function within INCLUDE
+               directives, for those who like to 
+               "INCLUDE [filedir()]/some-extra-reminders".  Thanks to Stefan
+               Wehr for the patch.
+               
+               Implemented more extensive shell-expansion of filenames specified
+               within wyrdrc, enabling the use of idioms like
+               'set reminders_file="$DOT_REMINDERS"'.
+
+2007-08-16     Added support for Remind 3.1.0 advance warning of reminders 
+               throughout the Wyrd interface, enabled via the 'advance_warning'
+               configuration variable.
+
+2007-08-15     Support new Remind 3.1.0 date formatting.
+
 2007-05-25     Released 1.4.2.
 
 2007-04-28     Added the untimed_window_width rcfile option, which lets the
