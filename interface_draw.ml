@@ -501,21 +501,14 @@ let draw_calendar (iface : interface_state_t)
                |Str.Text d ->
                   let day = pred (int_of_string d) in
                   if succ day = sel_tm.Unix.tm_mday then begin
-                     (* highlight selected day *)
-                     if today_tm.Unix.tm_year = sel_tm.Unix.tm_year &&
-                        today_tm.Unix.tm_mon = sel_tm.Unix.tm_mon &&
-                        succ day = today_tm.Unix.tm_mday then
-                        (* if it's also today's date, use boldface *)
-                           wattron iface.scr.calendar_win A.bold
-                     else
-                        ();
-                     Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_selection;
-                     assert (waddstr iface.scr.calendar_win d);
-                     Rcfile.color_off iface.scr.calendar_win Rcfile.Calendar_selection;
-                     wattroff iface.scr.calendar_win A.bold
-                  end else if today_tm.Unix.tm_year = sel_tm.Unix.tm_year &&
-                              today_tm.Unix.tm_mon = sel_tm.Unix.tm_mon &&
-                              succ day = today_tm.Unix.tm_mday then begin
+                     (* highlight selected day in reverse video *)
+                     wattron iface.scr.calendar_win A.reverse;
+                     (* assert (waddstr iface.scr.calendar_win d); *)
+                  end else
+                     ();
+                  if today_tm.Unix.tm_year = sel_tm.Unix.tm_year &&
+                     today_tm.Unix.tm_mon = sel_tm.Unix.tm_mon &&
+                     succ day = today_tm.Unix.tm_mday then begin
                      (* highlight today's date *)
                      Rcfile.color_on iface.scr.calendar_win Rcfile.Calendar_today;
                      wattron iface.scr.calendar_win A.bold;

@@ -923,8 +923,6 @@ The following is a list of all colorable objects.
       calendar days with high activity
    \item \texttt{calendar\_today} \\
       the current day in the calendar window (if it is visible)
-   \item \texttt{calendar\_selection} \\
-      the selected day in the calendar window
    \item \texttt{left\_divider} \\
       the vertical line to the left of the timed reminders window
    \item \texttt{right\_divider} \\
