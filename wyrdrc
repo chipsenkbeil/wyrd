@@ -77,6 +77,9 @@ set advance_warning="false"
 # width of the untimed reminders window
 set untimed_window_width="40"
 
+# whether or not to render untimed reminders in boldface
+set untimed_bold="true"
+
 
 # key bindings
 bind "j"                 scroll_down

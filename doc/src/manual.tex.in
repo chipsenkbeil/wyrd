@@ -749,6 +749,9 @@ CONFIGURATION VARIABLES section.
       advance warning of reminders.  When set to \texttt{"true"}, Wyrd
       will invoke Remind in a mode that generates advance warning of reminders
       as specified in the reminder file.
+   \item \texttt{untimed\_bold} \\
+      A boolean value that determines whether or not Wyrd should render
+      untimed reminders using a bold font.
 \end{itemize}
 For maximum usefulness, \texttt{busy\_level1} $<$ \texttt{busy\_level2} $<$ 
 \texttt{busy\_level3} $<$ \texttt{busy\_level4}.

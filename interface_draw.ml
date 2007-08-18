@@ -594,6 +594,10 @@ let draw_untimed (iface : interface_state_t) reminders =
    mvwhline iface.scr.untimed_win 0 1 acs.Acs.hline (pred iface.scr.uw_cols);
    mvwvline iface.scr.untimed_win 1 0 acs.Acs.vline (pred iface.scr.uw_lines);
    Rcfile.color_off iface.scr.untimed_win Rcfile.Right_divider;
+   if not !Rcfile.untimed_bold then
+      wattroff iface.scr.untimed_win A.bold
+   else
+      ();
    Rcfile.color_on iface.scr.untimed_win Rcfile.Untimed_reminder;
    (* make sure the cursor doesn't unexpectedly disappear *)
    let iface =

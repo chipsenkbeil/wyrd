@@ -125,6 +125,9 @@ let home_sticky = ref true
 let untimed_window_width = ref 40
 (* trigger advance warning of reminders? *)
 let advance_warning = ref false
+(* render untimed reminders in bold? *)
+let untimed_bold = ref true
+
 (* List of included rc files *)
 let included_rcfiles : (string list) ref = ref []
 
@@ -557,6 +560,8 @@ let parse_line line_stream =
          parse_set "untimed_window_width" untimed_window_width int_of_string "Expected an integral string after "
       | [< 'Ident "advance_warning" >] ->
          parse_set "advance_warning" advance_warning bool_of_string "Expected a boolean string after "
+      | [< 'Ident "untimed_bold" >] ->
+         parse_set "untimed_bold" untimed_bold bool_of_string "Expected a boolean string after "
       | [< >] ->
          config_failwith ("Unmatched variable name after \"set\"")
       end
