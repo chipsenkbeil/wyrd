@@ -225,16 +225,30 @@ let empty_tm = {
 }
 
 
-
 (* strip whitespace *)
-let strip s =
-   (* any amount of whitespace, followed by a non-whitespace char, 
-    * followed by any number of chars, followed by a non-whitespace char, 
-    * followed by any amount of whitespace *)
-   let re = Str.regexp "^[ \t]*\\([^ \t].*[^ \t]\\)[ \t]*$" in
-   Str.replace_first re "\\1" s
 
+let lstrip s =
+   (* Any amount of whitespace, followed by a non-whitespace char,
+    * followed by any number of characters.  If match fails,
+    * then the string must be entirely whitespace. *)
+   let re = Str.regexp "[ \t]*\\([^ \t].*\\)" in
+   if Str.string_match re s 0 then
+      Str.replace_first re "\\1" s
+   else
+      ""
 
+let rstrip s =
+   (* Any number of characters, followed by a non-whitespace char,
+    * followed by any number of whitespace chars.  If match
+    * fails, then the string must be entirely whitespace. *)
+   let re = Str.regexp "\\(.*[^ \t]\\).*" in
+   if Str.string_match re s 0 then
+      Str.replace_first re "\\1" s
+   else
+      ""
+
+let strip s = lstrip (rstrip s)
+      
 
 (* Use the shell to open a process, read all output from both stdout and stderr, 
  * and close the pipes to the process again.  Returns a list of lines from

@@ -622,13 +622,18 @@ let find_next msg_regex timestamp =
 (* Get a list of the main remfile and all INCLUDEd reminder files *)
 let get_included_remfiles () =   
    let main_remfile = Utility.expand_file !Rcfile.reminders_file in
+   let filedir = Filename.dirname main_remfile in
    let remfile_channel = open_in main_remfile in
-   let include_regex = Str.regexp_case_fold "^[ \t]*include[ \t]+\\([^ \t]+\\)" in
+   (* match "include <filename>" *)
+   let include_regex = Str.regexp_case_fold "^[ \t]*include[ \t]+\\([^ \t]+.*\\)$" in
+   (* match "[filedir()]" so we can do a Remind-like directory substitution *)
+   let filedir_regex = Str.regexp_case_fold "\\[[ \t]*filedir[ \t]*([ \t]*)[ \t]*\\]" in
    let rec build_filelist files =
       try
          let line = input_line remfile_channel in
          if Str.string_match include_regex line 0 then
-            let new_file = Str.matched_group 1 line in
+            let include_expr = Utility.strip (Str.matched_group 1 line) in
+            let new_file = Str.global_replace filedir_regex filedir include_expr in
             build_filelist (new_file :: files)
          else
             build_filelist files
