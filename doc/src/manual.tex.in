@@ -85,9 +85,9 @@ following software installed:
       (and development headers)
    \item 
 %BEGIN LATEX
-      Remind \footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php} $\ge$ 3.0.24
+      Remind \footnote{http://www.roaringpenguin.com/penguin/open\_source\_remind.php} $\ge$ 3.1.0
 %END LATEX
-%HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Remind</a> >= 3.0.24 \end{rawhtml}
+%HEVEA \begin{rawhtml} <a href="http://www.roaringpenguin.com/penguin/open_source_remind.php">Remind</a> >= 3.1.0 \end{rawhtml}
    \item 
 %BEGIN LATEX
       GNU make\footnote{http://www.gnu.org/software/make/}
