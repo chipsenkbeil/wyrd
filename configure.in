@@ -208,6 +208,31 @@ AC_MSG_ERROR([not found])
 fi
 
 
+AC_MSG_CHECKING(for ncurses term.h)
+AC_TRY_COMPILE(
+   [#include <term.h>], [TERMTYPE __dummy],
+   [TERM_H_STRING="<term.h>"
+    AC_DEFINE(CURSES_TERM_H, <term.h>, [Defined to ncurses term.h file])],
+   [
+AC_TRY_COMPILE(
+   [#include <ncurses/term.h>], [TERMTYPE __dummy],
+   [TERM_H_STRING="<ncurses/term.h>"
+    AC_DEFINE(CURSES_TERM_H, <ncurses/term.h>, [Defined to ncurses term.h file])],
+   [
+AC_TRY_COMPILE(
+   [#include <curses/term.h>], [TERMTYPE __dummy],
+   [TERM_H_STRING="<curses/term.h>"
+    AC_DEFINE(CURSES_TERM_H, <curses/term.h>, [Defined to ncurses term.h file])],
+) ]) ])
+
+if test -n "$TERM_H_STRING"
+then
+   AC_MSG_RESULT([found in $TERM_H_STRING])
+else
+   AC_MSG_ERROR([not found])
+fi
+
+
 # check whether the detected ncurses has wide char support
 BOOL_WIDE_CURSES="false"
 if test -n "$CURSES_LIB"
@@ -268,6 +293,7 @@ AC_SUBST(OCAMLLIB)
 AC_SUBST(OCAMLWIN32)
 AC_SUBST(EXE)
 AC_SUBST(CURSES_HEADER)
+AC_SUBST(CURSES_TERM_H)
 AC_SUBST(CURSES_LIB)
 AC_SUBST(BOOL_WIDE_CURSES)
 AC_SUBST(DEFS)
