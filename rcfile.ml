@@ -136,8 +136,6 @@ let inverse_color_table = Hashtbl.create 20
 (* Final hash table that maps from object to color_pair index *)
 let object_palette      = Hashtbl.create 20
 
-let tmpfile = "/tmp/wyrd-tmp." ^ (string_of_int (Unix.getuid ()))
-      
 
 (* Turn colors on and off *)
 let color_on win obj =

@@ -561,15 +561,19 @@ let find_next msg_regex timestamp =
    let rem_date_str2 = (string_of_tm_mon tm2.Unix.tm_mon) ^ " " ^ 
                        (string_of_int tm2.Unix.tm_mday) ^ " " ^
                        (string_of_int (tm2.Unix.tm_year + 1900)) in
-   let full_remind_command =
-      !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ 
-      rem_date_str1 ^ " > " ^ Rcfile.tmpfile ^ " && " ^ !Rcfile.remind_command ^ 
-      " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ rem_date_str2 ^ " | cat " ^ 
-      Rcfile.tmpfile ^ " - | sort"
+   let remind_output_for_month date_str =
+      let remind_month_command = 
+         !Rcfile.remind_command ^ " -n -s -b1 " ^ !Rcfile.reminders_file ^ " " ^ date_str
+      in
+      let (out_lines, _) = Utility.read_all_shell_command_output remind_month_command in
+      out_lines
    in
-   let (out_lines, err_lines) = 
-      Utility.read_all_shell_command_output full_remind_command 
+   (* concatenate the outputs from two consecutive months of Remind data, then sort
+    * the lines by leading datestamp *)
+   let two_month_output = List.rev_append 
+      (remind_output_for_month rem_date_str1) (remind_output_for_month rem_date_str2)
    in
+   let out_lines = List.fast_sort compare two_month_output in
    let rec check_messages lines =
       begin match lines with
       | [] ->
