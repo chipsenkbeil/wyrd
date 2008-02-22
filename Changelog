@@ -1,6 +1,12 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2008-02-21     Released 1.4.4.
+
+               Fixed an instance of insecure tempfile creation.  This 
+               addresses a security vulnerability that had the potential to
+               cause data loss.
+
 2007-08-17     Released 1.4.3.
 
                Modified the configure script to support weird locations of
