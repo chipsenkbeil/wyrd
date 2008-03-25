@@ -1,6 +1,9 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2008-02-24     Implemented improved support for Remind's new "reminder
+               directory" capability.
+
 2008-02-21     Released 1.4.4.
 
                Fixed an instance of insecure tempfile creation.  This 

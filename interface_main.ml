@@ -1178,12 +1178,11 @@ let handle_edit (iface : interface_state_t) reminders =
    in
    begin match fl with
    |None ->
+      let (main_remfile, _) = Remind.get_all_remfiles () in
       if iface.selected_side = Left then
-         handle_new_reminder iface reminders Timed
-         (Utility.expand_file !Rcfile.reminders_file)
+         handle_new_reminder iface reminders Timed main_remfile
       else
-         handle_new_reminder iface reminders Untimed
-         (Utility.expand_file !Rcfile.reminders_file)
+         handle_new_reminder iface reminders Untimed main_remfile
    |Some (filename, line_num, msg) -> 
       let filename_sub = Str.regexp "%file%" in
       let lineno_sub   = Str.regexp "%line%" in
@@ -1678,7 +1677,7 @@ let handle_keypress_normal key (iface : interface_state_t) reminders =
       |Rcfile.Edit ->
          handle_edit iface reminders
       |Rcfile.EditAny ->
-         let all_remfiles = Remind.get_included_remfiles () in
+         let (_, all_remfiles) = Remind.get_all_remfiles () in
          let selected_remfile = 
             (* if there's only one remfile, jump right in, otherwise
              * pop up a selection dialog *)
@@ -1700,8 +1699,8 @@ let handle_keypress_normal key (iface : interface_state_t) reminders =
             assert (doupdate ());
             (iface, reminders)
          end else begin
-            handle_paste_reminder iface reminders 
-            (Utility.expand_file !Rcfile.reminders_file)
+            let (main_remfile, _) = Remind.get_all_remfiles () in
+            handle_paste_reminder iface reminders main_remfile
          end
       |Rcfile.PasteReminderDialog ->
          if iface.rem_buffer = "" then begin
@@ -1710,7 +1709,7 @@ let handle_keypress_normal key (iface : interface_state_t) reminders =
             assert (doupdate ());
             (iface, reminders)
          end else begin
-            let all_remfiles = Remind.get_included_remfiles () in
+            let (_, all_remfiles) = Remind.get_all_remfiles () in
             let selected_remfile = 
                (* if there's only one remfile, jump right in, otherwise
                 * pop up a selection dialog *)
@@ -1729,30 +1728,30 @@ let handle_keypress_normal key (iface : interface_state_t) reminders =
       |Rcfile.QuickEvent ->
          handle_begin_quick_event iface reminders
       |Rcfile.NewTimed ->
-         handle_new_reminder iface reminders Timed
-         (Utility.expand_file !Rcfile.reminders_file)
+         let (main_remfile, _) = Remind.get_all_remfiles () in
+         handle_new_reminder iface reminders Timed main_remfile
       |Rcfile.NewTimedDialog ->
          let remfile = 
-            do_selection_dialog iface "Choose a reminders file"
-            (Remind.get_included_remfiles ())
+            let (_, all_remfiles) = Remind.get_all_remfiles () in
+            do_selection_dialog iface "Choose a reminders file" all_remfiles
          in
          handle_new_reminder iface reminders Timed remfile
       |Rcfile.NewUntimed ->
-         handle_new_reminder iface reminders Untimed
-         (Utility.expand_file !Rcfile.reminders_file)
+         let (main_remfile, _) = Remind.get_all_remfiles () in
+         handle_new_reminder iface reminders Untimed main_remfile
       |Rcfile.NewUntimedDialog ->
          let remfile = 
-            do_selection_dialog iface "Choose a reminders file"
-            (Remind.get_included_remfiles ())
+            let (_, all_remfiles) = Remind.get_all_remfiles () in
+            do_selection_dialog iface "Choose a reminders file" all_remfiles
          in
          handle_new_reminder iface reminders Untimed remfile
       |Rcfile.NewGenReminder x ->
-         handle_new_reminder iface reminders (General x)
-         (Utility.expand_file !Rcfile.reminders_file)
+         let (main_remfile, _) = Remind.get_all_remfiles () in
+         handle_new_reminder iface reminders (General x) main_remfile
       |Rcfile.NewGenReminderDialog x ->
          let remfile = 
-            do_selection_dialog iface "Choose a reminders file"
-            (Remind.get_included_remfiles ())
+            let (_, all_remfiles) = Remind.get_all_remfiles () in
+            do_selection_dialog iface "Choose a reminders file" all_remfiles
          in
          handle_new_reminder iface reminders (General x) remfile
       |Rcfile.SearchNext ->
@@ -1839,8 +1838,8 @@ let handle_keypress key (iface : interface_state_t) reminders =
                end
             |ExtendedQuick ->
                begin try
-                  handle_quick_event iface reminders
-                  (Utility.expand_file !Rcfile.reminders_file)
+                  let (main_remfile, _) = Remind.get_all_remfiles () in
+                  handle_quick_event iface reminders main_remfile
                with Failure err ->
                   let new_iface = {
                      iface with extended_input = "";

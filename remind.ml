@@ -26,6 +26,12 @@ exception Occurrence_not_found
 
 open Utility
 
+(* Sets over strings *)
+module SString = struct
+   type t = string
+   let compare i j = String.compare i j
+end
+module SSet = Set.Make (SString)
 
 (* A record for an individual timed reminder, as read from
  * the output of 'remind -s'. *)
@@ -623,29 +629,91 @@ let find_next msg_regex timestamp =
    check_messages out_lines
 
 
-(* Get a list of the main remfile and all INCLUDEd reminder files *)
-let get_included_remfiles () =   
-   let main_remfile = Utility.expand_file !Rcfile.reminders_file in
-   let filedir = Filename.dirname main_remfile in
-   let remfile_channel = open_in main_remfile in
-   (* match "include <filename>" *)
-   let include_regex = Str.regexp_case_fold "^[ \t]*include[ \t]+\\([^ \t]+.*\\)$" in
-   (* match "[filedir()]" so we can do a Remind-like directory substitution *)
-   let filedir_regex = Str.regexp_case_fold "\\[[ \t]*filedir[ \t]*([ \t]*)[ \t]*\\]" in
-   let rec build_filelist files =
-      try
-         let line = input_line remfile_channel in
-         if Str.string_match include_regex line 0 then
-            let include_expr = Utility.strip (Str.matched_group 1 line) in
-            let new_file = Str.global_replace filedir_regex filedir include_expr in
-            build_filelist (new_file :: files)
-         else
-            build_filelist files
-      with End_of_file ->
-         close_in remfile_channel;
-         List.rev files
+let get_remfile_list () =
+   let main_file_or_dir = Utility.expand_file !Rcfile.reminders_file in
+   try
+      (* First try opening as a directory. *)
+      let remdir_handle = Unix.opendir main_file_or_dir in
+      let rec find_remfiles filelist =
+         try
+            let f = Unix.readdir remdir_handle in
+            let next_filelist =
+               try
+                  (* Match only files with .rem extension *)
+                  let extension = Str.last_chars f 4 in
+                  if extension = ".rem" then
+                     (Filename.concat main_file_or_dir f) :: filelist
+                  else
+                     filelist
+               with Invalid_argument _ ->
+                  filelist
+            in
+            find_remfiles next_filelist
+         with End_of_file ->
+            Unix.closedir remdir_handle;
+            filelist
+      in
+      let remfile_list = List.fast_sort compare (find_remfiles []) in
+      if List.length remfile_list = 0 then
+         (* User selected an empty reminders directory.  Make up a reasonable default filename. *)
+         [Filename.concat main_file_or_dir "reminders.rem"]
+      else
+         remfile_list
+   with Unix.Unix_error _ ->
+      (* If it's not a directory, then treat it as a regular file. *)
+      [main_file_or_dir]
+
+
+(* Get a list of files INCLUDEd in a given file *)
+let get_included_files remfile =
+   let filedir = Filename.dirname remfile in
+   try
+      let remfile_channel = open_in remfile in
+      (* match "include <filename>" *)
+      let include_regex = Str.regexp_case_fold "^[ \t]*include[ \t]+\\([^ \t]+.*\\)$" in
+      (* match "[filedir()]" so we can do a Remind-like directory substitution *)
+      let filedir_regex = Str.regexp_case_fold "\\[[ \t]*filedir[ \t]*([ \t]*)[ \t]*\\]" in
+      let rec build_filelist files =
+         try
+            let line = input_line remfile_channel in
+            if Str.string_match include_regex line 0 then
+               let include_expr = Utility.strip (Str.matched_group 1 line) in
+               let new_file = Str.global_replace filedir_regex filedir include_expr in
+               build_filelist (new_file :: files)
+            else
+               build_filelist files
+         with End_of_file ->
+            close_in remfile_channel;
+            List.rev files
+      in
+      build_filelist []
+   with Sys_error _ ->
+      (* File does not exist *)
+      []
+
+
+(* Get a tuple of the form (primary remfile, all remfiles).  If !Rcfile.reminders_file
+ * is a single file, then "primary_remfile" is that file, and "all_remfiles" is
+ * formed by parsing the INCLUDE statements.  If !Rcfile.reminders_file is
+ * a directory, then "primary remfile" is the first file in the directory with
+ * extension ".rem", and "all remfiles" is all files with extension ".rem"
+ * combined with all INCLUDEd files. *)
+let get_all_remfiles () =   
+   (* Work around the argument reversal of Set relative to List *)
+   let fixed_add a s = SSet.add s a in
+   let rec add_include_files primary_files included_files_set =
+      match primary_files with
+      | [] ->
+         SSet.elements included_files_set
+      | primary_file :: tail ->
+         let included_files = get_included_files primary_file in
+         add_include_files tail (List.fold_left fixed_add included_files_set included_files)
    in
-   build_filelist [main_remfile]
+   let remfile_list = get_remfile_list () in
+   let all_remfiles = add_include_files remfile_list 
+      (List.fold_left fixed_add SSet.empty remfile_list)
+   in
+   (List.hd remfile_list, all_remfiles)
 
 
 (* Filter a list of untimed reminders, returning a list of those
