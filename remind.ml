@@ -26,12 +26,15 @@ exception Occurrence_not_found
 
 open Utility
 
-(* Sets over strings *)
-module SString = struct
-   type t = string
-   let compare i j = String.compare i j
-end
-module SSet = Set.Make (SString)
+
+(* Define a Set that takes pairs of integers as keys. *)
+module IntPair =
+   struct
+      type t = int * int
+      let compare i j = Pervasives.compare i j
+   end
+module IPSet = Set.Make (IntPair)
+
 
 (* A record for an individual timed reminder, as read from
  * the output of 'remind -s'. *)
@@ -629,43 +632,8 @@ let find_next msg_regex timestamp =
    check_messages out_lines
 
 
-let get_remfile_list () =
-   let main_file_or_dir = Utility.expand_file !Rcfile.reminders_file in
-   try
-      (* First try opening as a directory. *)
-      let remdir_handle = Unix.opendir main_file_or_dir in
-      let rec find_remfiles filelist =
-         try
-            let f = Unix.readdir remdir_handle in
-            let next_filelist =
-               try
-                  (* Match only files with .rem extension *)
-                  let extension = Str.last_chars f 4 in
-                  if extension = ".rem" then
-                     (Filename.concat main_file_or_dir f) :: filelist
-                  else
-                     filelist
-               with Invalid_argument _ ->
-                  filelist
-            in
-            find_remfiles next_filelist
-         with End_of_file ->
-            Unix.closedir remdir_handle;
-            filelist
-      in
-      let remfile_list = List.fast_sort compare (find_remfiles []) in
-      if List.length remfile_list = 0 then
-         (* User selected an empty reminders directory.  Make up a reasonable default filename. *)
-         [Filename.concat main_file_or_dir "reminders.rem"]
-      else
-         remfile_list
-   with Unix.Unix_error _ ->
-      (* If it's not a directory, then treat it as a regular file. *)
-      [main_file_or_dir]
-
-
-(* Get a list of files INCLUDEd in a given file *)
-let get_included_files remfile =
+(* Get a list of file or directory names INCLUDEd in a specific reminders file *)
+let parse_include_directives remfile =
    let filedir = Filename.dirname remfile in
    try
       let remfile_channel = open_in remfile in
@@ -684,13 +652,84 @@ let get_included_files remfile =
                build_filelist files
          with End_of_file ->
             close_in remfile_channel;
-            List.rev files
+            files
       in
       build_filelist []
    with Sys_error _ ->
       (* File does not exist *)
       []
 
+
+(* Given a directory name and an open handle to it, locate all *.rem files contained therein.
+ * Closes the directory handle on exit. *)
+let find_remdir_scripts dirname remdir_handle =
+   let safe_get_filename () =
+      try
+         Some (Unix.readdir remdir_handle)
+      with End_of_file ->
+         None
+   in
+   let rec listdir filelist =
+      match safe_get_filename () with
+      | Some filename ->
+         listdir ((Filename.concat dirname filename) :: filelist)
+      | None ->
+         Unix.closedir remdir_handle;
+         filelist
+   in
+   let is_rem_script filename = Filename.check_suffix filename ".rem" in
+   List.filter is_rem_script (listdir [])
+
+
+(* Recursively compute a subtree of reminder files that Remind would execute
+ * as a result of a single INCLUDE directive.  <pending_include_directives> is a list of 
+ * files and directories specified via a number of Remind INCLUDE statements.
+ * <known_include_directives> is a Set of include directives which have already been
+ * processed.  <known_included_filenames> is a list of filenames which are already
+ * known to be included; this is effectively a subset of the <known_include_directives>.
+ *
+ * We test that a file or directory has been visited by statting it and testing for
+ * containment of the (dev, inode) pair in the Set <known_include_directives>.  This should
+ * do the right thing in case of symlinks, relative paths, etc. *)
+let rec get_included_filenames known_included_filenames known_include_directives pending_include_directives =
+   match pending_include_directives with
+   | [] ->
+      List.fast_sort compare known_included_filenames
+   | include_directive :: remaining_include_directives ->
+      begin try
+         (* The (dev, inode) pair uniquely identifies a file or directory. *)
+         let directive_id =
+            let status = Unix.stat include_directive in
+            (status.Unix.st_dev, status.Unix.st_ino)
+         in
+         if IPSet.mem directive_id known_include_directives then
+            (* This include directive has already been processed... skip it *)
+            get_included_filenames known_included_filenames known_include_directives 
+               remaining_include_directives
+         else
+            begin try
+               (* This is a new include directive.  Start by assuming it's a directory.  If that works,
+                * treat each of the .rem scripts inside this directory as a new INCLUDE directive. *)
+               let remdir_handle = Unix.opendir include_directive in
+               let new_include_directives = find_remdir_scripts include_directive remdir_handle in
+               get_included_filenames known_included_filenames
+                  (IPSet.add directive_id known_include_directives)
+                  (List.rev_append new_include_directives remaining_include_directives)
+            with Unix.Unix_error _ ->
+               (* This include directive could not be opened as a directory.
+                * Treat it as a regular file: parse it to locate additional
+                * INCLUDE lines, and add the additional includes to the pending list. *)
+               let new_include_directives = parse_include_directives include_directive in
+               get_included_filenames (include_directive :: known_included_filenames) 
+                  (IPSet.add directive_id known_include_directives) 
+                  (List.rev_append new_include_directives remaining_include_directives)
+            end
+      with Unix.Unix_error (Unix.ENOENT, _, _) ->
+         (* include_directive cannot be found on disk... skip it *)
+         get_included_filenames known_included_filenames known_include_directives 
+            remaining_include_directives
+      end
+   
 
 (* Get a tuple of the form (primary remfile, all remfiles).  If !Rcfile.reminders_file
  * is a single file, then "primary_remfile" is that file, and "all_remfiles" is
@@ -699,21 +738,44 @@ let get_included_files remfile =
  * extension ".rem", and "all remfiles" is all files with extension ".rem"
  * combined with all INCLUDEd files. *)
 let get_all_remfiles () =   
-   (* Work around the argument reversal of Set relative to List *)
-   let fixed_add a s = SSet.add s a in
-   let rec add_include_files primary_files included_files_set =
-      match primary_files with
-      | [] ->
-         SSet.elements included_files_set
-      | primary_file :: tail ->
-         let included_files = get_included_files primary_file in
-         add_include_files tail (List.fold_left fixed_add included_files_set included_files)
+   (* Test whether a filename represents an existing directory. *)
+   let is_existing_dir fn =
+      try 
+         let status = Unix.stat fn in
+         status.Unix.st_kind = Unix.S_DIR
+      with Unix.Unix_error _ ->
+         false
    in
-   let remfile_list = get_remfile_list () in
-   let all_remfiles = add_include_files remfile_list 
-      (List.fold_left fixed_add SSet.empty remfile_list)
-   in
-   (List.hd remfile_list, all_remfiles)
+   let toplevel_include_directive = Utility.expand_file !Rcfile.reminders_file in
+   if is_existing_dir toplevel_include_directive then
+      try
+         let toplevel_scripts = find_remdir_scripts toplevel_include_directive
+            (Unix.opendir toplevel_include_directive)
+         in
+         if toplevel_scripts = [] then
+            (* User selected an empty reminders directory.  Make up a reasonable default filename. *)
+            let default_filename = Filename.concat toplevel_include_directive "reminders.rem" in
+            (default_filename, [default_filename])
+         else
+            (* Nonempty reminders directory.  Choose first entry as primary file, and parse
+             * through all files to get the INCLUDE structure. *)
+            let sorted_scripts = List.fast_sort compare toplevel_scripts in
+            (List.hd sorted_scripts,
+               get_included_filenames [] IPSet.empty sorted_scripts)
+      with Unix.Unix_error _ ->
+         (* Can't open the directory... *)
+         failwith (Printf.sprintf "Can't open reminders directory \"%s\"" 
+            toplevel_include_directive)
+   else
+      (* toplevel include directive is not a directory.  Treat it as a regular file,
+       * which need not exist. *)
+      let all_includes = get_included_filenames [] IPSet.empty [toplevel_include_directive] in
+      if all_includes = [] then
+         (* Special case: if the toplevel include does not exist, pretend it does exist *)
+         (toplevel_include_directive, [toplevel_include_directive])
+      else
+         (toplevel_include_directive, all_includes)
+
 
 
 (* Filter a list of untimed reminders, returning a list of those
