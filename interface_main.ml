@@ -1913,7 +1913,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
          |_ ->
             begin try
                (* only printable characters are accepted for search strings and quick events *)
-               if key >= 32 && key <= 126 then begin
+               if Install.wide_ncurses || (key >= 32 && key <= 126) then begin
                   let c = char_of_int key in
                   let new_iface = {
                      iface with extended_input = iface.extended_input ^ (String.make 1 c)
