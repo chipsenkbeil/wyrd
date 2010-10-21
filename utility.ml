@@ -337,7 +337,7 @@ let utf8_len s =
          let num_bytes = utf8_width s.[byte_pos] in
          len_aux (byte_pos + num_bytes) (succ char_count)
    in
-   if Install.wide_ncurses then
+   if Curses.Curses_config.wide_ncurses then
       len_aux 0 0
    else
       (* If build process does not detect ncursesw, then fall back
@@ -361,7 +361,7 @@ let utf8_string_before s n =
          build_substr (substr ^ new_bytes) (succ utf8_pos) 
             (byte_pos + num_new_bytes)
    in
-   if Install.wide_ncurses then
+   if Curses.Curses_config.wide_ncurses then
       build_substr "" 0 0
    else
       (* If we're not using utf-8, fall back on standard string behavior. *)
@@ -372,7 +372,7 @@ let utf8_string_before s n =
  * where 'n' may be measured in characters rather than bytes.  Does the right
  * thing for utf-8 wide characters. *)
 let utf8_string_after s n =
-   if Install.wide_ncurses then begin
+   if Curses.Curses_config.wide_ncurses then begin
       let starting_byte = ref 0 in
       for utf8_char = 0 to pred n do
          starting_byte := !starting_byte + (utf8_width s.[!starting_byte])

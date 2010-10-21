@@ -155,111 +155,6 @@ fi
 # find a C compiler
 AC_PROG_CC()
 
-ORIG_LIBS="$LIBS"
-ORIG_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CURSES_INCLUDE $ORIG_CPPFLAGS"
-
-
-# check for ncurses
-AC_MSG_CHECKING(for working ncurses library)
-
-if test "$try_utf8" != "no"
-then
-LIBS="-lncursesw $ORIG_LIBS"
-AC_TRY_LINK(
-  [#include <ncursesw/curses.h>], [initscr(); use_default_colors()],
-  [CURSES_LIB=-lncursesw
-   AC_DEFINE(CURSES_HEADER, <ncursesw/curses.h>, [Defined to ncurses header file])])
-fi
-
-if test -z "$CURSES_LIB"
-then
-LIBS="-lncurses $ORIG_LIBS"
-AC_TRY_LINK(
-  [#include <ncurses/curses.h>], [initscr(); use_default_colors()],
-  [CURSES_LIB=-lncurses
-   AC_DEFINE(CURSES_HEADER, <ncurses/curses.h>, [Defined to ncurses header file])],
-  [
-LIBS="-lncurses $ORIG_LIBS"
-AC_TRY_LINK(
-  [#include <ncurses.h>], [initscr(); use_default_colors()],
-  [CURSES_LIB=-lncurses
-   AC_DEFINE(CURSES_HEADER, <ncurses.h>, [Defined to ncurses header file])],
-  [
-LIBS="-lcurses $ORIG_LIBS"
-AC_TRY_LINK(
-  [#include <curses.h>], [initscr(); use_default_colors()],
-  [CURSES_LIB=-lcurses
-   AC_DEFINE(CURSES_HEADER, <curses.h>, [Defined to ncurses header file])],
-  [
-LIBS="-lncurses $ORIG_LIBS"
-AC_TRY_LINK(
-  [#include <curses.h>], [initscr(); use_default_colors()],
-  [CURSES_LIB=-lcurses
-   AC_DEFINE(CURSES_HEADER, <curses.h>, [Defined to ncurses header file])],
-) ]) ]) ])
-fi
-
-if test -n "$CURSES_LIB"
-then
-AC_MSG_RESULT([found in $CURSES_LIB])
-else
-AC_MSG_ERROR([not found])
-fi
-
-
-AC_MSG_CHECKING(for ncurses term.h)
-AC_TRY_COMPILE(
-   [#include <term.h>], [TERMTYPE __dummy],
-   [TERM_H_STRING="<term.h>"
-    AC_DEFINE(CURSES_TERM_H, <term.h>, [Defined to ncurses term.h file])],
-   [
-AC_TRY_COMPILE(
-   [#include <ncurses/term.h>], [TERMTYPE __dummy],
-   [TERM_H_STRING="<ncurses/term.h>"
-    AC_DEFINE(CURSES_TERM_H, <ncurses/term.h>, [Defined to ncurses term.h file])],
-   [
-AC_TRY_COMPILE(
-   [#include <curses/term.h>], [TERMTYPE __dummy],
-   [TERM_H_STRING="<curses/term.h>"
-    AC_DEFINE(CURSES_TERM_H, <curses/term.h>, [Defined to ncurses term.h file])],
-) ]) ])
-
-if test -n "$TERM_H_STRING"
-then
-   AC_MSG_RESULT([found in $TERM_H_STRING])
-else
-   AC_MSG_ERROR([not found])
-fi
-
-
-# check whether the detected ncurses has wide char support
-BOOL_WIDE_CURSES="false"
-if test -n "$CURSES_LIB"
-then
-  LIBS="$CURSES_LIB $ORIG_LIBS"
-
-  if test "$try_utf8" != "no"
-  then
-    AC_MSG_CHECKING(for wide character support in ncurses library)
-    AC_TRY_LINK(
-      [#include <wchar.h>
-       #include CURSES_HEADER
-      ],
-      [wchar_t wch = 0;
-       addnwstr(&wch, 1);],
-      [AC_MSG_RESULT(yes)
-       AC_DEFINE(HAVE_WIDE_CURSES, 1, [Defined if ncurses library includes wide character support])
-       BOOL_WIDE_CURSES="true"],
-      [AC_MSG_RESULT(no)])
-  fi
-fi
-
-
-CPPFLAGS="$ORIG_CPPFLAGS"
-LIBS="$ORIG_LIBS"
-
-
 # check Remind version
 AC_PATH_PROG(REMINDPATH, remind, not found)
 if test x"$REMINDPATH" != x"not found"; then
@@ -280,6 +175,13 @@ else
    AC_MSG_WARN(Wyrd requires Remind version 03.00.24 or greater.)
 fi
 
+# recursively configure curses
+if test x"$try_utf8" = x"yes"; then
+   ac_configure_args="$ac_configure_args --enable-widec"
+fi
+AC_CONFIG_SUBDIRS([curses])
+
+AC_PROG_INSTALL()
 
 # substitutions to perform
 AC_SUBST(OCAMLC)
@@ -292,20 +194,15 @@ AC_SUBST(OCAMLVERSION)
 AC_SUBST(OCAMLLIB)
 AC_SUBST(OCAMLWIN32)
 AC_SUBST(EXE)
-AC_SUBST(CURSES_HEADER)
-AC_SUBST(CURSES_TERM_H)
-AC_SUBST(CURSES_LIB)
-AC_SUBST(BOOL_WIDE_CURSES)
 AC_SUBST(DEFS)
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(INSTALL)
 
 # Finally create the Makefile from Makefile.in
 AC_OUTPUT(Makefile install.ml)
 chmod a-w Makefile
 
 
-
-# arch-tag: DO_NOT_CHANGE_3852958f-9da5-4ee1-8a22-ac63ac00aaac 

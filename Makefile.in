@@ -40,15 +40,12 @@ CC           = @CC@
 CFLAGS       = @CFLAGS@
 CPPFLAGS     = @CPPFLAGS@
 LDFLAGS      = @LDFLAGS@
+INSTALL      = @INSTALL@
 
-
-CURSES_LIB = @CURSES_LIB@
 
 INCLUDES = -I ./curses
 BFLAGS   = -pp camlp4o -g $(INCLUDES)
 OFLAGS   = -pp camlp4o $(INCLUDES)
-BLFLAGS  = -custom -cclib '$(LDFLAGS) $(CURSES_LIB) -lm'
-OLFLAGS  = -cclib '$(LDFLAGS) $(CURSES_LIB) -lm'
 DEPFLAGS = -pp camlp4o
 
 # main target
@@ -71,38 +68,33 @@ CMXA = $(CMA:.cma=.cmxa)
 
 COBJS = locale_wrap.o
 
-CURSES_CMO = curses/curses.cmo
-CURSES_CMX = curses/curses.cmx
-CURSES_COBJS = curses/ml_curses.o
-CURSES_BOBJS = $(CURSES_CMO) $(CURSES_COBJS)
-CURSES_OOBJS = $(CURSES_CMX) $(CURSES_COBJS)
+CURSES_CMA  = curses/curses.cma
+CURSES_CMXA = curses/curses.cmxa
 
 GENERATED = version.ml
 
 byte: $(NAME).byte
 opt: $(NAME).opt
-static: $(NAME).static-opt
 
-$(NAME).byte: $(COBJS) $(CURSES_BOBJS) $(CMO)
-	$(OCAMLC) $(BFLAGS) $(BLFLAGS) -o $@ $(CURSES_BOBJS) $(COBJS) $(CMA) $(CMO) 
+$(NAME).byte: $(COBJS) $(CURSES_CMA) $(CMO)
+	$(OCAMLC) $(BFLAGS) -o $@ $(CURSES_CMA) $(COBJS) $(CMA) $(CMO) 
 
-$(NAME).opt: $(COBJS) $(CURSES_OOBJS) $(CMX)
-	$(OCAMLOPT) $(OFLAGS) -o $@ $(CURSES_OOBJS) $(COBJS) $(CMXA) $(CMX) $(OLFLAGS)
+$(NAME).opt: $(COBJS) $(CURSES_CMXA) $(CMX)
+	$(OCAMLOPT) $(OFLAGS) -o $@ $(CURSES_CMXA) $(COBJS) $(CMXA) $(CMX)
 
-# static build seems to require mashing all the C objects into a library
-$(NAME).static-opt: $(COBJS) $(CMX) $(CURSES_OOBJS) my-static-libs
-	$(OCAMLOPT) $(OFLAGS) -I . -ccopt -static -cclib '-lmycurses $(CURSES_LIB) -lm' -o $@ \
-   $(COBJS) $(CMXA) curses.cmx $(CMX)
-	strip $(NAME).static-opt
-
-my-static-libs:
-	ar cr libmycurses.a curses/*.o
 
 VERSION=1.4.5pre2
 
 version.ml: Makefile
 	echo "let version = \""$(VERSION)"\"" > version.ml
 	echo "let date = \""`date`"\"" >> version.ml
+
+
+$(CURSES_CMA):
+	make -C curses byte
+
+$(CURSES_CMXA):
+	make -C curses opt
 
 
 # installation
@@ -113,25 +105,21 @@ install-indep:
 	mkdir -p $(DESTDIR)/$(sysconfdir)
 	mkdir -p $(MANDIR)/man1
 	mkdir -p $(MANDIR)/man5
-	install -m 644 wyrdrc $(DESTDIR)/$(sysconfdir)
-	install -m 644 doc/wyrd.1 $(MANDIR)/man1/wyrd.1
-	install -m 644 doc/wyrdrc.5 $(MANDIR)/man5/wyrdrc.5
+	$(INSTALL) -m 644 wyrdrc $(DESTDIR)/$(sysconfdir)
+	$(INSTALL) -m 644 doc/wyrd.1 $(MANDIR)/man1/wyrd.1
+	$(INSTALL) -m 644 doc/wyrdrc.5 $(MANDIR)/man5/wyrdrc.5
 
 install: install-indep
-	install -m 755 $(NAME).$(OCAMLBEST) $(BINDIR)
+	$(INSTALL) -m 755 $(NAME).$(OCAMLBEST) $(BINDIR)
 	mv $(BINDIR)/$(NAME).$(OCAMLBEST) $(BINDIR)/$(NAME)
 
 install-byte: install-indep
-	install -m 755 $(NAME).byte $(BINDIR)
+	$(INSTALL) -m 755 $(NAME).byte $(BINDIR)
 	mv $(BINDIR)/$(NAME).byte $(BINDIR)/$(NAME)
 
 install-opt: install-indep
-	install -m 755 $(NAME).opt $(BINDIR)
+	$(INSTALL) -m 755 $(NAME).opt $(BINDIR)
 	mv $(BINDIR)/$(NAME).opt $(BINDIR)/$(NAME)
-
-install-static: install-indep
-	install -m 755 $(NAME).static-opt $(BINDIR)
-	mv $(BINDIR)/$(NAME).static-opt $(BINDIR)/$(NAME)
 
 uninstall:
 	rm -f $(BINDIR)/$(NAME)$(EXE)
@@ -144,37 +132,6 @@ uninstall:
 ###############
 
 .SUFFIXES:
-
-
-# curses build rules
-curses-opt: $(CURSES_OOBJS)
-curses-byte: $(CURSES_BOBJS)
-
-curses/curses.ml:	curses/curses.ml.in curses/functions.c
-	$(MAKE) -C curses
-
-curses/functions.c:	curses/functions.c.in
-	$(MAKE) -C curses
-
-CURSES_INCLUDES = -I ./curses
-CURSES_BFLAGS = -g $(CURSES_INCLUDES)
-CURSES_OFLAGS = $(CURSES_INCLUDES)
-CURSES_CFLAGS = $(CPPFLAGS) $(DEFS) $(CFLAGS) -Wall -fPIC -DPIC
-
-curses/%.cmi : curses/%.mli
-	$(OCAMLC) -c $(CURSES_BFLAGS) $<
-
-curses/%.cmo : curses/%.ml
-	$(OCAMLC) -c $(CURSES_BFLAGS) $<
-
-curses/%.o : curses/%.ml
-	$(OCAMLOPT) -c $(CURSES_OFLAGS) $<
-
-curses/%.cmx : curses/%.ml
-	$(OCAMLOPT) -c $(CURSES_OFLAGS) $<
-
-curses/%.o : curses/%.c
-	cd curses && $(OCAMLC) -ccopt "$(CURSES_CFLAGS)" -c $*.c
 
 
 # generic build rules for toplevel directory
@@ -223,7 +180,7 @@ vtags:
 	otags -vi -o tags *.ml
 
 
-# Makefile is rebuilt whenever Makefile.in or configure.in is modified
+# Makefile is rebuilt whenever Makefile.in or configure.ac is modified
 ######################################################################
 
 Makefile: Makefile.in config.status
@@ -232,7 +189,7 @@ Makefile: Makefile.in config.status
 config.status: configure
 	./config.status --recheck
 
-configure: configure.in
+configure: configure.ac
 	autoconf 
 
 # clean
@@ -241,11 +198,11 @@ configure: configure.in
 partly-clean::
 	rm -f *.cm[iox] *.o *.a *~
 	rm -f $(GENERATED)
-	rm -f $(NAME).byte $(NAME).opt $(NAME).static-opt
+	rm -f $(NAME).byte $(NAME).opt
 	rm -f *.aux *.log $(NAME).tex $(NAME).dvi $(NAME).ps
 
 curses-clean::
-	rm -f curses/*.cm[iox] curses/*.o *~
+	make -C curses clean
 
 clean:: partly-clean curses-clean
 
@@ -257,8 +214,6 @@ dist-clean distclean:: clean
 ########
 
 depend::
-#	$(MAKE) txtin_lexer.ml
-#	$(MAKE) txtin_parser.ml
 	$(OCAMLDEP) -pp camlp4o $(INCLUDES) *.ml *.mli > depend
 	$(OCAMLDEP) -pp 'cpp -P -xassembler-with-cpp' -I ./curses curses/*.ml curses/*.mli >> depend
 

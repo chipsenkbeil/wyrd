@@ -6,12 +6,20 @@
 # Usage: prep-release.sh DESTDIR
 #
 
+CURSES_BRANCH=lp:ubuntu/ocaml-curses
+CURSES_REVISION=8
+
 echo "Exporting revision..."
 bzr export $1
 echo "Exporting dependencies..."
-bzr export $1/curses $HOME/src/bzr-repo/libcurses-ocaml-dev
+bzr export -r $CURSES_REVISION $1/curses $CURSES_BRANCH
 
 cd $1
+pushd curses
+echo "Generating curses/configure ..."
+autoheader && autoconf && rm -rf autom4te.cache
+popd
+
 echo "Generating ./configure ..."
 autoconf && rm -rf autom4te.cache
 echo "Creating documentation..."
@@ -19,5 +27,3 @@ cd doc && make &> /dev/null
 echo "Done."
 
 
-
-# arch-tag: DO_NOT_CHANGE_f08da183-17c9-42c8-904b-7d6bab8dfe50 
