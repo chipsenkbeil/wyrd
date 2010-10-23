@@ -26,7 +26,7 @@
 %@% IF LATEX %@%
 \title{Wyrd v1.4 User Manual}
 \author{Paul J. Pelzl}
-\date{August 17, 2007}
+\date{October 23, 2010}
 \maketitle
 
 \begin{center}
@@ -53,20 +53,14 @@ Wyrd serves two purposes:
       does not hide Remind's textfile programmability, for this is what makes
       Remind a truly powerful calendaring system.
 \end{enumerate}
-
 Wyrd also requires only a fraction of the resources of most calendar programs
 available today.
 
 
 \section{Installation}
-This section describes how to install Wyrd by compiling from source.  Volunteers have
-pre-packaged Wyrd for several popular operating systems, so you may be able to save
-yourself some time by installing from those packages.  Please check the 
-%BEGIN LATEX
-Wyrd website\footnote{http://www.eecs.umich.edu/\~{}pelzlpj/wyrd}
-%END LATEX
-%HEVEA \begin{rawhtml} <a href="http://www.eecs.umich.edu/~pelzlpj/wyrd/">Wyrd website</a> \end{rawhtml} 
-for up-to-date package information.
+This section describes how to install Wyrd by compiling from source.  Wyrd has been
+packaged for a number of popular Linux/Unix variants, so you may be able to save yourself
+some time by installing from a package provided by your OS distribution.
 
 Wyrd is designed to be portable to most Unix-like operating systems, including
 GNU/Linux, *BSD, and Mac OS X.  Before installing Wyrd, your system must have the
@@ -93,7 +87,7 @@ following software installed:
       GNU make\footnote{http://www.gnu.org/software/make/}
 %END LATEX
 %HEVEA \begin{rawhtml} <a href="http://www.gnu.org/software/make/">GNU make</a> \end{rawhtml}
-   \item standard Unix utilities such as \texttt{cat}, \texttt{sort}, and \texttt{less} 
+   \item the Unix pager application, \texttt{less} 
 \end{itemize}
 Wyrd may be compiled by executing the following at the root of the source tree:
 \begin{verbatim}
@@ -129,7 +123,8 @@ when configuring the sources.
 \Prog{wyrd} \oArg{OPTIONS} \oArg{FILE}
 \section{Description}
 Open the calendar and display reminders defined in FILE (and any included
-reminder files).  The default reminder file is \Tilde /.reminders.
+reminder files).  The default reminder file is \Tilde /.reminders.  (The FILE
+may also be a directory containing files with a .rem extension.)
 \section{Options}
 \begin{description}
    \item[\Opt{--version}] Display version information and exit.
@@ -174,8 +169,8 @@ The 43 Folders Wiki also has a nice section on Remind\footnote{http://wiki.43fol
 %HEVEA \begin{rawhtml} The 43 Folders Wiki also has a <a href="http://wiki.43folders.com/index.php/Remind">nice section on Remind</a>.\end{rawhtml}
 
 You can launch Wyrd using the default reminder file by executing
-\texttt{wyrd}.  If desired, a different reminder file may be selected by
-executing \texttt{wyrd <filename>}.
+\texttt{wyrd}.  If desired, a different reminder file (or reminder directory)
+may be selected by executing \texttt{wyrd <filename>}.
 %@% ELSE %@%
 %@% END-IF %@%
 
@@ -280,7 +275,8 @@ weekly untimed reminder; \texttt{'m'} will create a monthly timed reminder, and
 (respectively), but first will provide a selection dialog for you to choose
 which reminder file you want to add this reminder to.  The set of reminder files
 is determined by scanning the \texttt{INCLUDE} lines in your default reminder
-file.
+file.  (If you use a reminder directory, then all \texttt{*.rem} files in that directory
+will be available along with all \texttt{INCLUDE}d files.)
 
 If you select a reminder (either timed or untimed) and hit \texttt{<return>}, you
 will begin editing that reminder.  Wyrd will open up the appropriate reminders
@@ -630,7 +626,7 @@ CONFIGURATION VARIABLES section.
    \item \texttt{remind\_command} \\
       Determines the command used to execute Remind.
    \item \texttt{reminders\_file} \\
-      Controls which Remind file Wyrd will operate on.  The default is
+      Controls which Remind file (or Remind directory) Wyrd will operate on.  The default is
       %@% IF LATEX %@%
       \~{}/.reminders .
       %@% ELSE %@%
@@ -986,41 +982,18 @@ Wyrd.
 %@% END-IF %@%
 
 \section{Contact info}
-Wyrd author: Paul Pelzl \texttt{<pelzlpj@eecs.umich.edu>} \\
+Wyrd author: Paul Pelzl \texttt{<pelzlpj@gmail.com>} \\
 %@% IF LATEX %@%
-Wyrd website: \texttt{http://www.eecs.umich.edu/\~{}pelzlpj/wyrd} \\
+Wyrd website: \texttt{http://pessimization.com/software/wyrd} \\
+Wyrd project page (bug reports, code repository, etc.): \texttt{http://launchpad.net/wyrd} \\
 %@% ELSE %@%
-Wyrd website: \URL{http://www.eecs.umich.edu/\Tilde pelzlpj/wyrd} \\
-%@% END-IF %@%
-
-%@% IF LATEX %@%
-\noindent
-Feel free to contact me if you have bugs, feature requests, patches, etc.  I 
-would also welcome volunteers interested in packaging Wyrd for various platforms.
-
-Wyrd is developed with the aid of the excellent
-%@% IF LATEX %@%
-%BEGIN LATEX
-Bazaar VCS\footnote{http://www.bazaar-vcs.org/}.
-%END LATEX  
-%HEVEA \begin{rawhtml} <a href="http://www.bazaar-vcs.org/">Bazaar VCS</a>. \end{rawhtml}
-%@% ELSE %@%
-Bazaar VCS [1].
-%@% END-IF %@%
-Interested developers are advised to track Wyrd development via my public
-repository: \\
-%@% IF LATEX %@%
-\hspace*{2cm} \texttt{http://www.eecs.umich.edu/\~{}pelzlpj/wyrd/bzr-repo/} \\
-%@% ELSE %@%
-http://www.eecs.umich.edu/\Tilde pelzlpj/wyrd/bzr-repo/ \\
-%@% END-IF %@%
-Primary development may be found on branch \texttt{wyrd-1.4-dev} .
-
+Wyrd website: \URL{http://pessimization.com/software/wyrd} \\
+Wyrd project page (bug reports, code repository, etc.): \URL{http://launchpad.net/wyrd} \\
 %@% END-IF %@%
 
 \section{Miscellaneous}
 ``Wyrd is a concept in ancient Anglo-saxon and Nordic cultures roughly
-corresponding to fate.''  \emph{-- Wikipedia}
+corresponding to fate or personal destiny.''  \emph{-- Wikipedia}
 
 
 %@% IF !LATEX && !WYRDRC %@%
@@ -1034,7 +1007,7 @@ corresponding to fate.''  \emph{-- Wikipedia}
 \Cmd{wyrd}{1}, \Cmd{remind}{1}
 
 \section{Author}
-This manpage is written by Paul J. Pelzl <pelzlpj@eecs.umich.edu>.
+This manpage is written by Paul J. Pelzl <pelzlpj@gmail.com>.
    %@% END-IF %@%
 \LatexManEnd
 %@% END-IF %@%
@@ -1042,4 +1015,3 @@ This manpage is written by Paul J. Pelzl <pelzlpj@eecs.umich.edu>.
 \end{document}
 
 
-% arch-tag: DO_NOT_CHANGE_db7ed8b2-8ea4-4e32-b0f6-50482487cb00 
