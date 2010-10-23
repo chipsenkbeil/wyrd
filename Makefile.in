@@ -83,7 +83,7 @@ $(NAME).opt: $(COBJS) $(CURSES_CMXA) $(CMX)
 	$(OCAMLOPT) $(OFLAGS) -o $@ $(CURSES_CMXA) $(COBJS) $(CMXA) $(CMX)
 
 
-VERSION=1.4.5pre2
+VERSION=1.4.5
 
 version.ml: Makefile
 	echo "let version = \""$(VERSION)"\"" > version.ml
