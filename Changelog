@@ -1,6 +1,15 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2010-10-23     Released 1.4.5.
+
+2010-10-20     Switched from personal fork of OCaml curses bindings to the
+               community-maintained library from
+               http://www.nongnu.org/ocaml-tmk/ .
+
+2010-10-18     Fixed bug which prevented "quick add" feature from accepting
+               UTF-8 encoded text.
+
 2008-02-24     Implemented improved support for Remind's new "reminder
                directory" capability.
 
