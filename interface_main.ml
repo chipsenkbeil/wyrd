@@ -1934,7 +1934,7 @@ let handle_keypress key (iface : interface_state_t) reminders =
                      |ExtendedGoto   -> "logical error in generating extended entry string"
                   in
                   failwith err_msg
-            with Failure _ ->
+            with Failure _ | Invalid_argument "char_of_int" ->
                let _ = beep () in
                (iface, reminders)
             end
