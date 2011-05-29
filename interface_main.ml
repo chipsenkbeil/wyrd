@@ -233,9 +233,9 @@ let handle_resize (iface : interface_state_t) reminders =
        * paint an error message. *)
       let w = newwin 0 0 0 0 in
       erase ();
-      assert (mvwaddstr w 0 0 s);
-      assert (wnoutrefresh w);
-      assert (doupdate ());
+      let _ = mvwaddstr w 0 0 s in
+      let _ = wnoutrefresh w in
+      let _ = doupdate () in
       ({iface with resize_failed_win = Some w}, reminders)
    end
       
@@ -1952,14 +1952,17 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
          reminders.Remind.remind_error ^ "\"") false
       else
          ();
-      (* refresh the msg window (which contains a clock)
-       * every wgetch timeout cycle *)
-      let iface = draw_msg iface in
-      begin match iface.resize_failed_win with
-      | None   -> assert (doupdate ())
-      | Some w -> ()
-      end;
-      let key = wgetch iface.scr.help_win in
+      let (iface, wgetch_target) =
+        match iface.resize_failed_win with
+        | None ->
+            (* refresh the msg window (which contains a clock) every wgetch timeout cycle *)
+            let iface = draw_msg iface in
+            assert (doupdate ());
+            (iface, iface.scr.help_win)
+        | Some w ->
+            (iface, w)
+      in
+      let key = wgetch wgetch_target in
       let new_iface, new_reminders = 
          (* key = -1 is ncurses wgetch timeout error *)
          if key <> ~- 1 then
@@ -1978,7 +1981,7 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
       in
       let curr_time = Unix.time () in
       (* poll remind(1) every 5 minutes and update display *)
-      if curr_time -. last_update > 300.0 then begin
+      if curr_time -. last_update > 300.0 && iface.resize_failed_win = None then begin
          let r = Remind.create_three_month new_iface.top_timestamp in
          (* if the untimed list has been altered, change the focus to
           * the timed window *)
