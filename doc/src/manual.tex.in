@@ -155,7 +155,7 @@ the \Cmd{wyrdrc}{5} manpage
 to see how Wyrd can be configured to better fit your needs.
 
 \subsection{Overview}
-Before attemping to use Wyrd, learn how to use Remind.  Wyrd makes no attempt
+Before attempting to use Wyrd, learn how to use Remind.  Wyrd makes no attempt
 to hide the details of Remind programming from the user.  
 %@% IF LATEX %@%
 Aside from reading the Remind manpage, you may get some useful pointers by reading 
@@ -328,7 +328,7 @@ Reminders can be easily duplicated or rescheduled through the use of Wyrd's
 cutting and pasting features.
 
 Selecting a reminder and pressing \texttt{'X'} will cut that reminder: the
-corrdsponding \texttt{REM} line is deleted from your reminders file, and the
+corresponding \texttt{REM} line is deleted from your reminders file, and the
 reminder is copied to Wyrd's clipboard.  To copy a reminder without deleting it,
 use \texttt{'y'} instead.
 
