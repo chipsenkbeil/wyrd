@@ -90,11 +90,15 @@ version.ml: Makefile
 	echo "let date = \""`date`"\"" >> version.ml
 
 
-$(CURSES_CMA):
-	make -C curses byte
+$(CURSES_CMA) $(CURSES_CMXA) .stamp_built_curses:
+	$(MAKE) -C curses byte opt && touch .stamp_built_curses
 
-$(CURSES_CMXA):
-	make -C curses opt
+$(CMO) $(CMX): .stamp_built_curses
+
+
+# The curses build script does not respond well to getting invoked
+# by simultaneous processes.
+.NOTPARALLEL:
 
 
 # installation
@@ -202,7 +206,7 @@ partly-clean::
 	rm -f *.aux *.log $(NAME).tex $(NAME).dvi $(NAME).ps
 
 curses-clean::
-	make -C curses clean
+	$(MAKE) -C curses clean && rm -f .stamp_built_curses
 
 clean:: partly-clean curses-clean
 
@@ -215,9 +219,7 @@ dist-clean distclean:: clean
 
 depend::
 	$(OCAMLDEP) -pp camlp4o $(INCLUDES) *.ml *.mli > depend
-	$(OCAMLDEP) -pp 'cpp -P -xassembler-with-cpp' -I ./curses curses/*.ml curses/*.mli >> depend
 
 include depend
 
 
-# arch-tag: DO_NOT_CHANGE_bdb62873-ffd0-4d79-819e-880467e18f28 
