@@ -17,3 +17,6 @@ doc/*.pdf
 doc/*.1
 doc/*.5
 .stamp_built_curses
+setup.ml
+setup.log
+setup.data
