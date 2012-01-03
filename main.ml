@@ -103,7 +103,11 @@ try
    Interface_main.run iface
 with error ->
    endwin ();
-   Printf.fprintf stderr "Caught error at toplevel:\n%s\n" (Printexc.to_string error);;
+   Printf.fprintf stderr "Caught error at toplevel:\n%s\n" (Printexc.to_string error);
+   if Printexc.backtrace_status () then
+      Printf.fprintf stderr "\nBacktrace:\n\n%s\n" (Printexc.get_backtrace ())
+   else
+      ();;
 
 
 (* arch-tag: DO_NOT_CHANGE_eeac13df-e93f-4359-8b70-44fefc40e225 *)

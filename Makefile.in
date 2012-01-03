@@ -45,7 +45,7 @@ INSTALL      = @INSTALL@
 
 INCLUDES = -I ./curses
 BFLAGS   = -pp camlp4o -g $(INCLUDES)
-OFLAGS   = -pp camlp4o $(INCLUDES)
+OFLAGS   = -pp camlp4o -g $(INCLUDES)
 DEPFLAGS = -pp camlp4o
 
 # main target
