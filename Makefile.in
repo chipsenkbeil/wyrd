@@ -53,8 +53,10 @@ DEPFLAGS = -pp camlp4o
 
 NAME = wyrd
 
-all: $(OCAMLBEST)
+all: $(NAME)
 
+$(NAME): $(OCAMLBEST)
+	rm -f $(NAME) && ln -s $(NAME).$(OCAMLBEST) $(NAME)
 
 
 # bytecode and native-code compilation
@@ -83,7 +85,7 @@ $(NAME).opt: $(COBJS) $(CURSES_CMXA) $(CMX)
 	$(OCAMLOPT) $(OFLAGS) -o $@ $(CURSES_CMXA) $(COBJS) $(CMXA) $(CMX)
 
 
-VERSION=1.4.5-oasis1
+VERSION=1.4.5-oasis2
 
 version.ml: Makefile
 	echo "let version = \""$(VERSION)"\"" > version.ml
@@ -202,7 +204,7 @@ configure: configure.ac
 partly-clean::
 	rm -f *.cm[iox] *.o *.a *~
 	rm -f $(GENERATED)
-	rm -f $(NAME).byte $(NAME).opt
+	rm -f $(NAME) $(NAME).byte $(NAME).opt
 	rm -f *.aux *.log $(NAME).tex $(NAME).dvi $(NAME).ps
 
 curses-clean::

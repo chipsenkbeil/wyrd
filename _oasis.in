@@ -18,6 +18,6 @@ XCustomBuildDistclean:     make distclean
 XCustomInstall:            make install
 XCustomUninstall:          make uninstall
 
-Executable "wyrd.opt"
+Executable wyrd
   Path:        .
   MainIs:      main.ml
