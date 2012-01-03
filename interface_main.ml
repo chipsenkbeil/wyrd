@@ -1783,6 +1783,7 @@ let handle_keypress_normal key (iface : interface_state_t) reminders =
             ()
          end;
          let i = draw_msg iface in
+         let reminders = Remind.create_three_month i.top_timestamp in
          handle_refresh i reminders
       |Rcfile.Quit ->
          let new_iface = {iface with run_wyrd = false} in
