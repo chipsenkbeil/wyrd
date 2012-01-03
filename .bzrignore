@@ -20,3 +20,4 @@ doc/*.5
 setup.ml
 setup.log
 setup.data
+_oasis

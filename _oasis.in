@@ -1,6 +1,6 @@
 OASISFormat: 0.2
 Name:                      wyrd
-Version:                   1.4.6
+Version:                   @WYRD_VERSION@
 Synopsis:                  curses front-end for 'remind' calendar application
 Homepage:                  http://pessimization.com/software/wyrd
 Authors:                   Paul Pelzl <pelzlpj@gmail.com>

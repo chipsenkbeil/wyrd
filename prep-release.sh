@@ -22,10 +22,9 @@ popd
 
 echo "Generating ./configure ..."
 autoconf && rm -rf autom4te.cache
-echo "Generating oasis setup.ml ..."
-oasis setup
+echo "Generating _oasis and setup.ml ..."
+./make_oasis.ml && oasis setup
 echo "Creating documentation..."
 cd doc && make &> /dev/null
 echo "Done."
-
 
