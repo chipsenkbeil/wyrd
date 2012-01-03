@@ -1980,21 +1980,25 @@ let rec do_main_loop (iface : interface_state_t) reminders last_update =
          else
             (iface, reminders)
       in
+      let remfile_mtimes = Remind.get_remfile_mtimes () in
       let curr_time = Unix.time () in
-      (* poll remind(1) every 5 minutes and update display *)
-      if curr_time -. last_update > 300.0 && iface.resize_failed_win = None then begin
+      (* if stat() indicates that remfiles were updated, or if five minutes has passed,
+       * then poll remind(1) and update the display *)
+      if (remfile_mtimes <> new_iface.remfile_mtimes || curr_time -. last_update > 300.0) &&
+            iface.resize_failed_win = None then begin
          let r = Remind.create_three_month new_iface.top_timestamp in
          (* if the untimed list has been altered, change the focus to
           * the timed window *)
          let new_iface =
             if List.length r.Remind.curr_untimed <> 
-               List.length reminders.Remind.curr_untimed then {
+                  List.length reminders.Remind.curr_untimed then {
                new_iface with selected_side = Left;
                               top_untimed = 0;
-                              right_selection = 1
+                              right_selection = 1;
+                              remfile_mtimes = remfile_mtimes
                }
             else
-               new_iface
+               {new_iface with remfile_mtimes = remfile_mtimes}
          in
          let (iface2, reminders2) = handle_refresh new_iface r in
          do_main_loop iface2 reminders2 curr_time
@@ -2021,6 +2025,7 @@ let run (iface : interface_state_t) =
    set_bkgd iface.scr.msg_win Rcfile.Description; 
    scrollok iface.scr.timed_win true;
    let reminders = Remind.create_three_month (iface.top_timestamp) in
+   let iface = {iface with remfile_mtimes = Remind.get_remfile_mtimes ()} in
    assert (keypad iface.scr.help_win true);
    draw_help iface;
    draw_date_strip iface;

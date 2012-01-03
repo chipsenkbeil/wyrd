@@ -80,6 +80,8 @@ type untimed_lineinfo_t = {
 type extended_mode_t = ExtendedSearch | ExtendedGoto | ExtendedQuick
 type entry_mode_t = Normal | Extended of extended_mode_t
 
+module SMap = Map.Make(String)
+
 (* everything you need to know about the interface state goes in this variable *)
 type interface_state_t = {
    version           : string;              (* program version string *)
@@ -95,6 +97,7 @@ type interface_state_t = {
    timed_lineinfo    : timed_lineinfo_t list array;     (* information about the lines of the timed reminder window *)
    untimed_lineinfo  : untimed_lineinfo_t option array; (* same as above, for untimed window *)
    len_untimed       : int;                 (* number of entries in the untimed reminders list *)
+   remfile_mtimes    : float SMap.t;        (* for each remfile, maps filename to stat mtime *)
    search_regex      : Str.regexp;          (* most recent search string *)
    extended_input    : string;              (* buffer to hold search/goto/quick event info *)
    entry_mode        : entry_mode_t;        (* decides which mode the interface is in *)
@@ -146,6 +149,7 @@ let make (std : screen_t) =
       timed_lineinfo     = Array.make std.tw_lines [];
       untimed_lineinfo   = Array.make std.uw_lines None;
       len_untimed        = 0;
+      remfile_mtimes     = SMap.empty;
       search_regex       = Str.regexp "";
       extended_input     = "";
       entry_mode         = Normal;

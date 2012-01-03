@@ -801,5 +801,21 @@ let get_untimed_reminders_for_day untimed_reminders timestamp =
    List.filter is_current untimed_reminders
 
 
+(* Forms a list of all remfiles in use, and stats them all to
+ * get the mtimes. *)
+let get_remfile_mtimes () =
+   let safe_mtime filename =
+      try
+         let st = Unix.stat filename in
+         st.Unix.st_mtime
+      with Unix.Unix_error _ ->
+         0.0
+   in
+   let (_, all_remfiles) = get_all_remfiles () in
+   List.fold_left
+      (fun acc remfile -> Interface.SMap.add remfile (safe_mtime remfile) acc)
+      Interface.SMap.empty
+      all_remfiles
+
 
 (* arch-tag: DO_NOT_CHANGE_6bb48a1c-2b0c-4254-ba3a-ee9b48007169 *)
