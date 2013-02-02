@@ -63,7 +63,7 @@ OCAMLMAJORVERSION=`echo $OCAMLVERSION | cut -d '.' -f 1`
 OCAMLMINORVERSION=`echo $OCAMLVERSION | cut -d '.' -f 2`
 if test $OCAMLMAJORVERSION -lt 3 ; then
    AC_MSG_ERROR(Wyrd requires OCaml version 3.08 or greater.)
-else
+elif test $OCAMLMAJORVERSION -eq 3; then
    if test $OCAMLMINORVERSION -lt 8 ; then
       AC_MSG_ERROR(Wyrd requires OCaml version 3.08 or greater.)
    fi
