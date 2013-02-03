@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 CURSES_BRANCH=lp:ubuntu/ocaml-curses
 CURSES_REVISION=8
 
