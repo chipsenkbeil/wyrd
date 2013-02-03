@@ -150,22 +150,30 @@ let drop_curses_across (f : 'a -> 'b)  (x : 'a) : 'b =
    result
 
 
-(* Invoke an external process, ignoring SIGWINCH for the duration. *)
-let system_ignore_sigwinch (command : string) : Unix.process_status =
-  (* Yeah, this maybe isn't portable... sorry. *)
-  let sigwinch = 28 in
-  try
-     let orig_behavior = Sys.signal sigwinch Sys.Signal_ignore in
-     let result = Unix.system command in
-     let () = Sys.set_signal sigwinch orig_behavior in
-     result
-  with Invalid_argument _ ->
-     (* Sys.signal can fail if the signal is not supported *)
-     Unix.system command
+(* Invoke an external process as Unix.system, but loop on EINTR while waiting for process
+ * completion.  This is a workaround for the fact that SIGWINCH may be received while curses mode is
+ * deactivated when we launch an external editor. *)
+let system_retry_eintr (command : string) : Unix.process_status =
+  match Unix.fork () with
+  | 0 ->
+      begin try
+         Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; command |]
+      with _ ->
+         exit 127
+      end
+  | pid -> 
+      let rec loop_eintr () =
+         try
+            snd (Unix.waitpid [] pid)
+         with Unix.Unix_error (Unix.EINTR, _, _) ->
+            loop_eintr ()
+      in
+      loop_eintr ()
+
      
 
 let drop_curses_system (command : string) : Unix.process_status =
-   drop_curses_across system_ignore_sigwinch command
+   drop_curses_across system_retry_eintr command
 
 
 (* Parse a natural language event description and append
