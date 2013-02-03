@@ -1,6 +1,30 @@
 Wyrd ChangeLog
 --------------------------------------------------------------------------------
 
+2013-02-02     Release 1.4.6:
+
+    * Fixed a failure to quote filenames in the editor commands provided by
+      the default wyrdrc.
+
+    * Fixed a crash when the terminal is resized while wyrd is executing an
+      external editor or browser.  (In some environments, this would happen
+      every time a reminder file is edited.)
+
+    * Fixed 'configure' errors when compiling with OCaml 4.
+
+    * Added Oasis metadata.
+
+    * Added automatic refresh of the display when reminder files are modified.
+
+    * Added a backtrace printout for unhandled exceptions.
+
+    * Fixed a parallel-make race conditoin resulting from integration of
+      upstream ocaml-curses.
+
+    * Fixed a crash when the terminal is resized.
+
+    * Fixed some crashes which could be triggered by pressing arrow keys or
+      entering non-printable characters from the "quick add" entry field.
 
 2010-10-23     Release 1.4.5:
 
