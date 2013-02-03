@@ -140,6 +140,34 @@ let resize_subwins iface =
    new_scr
 
 
+(* Drop curses mode, invoke a function, and restore curses mode. *)
+let drop_curses_across (f : 'a -> 'b)  (x : 'a) : 'b =
+   def_prog_mode ();
+   endwin ();
+   let result = f x in
+   reset_prog_mode ();
+   let _ = curs_set 0 in
+   result
+
+
+(* Invoke an external process, ignoring SIGWINCH for the duration. *)
+let system_ignore_sigwinch (command : string) : Unix.process_status =
+  (* Yeah, this maybe isn't portable... sorry. *)
+  let sigwinch = 28 in
+  try
+     let orig_behavior = Sys.signal sigwinch Sys.Signal_ignore in
+     let result = Unix.system command in
+     let () = Sys.set_signal sigwinch orig_behavior in
+     result
+  with Invalid_argument _ ->
+     (* Sys.signal can fail if the signal is not supported *)
+     Unix.system command
+     
+
+let drop_curses_system (command : string) : Unix.process_status =
+   drop_curses_across system_ignore_sigwinch command
+
+
 (* Parse a natural language event description and append
  * the result to the specified reminders file. *)
 let append_quick_event event_spec remfile =
@@ -634,15 +662,7 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
          Str.global_replace filename_sub remfile
             !Rcfile.edit_new_command
       in
-      def_prog_mode ();
-      endwin ();
-      let editor_process_status = Unix.system command in 
-      reset_prog_mode ();
-      begin try
-         assert (curs_set 0)
-      with _ ->
-         ()
-      end;
+      let editor_process_status = drop_curses_system command in
       let r = Remind.create_three_month iface.top_timestamp in
       (* if the untimed list has been altered, change the focus to
        * the first element of the list *)
@@ -997,17 +1017,10 @@ let handle_view_reminders (iface : interface_state_t) reminders trigger_all =
       else
          !Rcfile.remind_command ^ " -q -g "
    in
-   let command = partial_command ^ !Rcfile.reminders_file ^ " " ^
-   rem_date_str ^ " | less -c" in
-   def_prog_mode ();
-   endwin ();
-   let _ = Unix.system command in 
-   reset_prog_mode ();
-   begin try
-      assert (curs_set 0)
-   with _ ->
-      ()
-   end;
+   let command =
+      partial_command ^ !Rcfile.reminders_file ^ " " ^ rem_date_str ^ " | less -c"
+   in
+   let _ = drop_curses_system command in
    handle_refresh iface reminders
 
 
@@ -1033,15 +1046,7 @@ let handle_view_calendar (iface : interface_state_t) reminders week_only =
       partial_command ^ time_option ^ weekday_option ^ 
       !Rcfile.reminders_file ^ " " ^ rem_date_str ^ " | less -c" 
    in
-   def_prog_mode ();
-   endwin ();
-   let _ = Unix.system command in 
-   reset_prog_mode ();
-   begin try
-      assert (curs_set 0)
-   with _ ->
-      ()
-   end;
+   let _ = drop_curses_system command in
    handle_refresh iface reminders
 
 
@@ -1190,15 +1195,7 @@ let handle_edit (iface : interface_state_t) reminders =
          Str.global_replace filename_sub filename !Rcfile.edit_old_command
       in
       let command = Str.global_replace lineno_sub line_num command_partial in
-      def_prog_mode ();
-      endwin ();
-      let _ = Unix.system command in 
-      reset_prog_mode ();
-      begin try
-         assert (curs_set 0)
-      with _ ->
-         ()
-      end;
+      let _ = drop_curses_system command in
       let r = Remind.create_three_month iface.top_timestamp in
       (* if the untimed list has been altered, change the focus
        * to the first element *)
@@ -1223,15 +1220,7 @@ let handle_edit_any (iface : interface_state_t) reminders remfile =
    let command = 
       Str.global_replace filename_sub remfile !Rcfile.edit_any_command
    in
-   def_prog_mode ();
-   endwin ();
-   let _ = Unix.system command in 
-   reset_prog_mode ();
-   begin try
-      assert (curs_set 0)
-   with _ ->
-      ()
-   end;
+   let _ = drop_curses_system command in
    let r = Remind.create_three_month iface.top_timestamp in
    (* if the untimed list has been altered, change the focus
     * to the first element *)
@@ -1408,15 +1397,7 @@ let handle_paste_reminder (iface : interface_state_t) reminders remfile =
       Str.global_replace filename_sub remfile
          !Rcfile.edit_new_command
    in
-   def_prog_mode ();
-   endwin ();
-   let _ = Unix.system command in 
-   reset_prog_mode ();
-   begin try
-      assert (curs_set 0)
-   with _ ->
-      ()
-   end;
+   let _ = drop_curses_system command in
    let r = Remind.create_three_month iface.top_timestamp in
    (* if the untimed list has been altered, change the focus to
     * the first element of the list *)
