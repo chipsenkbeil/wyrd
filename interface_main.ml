@@ -624,7 +624,9 @@ let handle_new_reminder (iface : interface_state_t) reminders rem_type
       substitute_aux [
          (Str.regexp "%monname%", Utility.string_of_tm_mon tm.Unix.tm_mon);
          (Str.regexp "%mon%", string_of_int (succ tm.Unix.tm_mon));
+         (Str.regexp "%0mon%", Printf.sprintf "%.2d" (succ tm.Unix.tm_mon));
          (Str.regexp "%mday%", string_of_int tm.Unix.tm_mday);
+         (Str.regexp "%0mday%", Printf.sprintf "%.2d" tm.Unix.tm_mday);
          (Str.regexp "%year%", string_of_int (tm.Unix.tm_year + 1900));
          (Str.regexp "%hour%", Printf.sprintf "%.2d" tm.Unix.tm_hour);
          (Str.regexp "%min%", Printf.sprintf "%.2d" tm.Unix.tm_min);

@@ -648,10 +648,12 @@ CONFIGURATION VARIABLES section.
    \item \texttt{timed\_template} \\
       Controls the format of the \texttt{REM} line created when editing a new
       timed reminder.  The following string substitutions will be made:
-      \texttt{'\%monname\%'} - month name, \texttt{'\%mon\%'} - month number,
-      \texttt{'\%mday\%'} - day of the month, \texttt{'\%year\%'} - year, 
-      \texttt{'\%hour\%'} - hour, \texttt{'\%min\%'} - minute,
-      \texttt{'\%wdayname\%'} - weekday name, \texttt{'\%wday\%'} - weekday number.
+      \texttt{'\%monname\%'} - month name, \texttt{'\%mon\%'} - month number
+      (1-12), \texttt{'\%0mon\%'} - month number (01-12), \texttt{'\%mday\%'} -
+      day of the month (1-31), \texttt{'\%0mday\%'} - day of the month (01-31),
+      \texttt{'\%year\%'} - year, \texttt{'\%hour\%'} - hour,
+      \texttt{'\%min\%'} - minute, \texttt{'\%wdayname\%'} - weekday name,
+      \texttt{'\%wday\%'} - weekday number.
    \item \texttt{untimed\_template} \\
       Controls the format of the \texttt{REM} line created when editing a new
       untimed reminder.  The substitution syntax is the same as for
