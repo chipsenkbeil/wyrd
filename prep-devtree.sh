@@ -2,7 +2,7 @@
 
 set -e
 
-CURSES_BRANCH=lp:ubuntu/ocaml-curses
+CURSES_BRANCH=lp:ubuntu/wily/ocaml-curses
 CURSES_REVISION=8
 
 echo "Getting curses lib ..."
