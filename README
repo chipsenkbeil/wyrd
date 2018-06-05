@@ -7,3 +7,12 @@ instructions.
 DEVELOPERS: Invoke "prep-devtree.sh" to grab a snapshot of the build
 dependencies.
 
+## Mac Notes
+
+Need the following packages from Homebrew:
+- `camlp4`
+- `ncurses`
+
+Then, run `autoconf` to get a configure file. From there, run like normal
+via `./configure --enable-utf8`, `make`, and `make install`.
+
