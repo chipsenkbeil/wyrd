@@ -1,0 +1,6 @@
+name = "curses"
+version = "1.0.3"
+description = "OCaml bindings for ncurses"
+requires = ""
+archive(byte) = "curses.cma"
+archive(native) = "curses.cmxa"
